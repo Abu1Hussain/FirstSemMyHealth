@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <style>
+        /* ==========================================
+           GLOBAL STYLES (Same as before)
+           ========================================== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f8fa; min-height: 100vh; padding: 20px; }
+        
+        .navbar {
+            background: white;
+            padding: 15px 30px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .logo-nav { font-size: 20px; font-weight: bold; color: #2196f3; text-decoration: none; }
+        .nav-links { display: flex; gap: 15px; }
+        .nav-link { text-decoration: none; color: #5a6c7d; font-size: 16px; padding: 8px 16px; border-radius: 5px; }
+        .nav-link:hover { background: #e8f4f8; }
+        .nav-link.active { background: #2196f3; color: white; }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        h1 { text-align: center; color: #2c3e50; margin-bottom: 30px; font-size: 26px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; color: #2c3e50; font-size: 15px; }
+        input { width: 100%; padding: 14px; border: 1px solid #d1d9e0; border-radius: 5px; font-size: 15px; }
+        input:focus { outline: none; border-color: #2196f3; }
+        .password-wrapper { position: relative; }
+        .toggle-password { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #5a6c7d; cursor: pointer; font-size: 13px; padding: 4px 8px; }
+        .toggle-password:hover { background: #e8f4f8; color: #2196f3; }
+        .btn-login { width: 100%; padding: 16px; background: #2196f3; color: white; border: none; border-radius: 5px; font-size: 17px; cursor: pointer; margin-top: 10px; }
+        .btn-login:hover { background: #1976d2; }
+        .error-message { color: #e53935; font-size: 13px; margin-top: 5px; display: none; }
+        .forgot-password-link { text-align: center; margin-top: 20px; }
+        .forgot-password-link a { color: #2196f3; text-decoration: none; font-size: 14px; }
+        .forgot-password-link a:hover { text-decoration: underline; }
+        
+        .server-error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <div class="navbar">
+        <a href="../index.html" class="logo-nav">Healthcare Portal</a>
+        <div class="nav-links">
+            <a href="register.html" class="nav-link">Registration</a>
+            <a href="login.html" class="nav-link active">Login</a>
+        </div>
+    </div>
+
+    <!-- Login Container -->
+    <div class="container">
+        <h1>Login</h1>
+        <form id="loginForm">
+            <div id="apiError" class="server-error" style="display:none;"></div>
+
+            <!-- CPR or Email -->
+            <div class="form-group">
+                <label for="identifier">CPR or Email</label>
+                <input type="text" id="identifier" name="identifier" required>
+                <span class="error-message" id="identifierError">Please enter CPR or Email</span>
+            </div>
+
+            <!-- Password -->
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="password-wrapper">
+                    <input type="password" id="password" name="password" required>
+                    <button type="button" class="toggle-password" id="togglePassword">Show</button>
+                </div>
+                <span class="error-message" id="passwordError">Please enter your password</span>
+            </div>
+
+            <!-- Login Button -->
+            <button type="submit" class="btn-login">Login</button>
+        </form>
+
+        <!-- Forgot Password Link -->
+        <div class="forgot-password-link">
+            <a href="forgot_password.html">Forgot Password?</a>
+        </div>
+    </div>
+
+    <script>
+        // Toggle Password Visibility
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+
+        togglePassword.addEventListener('click', function () {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            this.textContent = type === 'password' ? 'Show' : 'Hide';
+        });
+
+        // Form Validation & Logic
+        const form = document.getElementById('loginForm');
+        
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            
+            const identifier = document.getElementById('identifier').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const identifierError = document.getElementById('identifierError');
+            const passwordError = document.getElementById('passwordError');
+            
+            let isValid = true;
+
+            // Reset errors
+            identifierError.style.display = 'none';
+            passwordError.style.display = 'none';
+            document.getElementById('apiError').style.display = 'none';
+
+            // Validate Identifier
+            if (identifier === '') {
+                identifierError.style.display = 'block';
+                isValid = false;
+            }
+
+            // Validate Password
+            if (password === '') {
+                passwordError.style.display = 'block';
+                isValid = false;
+            }
+            
+            // If valid, submit form
+            if (isValid) {
+                const formData = new FormData();
+                formData.append('login_btn', '1');
+                formData.append('identifier', identifier);
+                formData.append('password', password);
+                
+                fetch('../php/auth.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.text()) // Get text first
+                .then(text => {
+                    try {
+                        const data = JSON.parse(text); // Try parsing JSON
+                        if (data.status === 'success') {
+                            // Store role for MFA redirection
+                            if (data.role) {
+                                localStorage.setItem('user_role', data.role);
+                            }
+                            window.location.href = 'MFA.html';
+                        } else {
+                            const errorDiv = document.getElementById('apiError');
+                            errorDiv.textContent = data.message;
+                            errorDiv.style.display = 'block';
+                        }
+                    } catch (e) {
+                        // If JSON parse fails, show the raw text (likely a PHP error)
+                        console.error('Server Error:', text);
+                        const errorDiv = document.getElementById('apiError');
+                        errorDiv.textContent = "Server Error: " + text.substring(0, 100); // Show first 100 chars
+                        errorDiv.style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    const errorDiv = document.getElementById('apiError');
+                    errorDiv.textContent = "Connection error. Please try again.";
+                    errorDiv.style.display = 'block';
+                });
+            }
+        });
+    </script>
+</body>
+</html>

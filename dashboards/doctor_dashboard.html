@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyHealth - Doctor Dashboard</title>
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <style>
+        .content-section { display: none; }
+        .content-section.active { display: block; }
+        /* Loading Overlay */
+        #loading { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.8); z-index: 1000; display: flex; justify-content: center; align-items: center; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+    <!-- Ionicons for icons -->
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+</head>
+<body>
+    <div id="loading"><div class="spinner"></div></div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo-section">
+            <div class="logo-text">MyHealth AI</div>
+        </div>
+        <ul class="nav-links">
+            <li class="nav-item">
+                <a href="#" class="nav-link active" data-view="dashboard">
+                    <ion-icon name="grid-outline" class="nav-icon"></ion-icon> Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link" data-view="patients">
+                    <ion-icon name="people-outline" class="nav-icon"></ion-icon> My Patients
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link" data-view="appointments">
+                    <ion-icon name="calendar-outline" class="nav-icon"></ion-icon> Appointments
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link" data-view="prescriptions">
+                    <ion-icon name="medkit-outline" class="nav-icon"></ion-icon> Prescriptions
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link" data-view="records">
+                    <ion-icon name="document-text-outline" class="nav-icon"></ion-icon> Medical Records
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link" data-view="profile">
+                    <ion-icon name="person-outline" class="nav-icon"></ion-icon> My Profile
+                </a>
+            </li>
+            <li class="nav-item" style="margin-top: auto;">
+                <a href="../php/logout.php" class="nav-link">
+                    <ion-icon name="log-out-outline" class="nav-icon"></ion-icon> Logout
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <div class="header">
+            <div class="welcome-text">
+                <h2>Welcome, Dr. <span id="user-name">Loading...</span>! 👨‍⚕️</h2>
+            </div>
+            <div class="user-profile">
+                <span>Doctor Account</span>
+                <div class="avatar" id="user-initial">?</div>
+            </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="content-body">
+            
+            <!-- VIEW: DASHBOARD -->
+            <div id="view-dashboard" class="content-section active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="stat-value" id="stat-patients">0</span>
+                        <span class="stat-label">Total Patients</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value" id="stat-appointments">0</span>
+                        <span class="stat-label">Today's Appointments</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value" id="stat-pending">0</span>
+                        <span class="stat-label">Pending Reviews</span>
+                    </div>
+                </div>
+                
+                <div class="dashboard-card">
+                    <h3>Today's Schedule</h3>
+                    <div id="today-schedule">
+                        <p>No appointments for today.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: MY PATIENTS -->
+            <div id="view-patients" class="content-section">
+                <div class="dashboard-card">
+                    <h3>👥 My Patients</h3>
+                    <p>Patient list will appear here.</p>
+                </div>
+            </div>
+
+            <!-- VIEW: APPOINTMENTS -->
+            <div id="view-appointments" class="content-section">
+                <div class="dashboard-card">
+                    <h3>📅 All Appointments</h3>
+                    <p>Appointment management will appear here.</p>
+                </div>
+            </div>
+
+             <!-- VIEW: PRESCRIPTIONS -->
+             <div id="view-prescriptions" class="content-section">
+                <div class="dashboard-card">
+                    <h3>💊 Manage Prescriptions</h3>
+                    <p>Prescription tools will appear here.</p>
+                </div>
+            </div>
+
+            <!-- VIEW: MEDICAL RECORDS -->
+            <div id="view-records" class="content-section">
+                <div class="dashboard-card">
+                    <h3>📋 Medical Records</h3>
+                    <p>Search and view patient records.</p>
+                </div>
+            </div>
+            
+            <!-- VIEW: PROFILE -->
+            <div id="view-profile" class="content-section">
+                <div class="dashboard-card">
+                    <h3>👤 My Profile</h3>
+                    <form>
+                        <div class="form-group">
+                            <label>Name</label>
+                            <input type="text" class="form-control" id="profile-name" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" class="form-control" value="doctor@myhealth.com" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Specialization</label>
+                            <input type="text" class="form-control" value="General Practitioner" readonly>
+                        </div>
+                        <button type="button" class="btn-primary">Update Profile</button>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    
+    <script src="../js/doctor_dashboard.js"></script>
+</body>
+</html>

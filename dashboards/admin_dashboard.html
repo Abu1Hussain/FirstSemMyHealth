@@ -1,0 +1,1059 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard - MyHealth AI</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      :root {
+        --admin-primary: #2196f3;
+        --admin-dark: #2d3748;
+        --admin-light: #f5f8fa;
+        --admin-success: #38a169;
+        --admin-warning: #d69e2e;
+        --admin-danger: #e53e3e;
+        --admin-gray: #a0aec0;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: var(--admin-light);
+        color: var(--admin-dark);
+      }
+
+      /* Layout */
+      .admin-dashboard {
+        display: flex;
+        min-height: 100vh;
+      }
+      .admin-sidebar {
+        width: 280px;
+        background: var(--admin-dark);
+        color: white;
+        position: fixed;
+        height: 100vh;
+        overflow-y: auto;
+        transition: transform 0.3s;
+        z-index: 1000;
+      }
+      .admin-sidebar.active {
+        transform: translateX(0);
+      }
+      .admin-main {
+        flex: 1;
+        margin-left: 280px;
+        padding: 20px;
+        transition: margin-left 0.3s;
+      }
+
+      /* Sidebar Components */
+      .admin-sidebar-header {
+        padding: 25px;
+        background: rgba(0, 0, 0, 0.2);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .admin-sidebar-header h2 {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 1.5rem;
+        color: white;
+      }
+      .admin-sidebar-header a {
+        color: white;
+        text-decoration: none;
+      }
+      .admin-nav {
+        padding: 20px 0;
+      }
+      .nav-section {
+        margin-bottom: 25px;
+      }
+      .nav-section-title {
+        padding: 0 25px 10px;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        color: var(--admin-gray);
+        letter-spacing: 1px;
+      }
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 25px;
+        color: rgba(255, 255, 255, 0.8);
+        text-decoration: none;
+        transition: all 0.3s;
+        border-left: 4px solid transparent;
+        cursor: pointer;
+      }
+      .nav-item:hover,
+      .nav-item.active {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        border-left-color: var(--admin-primary);
+      }
+      .nav-item i {
+        width: 20px;
+        text-align: center;
+      }
+
+      /* Topbar */
+      .admin-topbar {
+        background: white;
+        padding: 15px 25px;
+        border-radius: 10px;
+        margin-bottom: 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      }
+      .admin-breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.9rem;
+        color: var(--admin-gray);
+      }
+      .admin-actions {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+      }
+      .admin-menu-toggle {
+        display: none;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: var(--admin-dark);
+      }
+
+      /* Stats Grid */
+      .admin-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+      }
+      .admin-stat-card {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        border-top: 4px solid var(--admin-primary);
+      }
+      .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        color: white;
+      }
+      .stat-icon.users {
+        background: #2196f3;
+      }
+      .stat-icon.patients {
+        background: #38a169;
+      }
+      .stat-icon.doctors {
+        background: #d69e2e;
+      }
+      .stat-icon.appointments {
+        background: #667eea;
+      }
+      .stat-icon.ai {
+        background: #9f7aea;
+      }
+
+      /* Content Sections (Views) */
+      .content-section {
+        display: none;
+      }
+      .content-section.active {
+        display: block;
+      }
+
+      /* Tables */
+      .table-card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        margin-bottom: 30px;
+      }
+      .table-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+      .table-card-header h3 {
+        font-size: 1.2rem;
+        color: var(--admin-dark);
+      }
+      .admin-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .admin-table th {
+        text-align: left;
+        padding: 12px 15px;
+        background: var(--admin-light);
+        color: var(--admin-gray);
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        border-bottom: 2px solid #e2e8f0;
+      }
+      .admin-table td {
+        padding: 15px;
+        border-bottom: 1px solid #e2e8f0;
+        font-size: 0.9rem;
+      }
+      .admin-table tr:hover {
+        background: var(--admin-light);
+      }
+
+      /* Filters */
+      .filter-group {
+        display: flex;
+        gap: 10px;
+      }
+      .filter-select {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        outline: none;
+      }
+
+      /* Modal */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 2000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.5);
+      }
+      .modal-content {
+        background-color: #fefefe;
+        margin: 15% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+        max-width: 600px;
+        border-radius: 12px;
+      }
+      .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+      .close:hover,
+      .close:focus {
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      @media (max-width: 1024px) {
+        .admin-sidebar {
+          transform: translateX(-100%);
+        }
+        .admin-main {
+          margin-left: 0;
+        }
+        .admin-menu-toggle {
+          display: block;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="admin-dashboard">
+      <!-- Sidebar -->
+      <aside class="admin-sidebar" id="adminSidebar">
+        <div class="admin-sidebar-header">
+          <h2>
+            <a href="../index.html"
+              ><i class="fas fa-hospital"></i> MyHealth AI</a
+            >
+          </h2>
+          <p style="font-size: 0.9rem; opacity: 0.8; margin-top: 5px">
+            Admin Control Panel
+          </p>
+        </div>
+
+        <nav class="admin-nav">
+          <div class="nav-section">
+            <div class="nav-section-title">Main</div>
+            <a
+              href="#"
+              class="nav-item active"
+              onclick="showSection('dashboard')"
+              ><i class="fas fa-tachometer-alt"></i> Dashboard</a
+            >
+          </div>
+
+          <div class="nav-section">
+            <div class="nav-section-title">User Management</div>
+            <a href="#" class="nav-item" onclick="showSection('users')"
+              ><i class="fas fa-users"></i> Users</a
+            >
+            <a href="#" class="nav-item" onclick="showSection('patients')"
+              ><i class="fas fa-user-injured"></i> Patients</a
+            >
+            <a href="#" class="nav-item" onclick="showSection('doctors')"
+              ><i class="fas fa-user-md"></i> Doctors</a
+            >
+          </div>
+
+          <div class="nav-section">
+            <div class="nav-section-title">Healthcare</div>
+            <a href="#" class="nav-item" onclick="showSection('appointments')"
+              ><i class="fas fa-calendar-check"></i> Appointments</a
+            >
+            <a href="#" class="nav-item" onclick="showSection('records')"
+              ><i class="fas fa-file-medical"></i> Health Records</a
+            >
+            <a href="#" class="nav-item" onclick="showSection('prescriptions')"
+              ><i class="fas fa-prescription-bottle-alt"></i> Prescriptions</a
+            >
+          </div>
+
+          <div class="nav-section">
+            <div class="nav-section-title">AI System</div>
+            <a href="#" class="nav-item" onclick="showSection('ai-analysis')"
+              ><i class="fas fa-chart-pie"></i> AI Analysis</a
+            >
+            <a href="#" class="nav-item" onclick="showSection('ai-logs')"
+              ><i class="fas fa-robot"></i> AI Logs</a
+            >
+            <a href="#" class="nav-item" onclick="showSection('doc-queue')"
+              ><i class="fas fa-file-upload"></i> Document Queue</a
+            >
+          </div>
+
+          <div class="nav-section">
+            <div class="nav-section-title">System</div>
+            <a href="#" class="nav-item" onclick="showSection('system-logs')"
+              ><i class="fas fa-clipboard-list"></i> System Logs</a
+            >
+            <a href="#" class="nav-item" onclick="showSection('audit-trail')"
+              ><i class="fas fa-history"></i> Audit Trail</a
+            >
+            <a href="#" class="nav-item" onclick="showSection('reports')"
+              ><i class="fas fa-file-alt"></i> Reports</a
+            >
+            <a href="#" class="nav-item" onclick="showSection('settings')"
+              ><i class="fas fa-cogs"></i> Settings</a
+            >
+          </div>
+        </nav>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="admin-main">
+        <!-- Top Bar -->
+        <div class="admin-topbar">
+          <button class="admin-menu-toggle" id="adminMenuToggle">
+            <i class="fas fa-bars"></i>
+          </button>
+          <div class="admin-breadcrumb">
+            <span><i class="fas fa-home"></i></span>
+            <span id="breadcrumbTitle">Dashboard</span>
+          </div>
+          <div class="admin-actions">
+            <div style="font-weight: 500">System Admin</div>
+            <div
+              style="cursor: pointer; color: var(--admin-danger)"
+              onclick="logout()"
+            >
+              <i class="fas fa-sign-out-alt"></i> Logout
+            </div>
+          </div>
+        </div>
+
+        <!-- DASHBOARD VIEW -->
+        <div id="dashboard-section" class="content-section active">
+          <div class="admin-stats-grid">
+            <div class="admin-stat-card users">
+              <div class="stat-icon users"><i class="fas fa-users"></i></div>
+              <div>
+                <h3>Total Users</h3>
+                <div class="stat-value">1,245</div>
+              </div>
+            </div>
+            <div class="admin-stat-card patients">
+              <div class="stat-icon patients">
+                <i class="fas fa-user-injured"></i>
+              </div>
+              <div>
+                <h3>Patients</h3>
+                <div class="stat-value">1,180</div>
+              </div>
+            </div>
+            <div class="admin-stat-card doctors">
+              <div class="stat-icon doctors">
+                <i class="fas fa-user-md"></i>
+              </div>
+              <div>
+                <h3>Doctors</h3>
+                <div class="stat-value">65</div>
+              </div>
+            </div>
+            <div class="admin-stat-card appointments">
+              <div class="stat-icon appointments">
+                <i class="fas fa-calendar-check"></i>
+              </div>
+              <div>
+                <h3>Appointments</h3>
+                <div class="stat-value">42</div>
+              </div>
+            </div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-header">
+              <h3><i class="fas fa-chart-line"></i> User Growth</h3>
+            </div>
+            <div class="chart-container">
+              <canvas id="userGrowthChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- USERS VIEW -->
+        <div id="users-section" class="content-section">
+          <div class="table-card">
+            <div class="table-card-header"><h3>All Users</h3></div>
+            <div style="overflow-x: auto">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Role</th>
+                  </tr>
+                </thead>
+                <tbody id="usersTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- PATIENTS VIEW -->
+        <div id="patients-section" class="content-section">
+          <div class="table-card">
+            <div class="table-card-header"><h3>All Patients</h3></div>
+            <div style="overflow-x: auto">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>CPR</th>
+                  </tr>
+                </thead>
+                <tbody id="patientsTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- DOCTORS VIEW -->
+        <div id="doctors-section" class="content-section">
+          <div class="table-card">
+            <div class="table-card-header"><h3>All Doctors</h3></div>
+            <div style="overflow-x: auto">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Doctor Name</th>
+                    <th>Doctor ID</th>
+                  </tr>
+                </thead>
+                <tbody id="doctorsTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- APPOINTMENTS VIEW -->
+        <div id="appointments-section" class="content-section">
+          <div class="table-card">
+            <div class="table-card-header">
+              <h3>Appointments</h3>
+              <div class="filter-group">
+                <select
+                  id="appointYear"
+                  class="filter-select"
+                  onchange="filterAppointments()"
+                ></select>
+                <select
+                  id="appointMonth"
+                  class="filter-select"
+                  onchange="filterAppointments()"
+                >
+                  <option value="all">All Months</option>
+                  <option value="0">January</option>
+                  <option value="1">February</option>
+                  <option value="2">March</option>
+                  <option value="3">April</option>
+                  <option value="4">May</option>
+                  <option value="5">June</option>
+                  <option value="6">July</option>
+                  <option value="7">August</option>
+                  <option value="8">September</option>
+                  <option value="9">October</option>
+                  <option value="10">November</option>
+                  <option value="11">December</option>
+                </select>
+              </div>
+            </div>
+            <div style="overflow-x: auto">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Patient</th>
+                    <th>Doctor</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="appointmentsTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- HEALTH RECORDS VIEW -->
+        <div id="records-section" class="content-section">
+          <div class="table-card">
+            <div class="table-card-header"><h3>Health Records</h3></div>
+            <div style="overflow-x: auto">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Patient Name</th>
+                    <th>Reason for Visit / Condition</th>
+                  </tr>
+                </thead>
+                <tbody id="recordsTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- PRESCRIPTIONS VIEW -->
+        <div id="prescriptions-section" class="content-section">
+          <div class="table-card">
+            <div class="table-card-header"><h3>Prescriptions</h3></div>
+            <div style="overflow-x: auto">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Patient Name</th>
+                    <th>Doctor Name</th>
+                    <th>Prescription</th>
+                  </tr>
+                </thead>
+                <tbody id="prescriptionsTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI ANALYSIS VIEW -->
+        <div id="ai-analysis-section" class="content-section">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px">
+            <div class="chart-card">
+              <div class="chart-header"><h3>Common Doctors Searched</h3></div>
+              <div class="chart-container">
+                <canvas id="aiDoctorsChart"></canvas>
+              </div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-header"><h3>Common Visit Times</h3></div>
+              <div class="chart-container">
+                <canvas id="aiTimeChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI LOGS VIEW -->
+        <div id="ai-logs-section" class="content-section">
+          <div class="table-card">
+            <div class="table-card-header"><h3>AI System Usage Logs</h3></div>
+            <div style="overflow-x: auto">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Access Time</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="aiLogsTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- DOCUMENT QUEUE VIEW -->
+        <div id="doc-queue-section" class="content-section">
+          <div class="table-card">
+            <div class="table-card-header">
+              <h3>Document Analysis Queue</h3>
+            </div>
+            <div style="overflow-x: auto">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Patient Name</th>
+                    <th>Upload Date</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="docQueueTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- SYSTEM LOGS VIEW -->
+        <div id="system-logs-section" class="content-section">
+          <div class="table-card">
+            <div class="table-card-header"><h3>User Login Logs</h3></div>
+            <div style="overflow-x: auto">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Login Date</th>
+                    <th>Login Time</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="sysLogsTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- AUDIT TRAIL VIEW -->
+        <div id="audit-trail-section" class="content-section">
+          <div class="table-card">
+            <div class="table-card-header"><h3>Audit Trail</h3></div>
+            <div style="overflow-x: auto">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Action Performed</th>
+                    <th>Timestamp</th>
+                  </tr>
+                </thead>
+                <tbody id="auditTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- REPORTS VIEW -->
+        <div id="reports-section" class="content-section">
+          <div class="table-card">
+            <div class="table-card-header">
+              <h3>User Suggestions & Issues</h3>
+            </div>
+            <div style="overflow-x: auto">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Type</th>
+                    <th>Message/Report</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody id="reportsTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- SETTINGS VIEW -->
+        <div id="settings-section" class="content-section">
+          <div class="table-card">
+            <div class="table-card-header"><h3>Settings</h3></div>
+            <div
+              style="
+                padding: 20px;
+                text-align: center;
+                color: var(--admin-gray);
+              "
+            >
+              <i
+                class="fas fa-cogs"
+                style="font-size: 3rem; margin-bottom: 10px"
+              ></i>
+              <p>
+                System Configuration settings will be implemented here in future
+                updates.
+              </p>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Document Viewer Modal -->
+    <div id="docModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeDocModal()">&times;</span>
+        <h3>Uploaded Documents</h3>
+        <div id="docModalContent" style="margin-top: 15px">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Toggle Sidebar
+      document
+        .getElementById("adminMenuToggle")
+        .addEventListener("click", () => {
+          document.getElementById("adminSidebar").classList.toggle("active");
+        });
+
+      // Navigation Logic
+      function showSection(sectionId) {
+        document
+          .querySelectorAll(".content-section")
+          .forEach((el) => el.classList.remove("active"));
+        document
+          .querySelectorAll(".nav-item")
+          .forEach((el) => el.classList.remove("active"));
+        document.getElementById(sectionId + "-section").classList.add("active");
+        const navLink = document.querySelector(
+          `.nav-item[onclick="showSection('${sectionId}')"]`,
+        );
+        if (navLink) navLink.classList.add("active");
+        document.getElementById("breadcrumbTitle").textContent = sectionId
+          .split("-")
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(" ");
+      }
+
+      // Mock Data
+      const mockUsers = [
+        { name: "Patient Zero", role: "Patient" },
+        { name: "Dr. Confident", role: "Doctor" },
+        { name: "System Admin", role: "Admin" },
+      ];
+      const mockPatients = [
+        { name: "Patient Zero", cpr: "123456789" },
+        { name: "Mr. John Doe", cpr: "987654321" },
+      ];
+      const mockDoctors = [
+        { name: "Dr. Confident", id: "DOC-001" },
+        { name: "Dr. Smiling", id: "DOC-002" },
+        { name: "Dr. Trusted", id: "DOC-003" },
+      ];
+      const mockRecords = [
+        { name: "Patient Zero", reason: "Severe migraine" },
+        { name: "Mr. John Doe", reason: "Annual checkup" },
+      ];
+      const mockPrescriptions = [
+        {
+          patient: "Patient Zero",
+          doctor: "Dr. Confident",
+          rx: "Ibuprofen 400mg",
+        },
+        { patient: "Mr. John Doe", doctor: "Dr. Smiling", rx: "Vitamin D" },
+      ];
+      const mockAppointments = [
+        {
+          date: new Date("2026-01-15"),
+          patient: "Patient Zero",
+          doctor: "Dr. Confident",
+          status: "Confirmed",
+        },
+        {
+          date: new Date("2026-02-10"),
+          patient: "Mr. John Doe",
+          doctor: "Dr. Smiling",
+          status: "Pending",
+        },
+      ];
+
+      // AI System Mock Data
+      const mockAILogs = [
+        {
+          user: "Patient Zero",
+          time: "2026-02-12 10:30 AM",
+          action: "Symptom Checker",
+        },
+        {
+          user: "Mr. John Doe",
+          time: "2026-02-12 11:15 AM",
+          action: "Document Analysis",
+        },
+      ];
+      const mockDocQueue = [
+        {
+          patient: "Patient Zero",
+          date: "2026-02-12",
+          files: ["blood_test.pdf", "mri_scan.jpg"],
+        },
+        {
+          patient: "Ms. Jane Smith",
+          date: "2026-02-11",
+          files: ["prescription.png"],
+        },
+      ];
+
+      // System Ops Mock Data
+      const mockSysLogs = [
+        {
+          user: "System Admin",
+          date: "2026-02-12",
+          time: "09:00 AM",
+          status: "Success",
+        },
+        {
+          user: "Dr. Confident",
+          date: "2026-02-12",
+          time: "09:15 AM",
+          status: "Success",
+        },
+      ];
+      const mockAudit = [
+        {
+          user: "System Admin",
+          action: "Updated System Settings",
+          time: "2026-02-12 09:30 AM",
+        },
+        {
+          user: "Dr. Confident",
+          action: "Updated Patient Record",
+          time: "2026-02-12 10:00 AM",
+        },
+      ];
+      const mockReports = [
+        {
+          user: "Patient Zero",
+          type: "Suggestion",
+          msg: "Add dark mode please",
+          date: "2026-02-10",
+        },
+        {
+          user: "Dr. Smiling",
+          type: "Issue",
+          msg: "Calendar sync delay",
+          date: "2026-02-11",
+        },
+      ];
+
+      // Render Functions
+      function renderTables() {
+        // Basic Tables
+        document.getElementById("usersTableBody").innerHTML = mockUsers
+          .map((u) => `<tr><td>${u.name}</td><td>${u.role}</td></tr>`)
+          .join("");
+        document.getElementById("patientsTableBody").innerHTML = mockPatients
+          .map((p) => `<tr><td>${p.name}</td><td>${p.cpr}</td></tr>`)
+          .join("");
+        document.getElementById("doctorsTableBody").innerHTML = mockDoctors
+          .map((d) => `<tr><td>${d.name}</td><td>${d.id}</td></tr>`)
+          .join("");
+        document.getElementById("recordsTableBody").innerHTML = mockRecords
+          .map((r) => `<tr><td>${r.name}</td><td>${r.reason}</td></tr>`)
+          .join("");
+        document.getElementById("prescriptionsTableBody").innerHTML =
+          mockPrescriptions
+            .map(
+              (p) =>
+                `<tr><td>${p.patient}</td><td>${p.doctor}</td><td>${p.rx}</td></tr>`,
+            )
+            .join("");
+
+        // AI System Tables
+        document.getElementById("aiLogsTableBody").innerHTML = mockAILogs
+          .map(
+            (l) =>
+              `<tr><td>${l.user}</td><td>${l.time}</td><td>${l.action}</td></tr>`,
+          )
+          .join("");
+        document.getElementById("docQueueTableBody").innerHTML = mockDocQueue
+          .map(
+            (d, i) => `
+                <tr>
+                    <td>${d.patient}</td>
+                    <td>${d.date}</td>
+                    <td><button class="status-badge status-active" style="border:none;cursor:pointer;" onclick="viewDocs(${i})"><i class="fas fa-eye"></i> View</button></td>
+                </tr>`,
+          )
+          .join("");
+
+        // System Tables
+        document.getElementById("sysLogsTableBody").innerHTML = mockSysLogs
+          .map(
+            (l) =>
+              `<tr><td>${l.user}</td><td>${l.date}</td><td>${l.time}</td><td><span class="status-badge status-active">${l.status}</span></td></tr>`,
+          )
+          .join("");
+        document.getElementById("auditTableBody").innerHTML = mockAudit
+          .map(
+            (a) =>
+              `<tr><td>${a.user}</td><td>${a.action}</td><td>${a.time}</td></tr>`,
+          )
+          .join("");
+        document.getElementById("reportsTableBody").innerHTML = mockReports
+          .map(
+            (r) =>
+              `<tr><td>${r.user}</td><td>${r.type}</td><td>${r.msg}</td><td>${r.date}</td></tr>`,
+          )
+          .join("");
+
+        filterAppointments();
+      }
+
+      // Logic
+      function filterAppointments() {
+        const yearFilter = document.getElementById("appointYear").value;
+        const monthFilter = document.getElementById("appointMonth").value;
+        const tbody = document.getElementById("appointmentsTableBody");
+        const filtered = mockAppointments.filter((app) => {
+          const yearMatch =
+            yearFilter === "all" ||
+            app.date.getFullYear().toString() === yearFilter;
+          const monthMatch =
+            monthFilter === "all" ||
+            app.date.getMonth().toString() === monthFilter;
+          return yearMatch && monthMatch;
+        });
+        tbody.innerHTML = filtered.length
+          ? filtered
+              .map(
+                (app) =>
+                  `<tr><td>${app.date.toDateString()}</td><td>${app.patient}</td><td>${app.doctor}</td><td><span class="status-badge status-active">${app.status}</span></td></tr>`,
+              )
+              .join("")
+          : '<tr><td colspan="4" style="text-align:center;">No data</td></tr>';
+      }
+
+      function setupFilters() {
+        const years = [
+          ...new Set(mockAppointments.map((a) => a.date.getFullYear())),
+        ].sort();
+        document.getElementById("appointYear").innerHTML =
+          '<option value="all">All Years</option>' +
+          years.map((y) => `<option value="${y}">${y}</option>`).join("");
+      }
+
+      function viewDocs(index) {
+        const data = mockDocQueue[index];
+        const content = document.getElementById("docModalContent");
+        content.innerHTML =
+          `<p><strong>Patient:</strong> ${data.patient}</p><ul>` +
+          data.files
+            .map((f) => `<li><a href="#" style="color:#2196f3;">${f}</a></li>`)
+            .join("") +
+          `</ul>`;
+        document.getElementById("docModal").style.display = "block";
+      }
+
+      function closeDocModal() {
+        document.getElementById("docModal").style.display = "none";
+      }
+      window.onclick = function (event) {
+        if (event.target == document.getElementById("docModal"))
+          closeDocModal();
+      };
+
+      function logout() {
+        if (confirm("Logout?")) window.location.href = "../php/logout.php";
+      }
+
+      // Initialize Charts & Data
+      document.addEventListener("DOMContentLoaded", () => {
+        setupFilters();
+        renderTables();
+
+        // User Growth Chart
+        new Chart(document.getElementById("userGrowthChart"), {
+          type: "line",
+          data: {
+            labels: ["Jan", "Feb", "Mar"],
+            datasets: [
+              {
+                label: "Signups",
+                data: [12, 19, 3],
+                borderColor: "#2196f3",
+                fill: false,
+              },
+            ],
+          },
+          options: { responsive: true, maintainAspectRatio: false },
+        });
+
+        // AI Doctors Chart
+        new Chart(document.getElementById("aiDoctorsChart"), {
+          type: "bar",
+          data: {
+            labels: ["Dr. Confident", "Dr. Smiling", "Dr. Trusted"],
+            datasets: [
+              {
+                label: "Search Count",
+                data: [45, 30, 25],
+                backgroundColor: ["#2196f3", "#38a169", "#d69e2e"],
+              },
+            ],
+          },
+          options: { responsive: true, maintainAspectRatio: false },
+        });
+
+        // AI Time Chart
+        new Chart(document.getElementById("aiTimeChart"), {
+          type: "line", // 'line' often visualizes "common times" better than bar
+          data: {
+            labels: ["8 AM", "10 AM", "12 PM", "2 PM", "4 PM"],
+            datasets: [
+              {
+                label: "Visits/Searches",
+                data: [10, 45, 20, 60, 30],
+                borderColor: "#e53e3e",
+                fill: true,
+                backgroundColor: "rgba(229, 62, 62, 0.1)",
+              },
+            ],
+          },
+          options: { responsive: true, maintainAspectRatio: false },
+        });
+      });
+    </script>
+  </body>
+</html>

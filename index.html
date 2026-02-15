@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Healthcare Portal</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: Arial, sans-serif;
+        background: #f5f8fa;
+      }
+
+      /* ==========================================
+           HEADER
+           ========================================== */
+      .header {
+        background: white;
+        padding: 20px 40px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .logo {
+        font-size: 24px;
+        font-weight: bold;
+        color: #2196f3;
+      }
+
+      .header-buttons {
+        display: flex;
+        gap: 15px;
+      }
+
+      .btn-header {
+        padding: 10px 20px;
+        border-radius: 5px;
+        text-decoration: none;
+        font-size: 15px;
+        transition: background-color 0.3s;
+      }
+
+      .btn-login-header {
+        background: white;
+        color: #2196f3;
+        border: 2px solid #2196f3;
+      }
+
+      .btn-login-header:hover {
+        background: #e8f4f8;
+      }
+
+      .btn-register-header {
+        background: #2196f3;
+        color: white;
+        border: 2px solid #2196f3;
+      }
+
+      .btn-register-header:hover {
+        background: #1976d2;
+      }
+
+      /* ==========================================
+           HERO SECTION
+           ========================================== */
+      .hero {
+        background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+        color: white;
+        padding: 80px 40px;
+        text-align: center;
+      }
+
+      .hero h1 {
+        font-size: 42px;
+        margin-bottom: 20px;
+      }
+
+      .hero p {
+        font-size: 18px;
+        margin-bottom: 30px;
+        opacity: 0.9;
+      }
+
+      .hero-buttons {
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+      }
+
+      .btn-hero {
+        padding: 15px 35px;
+        border-radius: 5px;
+        text-decoration: none;
+        font-size: 17px;
+        transition: all 0.3s;
+      }
+
+      .btn-primary {
+        background: white;
+        color: #2196f3;
+      }
+
+      .btn-primary:hover {
+        background: #f5f8fa;
+      }
+
+      .btn-secondary {
+        background: transparent;
+        color: white;
+        border: 2px solid white;
+      }
+
+      .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      /* ==========================================
+           FEATURES SECTION
+           ========================================== */
+      .features {
+        padding: 60px 40px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .features-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 30px;
+        margin-top: 40px;
+      }
+
+      .feature-card {
+        background: white;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        text-align: center;
+      }
+
+      .feature-card h3 {
+        color: #2c3e50;
+        margin-bottom: 15px;
+        font-size: 20px;
+      }
+
+      .feature-card p {
+        color: #5a6c7d;
+        font-size: 15px;
+        line-height: 1.6;
+      }
+
+      /* ==========================================
+           INFO SECTION
+           ========================================== */
+      .info-section {
+        background: white;
+        padding: 60px 40px;
+      }
+
+      .info-content {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .info-content h2 {
+        color: #2c3e50;
+        font-size: 32px;
+        margin-bottom: 30px;
+        text-align: center;
+      }
+
+      .info-list {
+        list-style: none;
+        padding: 0;
+      }
+
+      .info-list li {
+        padding: 15px 0;
+        border-bottom: 1px solid #e0e0e0;
+        color: #5a6c7d;
+        font-size: 16px;
+      }
+
+      .info-list li:before {
+        content: "✓";
+        color: #43a047;
+        font-weight: bold;
+        margin-right: 10px;
+      }
+
+      /* ==========================================
+           CTA SECTION
+           ========================================== */
+      .cta-section {
+        padding: 80px 40px;
+        text-align: center;
+        background: #f5f8fa;
+      }
+
+      .cta-section h2 {
+        color: #2c3e50;
+        font-size: 32px;
+        margin-bottom: 30px;
+      }
+
+      /* ==========================================
+           FOOTER
+           ========================================== */
+      .footer {
+        background: #2c3e50;
+        color: white;
+        padding: 30px 40px;
+        text-align: center;
+      }
+
+      /* ==========================================
+           RESPONSIVE
+           ========================================== */
+      @media (max-width: 768px) {
+        .features-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .hero-buttons {
+          flex-direction: column;
+        }
+
+        .hero h1 {
+          font-size: 32px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Header -->
+    <div class="header">
+      <a href="index.html" class="logo" style="text-decoration: none"
+        >Healthcare Portal</a
+      >
+      <div class="header-buttons">
+        <a href="loginReg/login.html" class="btn-header btn-login-header"
+          >Login</a
+        >
+        <a
+          href="loginReg/register.html"
+          class="btn-header btn-register-header"
+          >Register</a
+        >
+      </div>
+    </div>
+
+    <!-- Hero Section -->
+    <div class="hero">
+      <h1>Welcome to Healthcare Portal</h1>
+      <p>
+        Your health, our priority. Access your medical records anytime,
+        anywhere.
+      </p>
+      <div class="hero-buttons">
+        <a href="loginReg/register.html" class="btn-hero btn-primary"
+          >Get Started</a
+        >
+        <a href="loginReg/login.html" class="btn-hero btn-secondary"
+          >Patient Login</a
+        >
+      </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="features">
+      <div class="features-grid">
+        <div class="feature-card">
+          <h3>Secure Authentication</h3>
+          <p>
+            Multi-factor authentication ensures your health data stays
+            protected.
+          </p>
+        </div>
+        <div class="feature-card">
+          <h3>Easy Registration</h3>
+          <p>
+            Quick and simple sign-up process to get you started immediately.
+          </p>
+        </div>
+        <div class="feature-card">
+          <h3>Medical Records</h3>
+          <p>Access your complete medical history from any device.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Appointment Booking</h3>
+          <p>Schedule appointments with healthcare providers online.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Prescription Management</h3>
+          <p>View and manage your prescriptions digitally.</p>
+        </div>
+        <div class="feature-card">
+          <h3>24/7 Access</h3>
+          <p>Your health information available whenever you need it.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info Section -->
+    <div class="info-section">
+      <div class="info-content">
+        <h2>Why Choose Our Healthcare Portal?</h2>
+        <ul class="info-list">
+          <li>Secure and encrypted patient data storage</li>
+          <li>Easy-to-use interface for all age groups</li>
+          <li>Real-time updates on test results and reports</li>
+          <li>Direct communication with healthcare providers</li>
+          <li>Mobile-friendly design for access on the go</li>
+          <li>Comprehensive health tracking and monitoring</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- CTA Section -->
+    <div class="cta-section">
+      <h2>Ready to Get Started?</h2>
+      <div class="hero-buttons">
+        <a href="loginReg/register.html" class="btn-hero btn-primary"
+          >Create Account</a
+        >
+        <a href="loginReg/login.html" class="btn-hero btn-primary">Sign In</a>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>&copy; 2026 Healthcare Portal. All rights reserved.</p>
+    </div>
+  </body>
+</html>

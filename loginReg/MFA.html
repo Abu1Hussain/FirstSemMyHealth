@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MFA Verification</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f8fa;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 26px;
+        }
+
+        p {
+            color: #5a6c7d;
+            margin-bottom: 30px;
+            font-size: 15px;
+        }
+
+        .code-input {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #d1d9e0;
+            border-radius: 5px;
+            font-size: 20px;
+            text-align: center;
+            letter-spacing: 8px;
+            margin-bottom: 20px;
+        }
+
+        .code-input:focus {
+            outline: none;
+            border-color: #2196f3;
+        }
+
+        .btn-check {
+            width: 100%;
+            padding: 16px;
+            background: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 17px;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+
+        .btn-check:hover {
+            background: #1976d2;
+        }
+
+        .btn-resend {
+            width: 100%;
+            padding: 16px;
+            background: white;
+            color: #2196f3;
+            border: 2px solid #2196f3;
+            border-radius: 5px;
+            font-size: 17px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        .btn-resend:hover {
+            background: #e8f4f8;
+        }
+
+        .back-link {
+            margin-top: 20px;
+        }
+
+        .back-link a {
+            color: #2196f3;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+
+        .error-message {
+            color: #e53935;
+            font-size: 13px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .success-message {
+            color: #43a047;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>MFA Verification</h1>
+        <p>Enter the 6-digit code sent to your device</p>
+        
+        <form id="mfaForm">
+            <input type="text" id="codeInput" class="code-input" maxlength="6" placeholder="000000" required>
+            <span class="error-message" id="codeError">Please enter a 6-digit code</span>
+            <span class="success-message" id="successMessage">Code sent successfully!</span>
+            
+            <button type="submit" class="btn-check">Check</button>
+            <button type="button" class="btn-resend" id="resendBtn">Resend Code</button>
+        </form>
+
+        <div class="back-link">
+            <a href="loginReg/login.html">Back to Login</a> | <a href="../index.html">Home</a>
+        </div>
+    </div>
+
+    <script>
+        /* ==========================================
+           AUTO-FOCUS ON CODE INPUT
+           ========================================== */
+        window.addEventListener('load', function() {
+            document.getElementById('codeInput').focus();
+        });
+
+        /* ==========================================
+           NUMERIC INPUT ONLY
+           ========================================== */
+        document.getElementById('codeInput').addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+
+        /* ==========================================
+           ENTER KEY SUBMISSION
+           ========================================== */
+        document.getElementById('codeInput').addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('mfaForm').dispatchEvent(new Event('submit'));
+            }
+        });
+
+        /* ==========================================
+           MFA FORM VALIDATION
+           ========================================== */
+        document.getElementById('mfaForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Hide messages
+            document.getElementById('codeError').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'none';
+            
+            var code = document.getElementById('codeInput').value;
+            
+            // Validate 6 digits
+            if (code.length !== 6) {
+                document.getElementById('codeError').style.display = 'block';
+                return;
+            }
+            
+            // Accept any 6-digit code for testing
+            alert('MFA verification successful!');
+            
+            // Redirect based on role
+            const role = localStorage.getItem('user_role');
+            if (role === 'doctor') {
+                window.location.href = '../dashboards/doctor_dashboard.html';
+            } else {
+                window.location.href = '../dashboards/patient_dashboard.html';
+            }
+        });
+
+        /* ==========================================
+           RESEND CODE BUTTON
+           ========================================== */
+        document.getElementById('resendBtn').addEventListener('click', function() {
+            var successMsg = document.getElementById('successMessage');
+            successMsg.style.display = 'block';
+            
+            // Hide after 10 seconds
+            setTimeout(function() {
+                successMsg.style.display = 'none';
+            }, 10000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyHealth - Patient Dashboard</title>
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <style>
+        .content-section { display: none; }
+        .content-section.active { display: block; }
+        /* Loading Overlay */
+        #loading { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.8); z-index: 1000; display: flex; justify-content: center; align-items: center; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Timeline Styles */
+        .timeline-container {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .timeline-hour {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .timeline-hour:last-child { border-bottom: none; }
+        .chairs-badge {
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.85em;
+        }
+    </style>
+    <!-- Ionicons for icons -->
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+</head>
+<body>
+    <div id="loading"><div class="spinner"></div></div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo-section">
+            <div class="logo-text">MyHealth AI</div>
+        </div>
+        <ul class="nav-links">
+            <li class="nav-item">
+                <a href="#" class="nav-link active" data-view="dashboard">
+                    <ion-icon name="grid-outline" class="nav-icon"></ion-icon> Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link" data-view="appointments">
+                    <ion-icon name="calendar-outline" class="nav-icon"></ion-icon> Appointments
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link" data-view="records">
+                    <ion-icon name="folder-open-outline" class="nav-icon"></ion-icon> Health Records
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link" data-view="prescriptions">
+                    <ion-icon name="medkit-outline" class="nav-icon"></ion-icon> Prescriptions
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" class="nav-link" data-view="profile">
+                    <ion-icon name="person-outline" class="nav-icon"></ion-icon> My Profile
+                </a>
+            </li>
+            <li class="nav-item" style="margin-top: auto;">
+                <a href="../php/logout.php" class="nav-link">
+                    <ion-icon name="log-out-outline" class="nav-icon"></ion-icon> Logout
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <div class="header">
+            <div class="welcome-text">
+                <h2>Welcome back, <span id="user-name">Loading...</span>! 👋</h2>
+            </div>
+            <div class="user-profile">
+                <span>Patient Account</span>
+                <div class="avatar" id="user-initial">?</div>
+            </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="content-body">
+            
+            <!-- VIEW: DASHBOARD -->
+            <div id="view-dashboard" class="content-section active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="stat-value" id="stat-health">Good</span>
+                        <span class="stat-label">Health Status</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value" id="stat-upcoming">0</span>
+                        <span class="stat-label">Pending Appointments</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value" id="stat-prescriptions">0</span>
+                        <span class="stat-label">New Prescriptions</span>
+                    </div>
+                </div>
+                
+                <!-- Doctor List Section -->
+                <div class="dashboard-card">
+                    <h3>👨‍⚕️ Our Doctors</h3>
+                    <div id="doctors-list" class="doctors-grid">
+                        <p>Loading doctors...</p>
+                    </div>
+                </div>
+
+                <div class="dashboard-card">
+                    <h3>Recent Activity</h3>
+                    <p>No recent activity to show.</p>
+                </div>
+            </div>
+
+            <!-- Doctor Profile Modal -->
+            <div id="doctor-modal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:2000; justify-content:center; align-items:center;">
+                <div class="modal-content" style="background:white; padding:30px; border-radius:12px; width:90%; max-width:500px; position:relative;">
+                    <span class="close-modal" style="position:absolute; top:15px; right:20px; font-size:24px; cursor:pointer;">&times;</span>
+                    
+                    <div style="text-align:center; margin-bottom:20px;">
+                        <img id="modal-doc-img" src="" style="width:120px; height:120px; border-radius:50%; object-fit:cover; border:4px solid #e3f2fd;">
+                        <h2 id="modal-doc-name" style="margin-top:10px; color:#2c3e50;">Doctor Name</h2>
+                        <div id="modal-doc-spec" style="color:#1976d2; font-weight:600;">Specialization</div>
+                    </div>
+                    
+                    <div style="background:#f8f9fa; padding:15px; border-radius:8px; margin-bottom:20px;">
+                        <p id="modal-doc-bio" style="color:#555; line-height:1.6;">Bio goes here...</p>
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                        <div>
+                            <span style="display:block; font-size:12px; color:#777;">Daily Capacity</span>
+                            <strong id="modal-doc-capacity" style="font-size:18px; color:#2c3e50;">0</strong> <span style="font-size:14px;">chairs</span>
+                        </div>
+                    </div>
+
+                    <button id="btn-book-doc" class="btn-primary" style="width:100%;">Book Appointment</button>
+                </div>
+            </div>
+
+            <!-- VIEW: APPOINTMENTS -->
+            <div id="view-appointments" class="content-section">
+                
+                <!-- Daily Availability Timeline -->
+                <div class="dashboard-card">
+                    <h3>📊 Today's Availability</h3>
+                    <div id="daily-timeline" class="timeline-container">
+                        <p>Loading availability...</p>
+                        <!-- Populated via JS: Time slots and chairs left -->
+                    </div>
+                </div>
+
+                <div class="dashboard-card">
+                    <h3>📅 Book New Appointment</h3>
+                    <div id="appt-message" style="display:none; padding:10px; border-radius:5px; margin-bottom:10px;"></div>
+                    
+                    <form id="appointmentForm">
+                        <input type="hidden" id="selected-doctor-id" name="doctor_id">
+                        
+                        <!-- Selected Doctor Display -->
+                        <div id="selected-doctor-display" style="display:none; background:#e3f2fd; padding:15px; border-radius:8px; margin-bottom:20px; align-items:center; gap:15px;">
+                            <img id="display-doc-img" src="" style="width:50px; height:50px; border-radius:50%; object-fit:cover;">
+                            <div>
+                                <div style="font-size:12px; color:#1565c0;">Selected Doctor</div>
+                                <div id="display-doc-name" style="font-weight:bold; color:#0d47a1;">Dr. Name</div>
+                            </div>
+                            <button type="button" id="change-doc-btn" style="margin-left:auto; background:none; border:none; color:#c62828; cursor:pointer;">Change</button>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Date</label>
+                            <input type="date" id="appointment-date" class="form-control" required min="">
+                        </div>
+                        <div class="form-group">
+                            <label>Reason for Appointment (Describe symptoms)</label>
+                            <textarea id="reason" class="form-control" required rows="4" placeholder="e.g. I have severe stomach pain and fever..."></textarea>
+                            <small style="color: var(--primary-color);">🤖 AI will analyze this to determine priority.</small>
+                        </div>
+                        <div class="form-group">
+                            <label>Upload Document (Optional)</label>
+                            <input type="file" id="document" class="form-control">
+                        </div>
+                        <button type="submit" class="btn-primary">Analyze & Book Appointment</button>
+                    </form>
+                </div>
+
+                <div class="dashboard-card">
+                    <h3>Upcoming Appointments</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Reason</th>
+                                <th>AI Priority</th>
+                                <th>Status</th>
+                                <th>Queue / Wait</th>
+                            </tr>
+                        </thead>
+                        <tbody id="appointments-list">
+                            <!-- Populated via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- VIEW: RECORDS -->
+            <div id="view-records" class="content-section">
+                <div class="dashboard-card">
+                    <h3>📋 Health Records</h3>
+                    <p>No records found.</p>
+                </div>
+            </div>
+
+             <!-- VIEW: PRESCRIPTIONS -->
+             <div id="view-prescriptions" class="content-section">
+                <div class="dashboard-card">
+                    <h3>💊 Prescriptions</h3>
+                    <p>No prescriptions found.</p>
+                </div>
+            </div>
+
+            <!-- VIEW: TIMELINE -->
+            <div id="view-timeline" class="content-section">
+                <div class="dashboard-card">
+                    <h3>📈 Health Timeline</h3>
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-dot"></div>
+                            <div class="timeline-date">Today</div>
+                            <div class="timeline-content">Logged in to MyHealth Portal</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- VIEW: PROFILE -->
+            <div id="view-profile" class="content-section">
+                <div class="dashboard-card">
+                    <h3>👤 My Profile</h3>
+                    <form>
+                        <div class="form-group">
+                            <label>Name</label>
+                            <input type="text" class="form-control" id="profile-name" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" class="form-control" value="user@example.com" readonly>
+                        </div>
+                        <button type="button" class="btn-primary">Update Profile</button>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    
+    <script src="../js/dashboard.js"></script>
+</body>
+</html>
