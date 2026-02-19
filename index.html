@@ -3,244 +3,387 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Healthcare Portal</title>
+    <title>Healthcare Portal – Home</title>
+    <meta
+      name="description"
+      content="Healthcare Portal — access your medical records, book appointments, and connect with doctors online."
+    />
     <style>
+      /* ══════════════════════════════════════════
+         Landing Page Styles
+         ══════════════════════════════════════════ */
+
+      /* Reset — removes default browser spacing and uses border-box sizing */
       * {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
       }
-
       body {
-        font-family: Arial, sans-serif;
-        background: #f5f8fa;
+        font-family: "Inter", -apple-system, sans-serif;
+        background: #f0f4f8;
+        color: #102a43;
       }
 
-      /* ==========================================
-           HEADER
-           ========================================== */
+      /* ── Header / Navigation ── */
       .header {
-        background: white;
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
         padding: 20px 40px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         display: flex;
         justify-content: space-between;
         align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.5);
       }
-
       .logo {
         font-size: 24px;
-        font-weight: bold;
-        color: #2196f3;
+        font-weight: 800;
+        color: #4f46e5;
+        letter-spacing: -0.5px;
       }
-
       .header-buttons {
         display: flex;
         gap: 15px;
       }
-
       .btn-header {
         padding: 10px 20px;
-        border-radius: 5px;
+        border-radius: 8px;
         text-decoration: none;
         font-size: 15px;
-        transition: background-color 0.3s;
+        font-weight: 600;
+        transition: all 0.2s;
       }
 
+      /* Login button (outlined style) */
       .btn-login-header {
-        background: white;
-        color: #2196f3;
-        border: 2px solid #2196f3;
+        background: transparent;
+        color: #4f46e5;
+        border: 2px solid #4f46e5;
       }
-
       .btn-login-header:hover {
-        background: #e8f4f8;
+        background: rgba(79, 70, 229, 0.05);
       }
 
+      /* Register button (filled style) */
       .btn-register-header {
-        background: #2196f3;
+        background: #4f46e5;
         color: white;
-        border: 2px solid #2196f3;
+        border: 2px solid #4f46e5;
+        box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2);
       }
-
       .btn-register-header:hover {
-        background: #1976d2;
+        background: #4338ca;
+        border-color: #4338ca;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 12px rgba(79, 70, 229, 0.3);
       }
 
-      /* ==========================================
-           HERO SECTION
-           ========================================== */
+      /* ── Hero Section (big indigo banner) ── */
       .hero {
-        background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+        background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
         color: white;
-        padding: 80px 40px;
+        padding: 100px 40px;
         text-align: center;
       }
-
       .hero h1 {
-        font-size: 42px;
-        margin-bottom: 20px;
+        font-size: 48px;
+        margin-bottom: 24px;
+        font-weight: 800;
+        letter-spacing: -1px;
       }
-
       .hero p {
-        font-size: 18px;
-        margin-bottom: 30px;
+        font-size: 20px;
+        margin-bottom: 40px;
         opacity: 0.9;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+        line-height: 1.5;
       }
-
       .hero-buttons {
         display: flex;
         gap: 20px;
         justify-content: center;
       }
-
       .btn-hero {
-        padding: 15px 35px;
-        border-radius: 5px;
+        padding: 16px 36px;
+        border-radius: 10px;
         text-decoration: none;
         font-size: 17px;
+        font-weight: 700;
         transition: all 0.3s;
       }
 
+      /* Primary hero button (white background) */
       .btn-primary {
         background: white;
-        color: #2196f3;
+        color: #4f46e5;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
       }
-
       .btn-primary:hover {
-        background: #f5f8fa;
+        background: #f8fafc;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
       }
 
+      /* Secondary hero button (transparent with white border) */
       .btn-secondary {
-        background: transparent;
-        color: white;
-        border: 2px solid white;
-      }
-
-      .btn-secondary:hover {
         background: rgba(255, 255, 255, 0.1);
+        color: white;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        backdrop-filter: blur(5px);
+      }
+      .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: white;
+        transform: translateY(-2px);
       }
 
-      /* ==========================================
-           FEATURES SECTION
-           ========================================== */
+      /* ── Features Section (6 feature cards) ── */
       .features {
-        padding: 60px 40px;
+        padding: 80px 40px;
         max-width: 1200px;
-        margin: 0 auto;
+        margin: -60px auto 0; /* Negativ margin overlap */
+        position: relative;
+        z-index: 10;
       }
-
       .features-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 30px;
-        margin-top: 40px;
+        margin-top: 0;
       }
-
       .feature-card {
         background: white;
-        padding: 30px;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        padding: 40px 30px;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
         text-align: center;
+        transition: transform 0.3s, box-shadow 0.3s;
+        border: 1px solid rgba(0, 0, 0, 0.02);
       }
-
+      .feature-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+      }
       .feature-card h3 {
-        color: #2c3e50;
-        margin-bottom: 15px;
+        color: #102a43;
+        margin-bottom: 16px;
         font-size: 20px;
+        font-weight: 700;
       }
-
       .feature-card p {
-        color: #5a6c7d;
-        font-size: 15px;
+        color: #627d98;
+        font-size: 16px;
         line-height: 1.6;
       }
 
-      /* ==========================================
-           INFO SECTION
-           ========================================== */
-      .info-section {
-        background: white;
-        padding: 60px 40px;
+      /* ═══════════════════════════════════════════
+         OUR DOCTORS SECTION
+         ═══════════════════════════════════════════ */
+      .doctors-section {
+        padding: 100px 40px 60px;
+        background: #f0f4f8; /* Kept simple or could be white */
+      }
+      .doctors-section h2 {
+        text-align: center;
+        color: #102a43;
+        font-size: 36px;
+        font-weight: 800;
+        margin-bottom: 16px;
+        letter-spacing: -0.5px;
+      }
+      .doctors-section .section-subtitle {
+        text-align: center;
+        color: #627d98;
+        font-size: 18px;
+        margin-bottom: 50px;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
       }
 
-      .info-content {
+      /* Grid layout for doctor cards */
+      .doctors-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 30px;
         max-width: 1200px;
         margin: 0 auto;
       }
 
-      .info-content h2 {
-        color: #2c3e50;
-        font-size: 32px;
-        margin-bottom: 30px;
+      /* Individual doctor card */
+      .doctor-card {
+        background: white;
+        border-radius: 16px;
+        padding: 30px 20px;
         text-align: center;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border: 1px solid rgba(0, 0, 0, 0.04);
+      }
+      .doctor-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 35px rgba(79, 70, 229, 0.15);
       }
 
+      /* Doctor image */
+      .doctor-card img {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-bottom: 20px;
+        border: 4px solid #e0e7ff;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        transition: border-color 0.3s;
+      }
+      .doctor-card:hover img {
+        border-color: #4f46e5;
+      }
+
+      /* Doctor name */
+      .doctor-card .doctor-name {
+        font-size: 18px;
+        font-weight: 700;
+        color: #102a43;
+        margin-bottom: 8px;
+      }
+
+      /* Doctor specialization badge */
+      .doctor-card .doctor-spec {
+        font-size: 13px;
+        color: #4f46e5;
+        font-weight: 600;
+        background: #e0e7ff;
+        padding: 6px 14px;
+        border-radius: 20px;
+        display: inline-block;
+      }
+
+      /* Loading message */
+      .doctors-loading {
+        text-align: center;
+        color: #627d98;
+        font-size: 16px;
+        padding: 40px 0;
+      }
+
+      /* ── Info / Why Choose Us Section ── */
+      .info-section {
+        background: white;
+        padding: 100px 40px;
+      }
+      .info-content {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      .info-content h2 {
+        color: #102a43;
+        font-size: 36px;
+        font-weight: 800;
+        margin-bottom: 40px;
+        text-align: center;
+        letter-spacing: -0.5px;
+      }
       .info-list {
         list-style: none;
         padding: 0;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px 40px;
       }
-
       .info-list li {
-        padding: 15px 0;
-        border-bottom: 1px solid #e0e0e0;
-        color: #5a6c7d;
-        font-size: 16px;
+        padding: 20px;
+        border-radius: 12px;
+        background: #f8fafc;
+        color: #486581;
+        font-size: 17px;
+        border: 1px solid #f0f4f8;
+        transition: transform 0.2s;
       }
-
+      .info-list li:hover {
+        transform: translateX(5px);
+        background: #f0f4f8;
+      }
       .info-list li:before {
         content: "✓";
-        color: #43a047;
-        font-weight: bold;
-        margin-right: 10px;
+        color: #4f46e5;
+        font-weight: 900;
+        margin-right: 15px;
+        font-size: 18px;
       }
 
-      /* ==========================================
-           CTA SECTION
-           ========================================== */
+      /* ── Call-to-Action Section ── */
       .cta-section {
-        padding: 80px 40px;
+        padding: 100px 40px;
         text-align: center;
-        background: #f5f8fa;
+        background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
       }
-
       .cta-section h2 {
-        color: #2c3e50;
-        font-size: 32px;
+        color: #102a43;
+        font-size: 36px;
+        font-weight: 800;
         margin-bottom: 30px;
       }
 
-      /* ==========================================
-           FOOTER
-           ========================================== */
+      /* ── Footer ── */
       .footer {
-        background: #2c3e50;
-        color: white;
-        padding: 30px 40px;
+        background: #102a43;
+        color: rgba(255, 255, 255, 0.8);
+        padding: 40px 40px;
         text-align: center;
+        font-size: 15px;
       }
 
-      /* ==========================================
-           RESPONSIVE
-           ========================================== */
+      /* ── Responsive Design ── */
+      @media (max-width: 1024px) {
+        .doctors-grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+        .features-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
       @media (max-width: 768px) {
         .features-grid {
           grid-template-columns: 1fr;
         }
-
+        .doctors-grid {
+          grid-template-columns: repeat(2, 1fr);
+          gap: 20px;
+        }
         .hero-buttons {
           flex-direction: column;
         }
-
         .hero h1 {
-          font-size: 32px;
+          font-size: 36px;
+        }
+        .info-list {
+          grid-template-columns: 1fr;
+        }
+      }
+      @media (max-width: 480px) {
+        .doctors-grid {
+          grid-template-columns: 1fr;
+        }
+        .header {
+            padding: 15px 20px;
+        }
+        .logo {
+            font-size: 20px;
         }
       }
     </style>
   </head>
   <body>
-    <!-- Header -->
+    <!-- ═══════════════════════════════════════
+         Header / Navigation
+         ═══════════════════════════════════════ -->
     <div class="header">
       <a href="index.html" class="logo" style="text-decoration: none"
         >Healthcare Portal</a
@@ -249,15 +392,15 @@
         <a href="loginReg/login.html" class="btn-header btn-login-header"
           >Login</a
         >
-        <a
-          href="loginReg/register.html"
-          class="btn-header btn-register-header"
+        <a href="loginReg/register.html" class="btn-header btn-register-header"
           >Register</a
         >
       </div>
     </div>
 
-    <!-- Hero Section -->
+    <!-- ═══════════════════════════════════════
+         Hero Section
+         ═══════════════════════════════════════ -->
     <div class="hero">
       <h1>Welcome to Healthcare Portal</h1>
       <p>
@@ -274,7 +417,9 @@
       </div>
     </div>
 
-    <!-- Features Section -->
+    <!-- ═══════════════════════════════════════
+         Features Section
+         ═══════════════════════════════════════ -->
     <div class="features">
       <div class="features-grid">
         <div class="feature-card">
@@ -309,7 +454,27 @@
       </div>
     </div>
 
-    <!-- Info Section -->
+    <!-- ═══════════════════════════════════════
+         OUR DOCTORS SECTION
+         This section is filled dynamically by
+         JavaScript. It fetches doctor data from
+         the database via php/doctors_api.php
+         and creates a card for each doctor.
+         ═══════════════════════════════════════ -->
+    <div class="doctors-section">
+      <h2>Our Doctors</h2>
+      <p class="section-subtitle">
+        Meet our experienced team of healthcare professionals
+      </p>
+      <div class="doctors-grid" id="doctors-grid">
+        <!-- Doctor cards are loaded here by JavaScript -->
+        <p class="doctors-loading" id="doctors-loading">Loading doctors...</p>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════
+         Why Choose Us
+         ═══════════════════════════════════════ -->
     <div class="info-section">
       <div class="info-content">
         <h2>Why Choose Our Healthcare Portal?</h2>
@@ -324,7 +489,9 @@
       </div>
     </div>
 
-    <!-- CTA Section -->
+    <!-- ═══════════════════════════════════════
+         Call to Action
+         ═══════════════════════════════════════ -->
     <div class="cta-section">
       <h2>Ready to Get Started?</h2>
       <div class="hero-buttons">
@@ -335,9 +502,91 @@
       </div>
     </div>
 
-    <!-- Footer -->
+    <!-- ═══════════════════════════════════════
+         Footer
+         ═══════════════════════════════════════ -->
     <div class="footer">
       <p>&copy; 2026 Healthcare Portal. All rights reserved.</p>
     </div>
+
+    <!-- ═══════════════════════════════════════
+         JavaScript: Load Doctors from Database
+         ═══════════════════════════════════════ -->
+    <script>
+      /*
+       * This script runs when the page loads.
+       * It fetches the list of doctors from the database
+       * using the doctors_api.php endpoint, then creates
+       * a card for each doctor showing their photo and name.
+       */
+      document.addEventListener("DOMContentLoaded", function () {
+        // Get references to the HTML elements we'll use
+        var doctorsGrid = document.getElementById("doctors-grid");
+        var loadingMessage = document.getElementById("doctors-loading");
+
+        // Fetch doctors from the PHP API
+        fetch("php/doctors_api.php")
+          .then(function (response) {
+            return response.json();
+          })
+          .then(function (data) {
+            // Remove the "Loading..." message
+            if (loadingMessage) {
+              loadingMessage.remove();
+            }
+
+            // Check if we got doctors back from the API
+            if (
+              data.status === "success" &&
+              data.doctors &&
+              data.doctors.length > 0
+            ) {
+              // Loop through each doctor and create a card
+              data.doctors.forEach(function (doctor) {
+                // Create the card container
+                var card = document.createElement("div");
+                card.className = "doctor-card";
+
+                // Create the doctor's image
+                var img = document.createElement("img");
+                img.src = doctor.image; // e.g. "image/doc1(Female).jpg"
+                img.alt = doctor.name; // e.g. "Ahmed Al-Din"
+                img.loading = "lazy"; // Load images only when visible
+
+                // Create the name text
+                var nameEl = document.createElement("div");
+                nameEl.className = "doctor-name";
+                nameEl.textContent = doctor.name;
+
+                // Create the specialization badge
+                var specEl = document.createElement("div");
+                specEl.className = "doctor-spec";
+                specEl.textContent = doctor.specialization;
+
+                // Put everything together: image + name + specialization
+                card.appendChild(img);
+                card.appendChild(nameEl);
+                card.appendChild(specEl);
+
+                // Add the card to the doctors grid
+                doctorsGrid.appendChild(card);
+              });
+            } else {
+              // No doctors found in the database
+              doctorsGrid.innerHTML =
+                '<p style="text-align:center; color:#999; grid-column: 1/-1;">No doctors available yet. Please run setup.php first.</p>';
+            }
+          })
+          .catch(function (error) {
+            // If the API call failed (e.g. PHP not running)
+            if (loadingMessage) {
+              loadingMessage.textContent =
+                "Could not load doctors. Make sure the server is running.";
+              loadingMessage.style.color = "#c62828";
+            }
+            console.error("Error loading doctors:", error);
+          });
+      });
+    </script>
   </body>
 </html>

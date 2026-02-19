@@ -1,0 +1,57 @@
+-- allusers/simple_users.sql
+USE `allusers`;
+
+CREATE TABLE IF NOT EXISTS `users` (
+  `user_id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `email` VARCHAR(255) NOT NULL UNIQUE,
+  `hash_password` VARCHAR(255) NOT NULL,
+  `role` VARCHAR(50) NOT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Insert 10 doctors, 30 patients, 3 admins with explicit IDs
+INSERT IGNORE INTO `users` (`user_id`,`email`,`hash_password`,`role`) VALUES
+(2001,'doctor1@example.test','$2b$10$examplehash','doctor'),
+(2002,'doctor2@example.test','$2b$10$examplehash','doctor'),
+(2003,'doctor3@example.test','$2b$10$examplehash','doctor'),
+(2004,'doctor4@example.test','$2b$10$examplehash','doctor'),
+(2005,'doctor5@example.test','$2b$10$examplehash','doctor'),
+(2006,'doctor6@example.test','$2b$10$examplehash','doctor'),
+(2007,'doctor7@example.test','$2b$10$examplehash','doctor'),
+(2008,'doctor8@example.test','$2b$10$examplehash','doctor'),
+(2009,'doctor9@example.test','$2b$10$examplehash','doctor'),
+(2010,'doctor10@example.test','$2b$10$examplehash','doctor'),
+(3001,'patient1@example.test','$2b$10$examplehash','patient'),
+(3002,'patient2@example.test','$2b$10$examplehash','patient'),
+(3003,'patient3@example.test','$2b$10$examplehash','patient'),
+(3004,'patient4@example.test','$2b$10$examplehash','patient'),
+(3005,'patient5@example.test','$2b$10$examplehash','patient'),
+(3006,'patient6@example.test','$2b$10$examplehash','patient'),
+(3007,'patient7@example.test','$2b$10$examplehash','patient'),
+(3008,'patient8@example.test','$2b$10$examplehash','patient'),
+(3009,'patient9@example.test','$2b$10$examplehash','patient'),
+(3010,'patient10@example.test','$2b$10$examplehash','patient'),
+(3011,'patient11@example.test','$2b$10$examplehash','patient'),
+(3012,'patient12@example.test','$2b$10$examplehash','patient'),
+(3013,'patient13@example.test','$2b$10$examplehash','patient'),
+(3014,'patient14@example.test','$2b$10$examplehash','patient'),
+(3015,'patient15@example.test','$2b$10$examplehash','patient'),
+(3016,'patient16@example.test','$2b$10$examplehash','patient'),
+(3017,'patient17@example.test','$2b$10$examplehash','patient'),
+(3018,'patient18@example.test','$2b$10$examplehash','patient'),
+(3019,'patient19@example.test','$2b$10$examplehash','patient'),
+(3020,'patient20@example.test','$2b$10$examplehash','patient'),
+(3021,'patient21@example.test','$2b$10$examplehash','patient'),
+(3022,'patient22@example.test','$2b$10$examplehash','patient'),
+(3023,'patient23@example.test','$2b$10$examplehash','patient'),
+(3024,'patient24@example.test','$2b$10$examplehash','patient'),
+(3025,'patient25@example.test','$2b$10$examplehash','patient'),
+(3026,'patient26@example.test','$2b$10$examplehash','patient'),
+(3027,'patient27@example.test','$2b$10$examplehash','patient'),
+(3028,'patient28@example.test','$2b$10$examplehash','patient'),
+(3029,'patient29@example.test','$2b$10$examplehash','patient'),
+(3030,'patient30@example.test','$2b$10$examplehash','patient'),
+(4001,'admin1@example.test','$2b$10$examplehash','admin'),
+(4002,'admin2@example.test','$2b$10$examplehash','admin'),
+(4003,'admin3@example.test','$2b$10$examplehash','admin');

@@ -1,58 +1,81 @@
+/* ═══════════════════════════════════════════════════════════
+   Doctor Dashboard – Main Script
+   Handles: data loading, sidebar navigation,
+            and populating the doctor-specific stats.
+   ═══════════════════════════════════════════════════════════ */
+
 document.addEventListener("DOMContentLoaded", function () {
-    const loading = document.getElementById("loading");
-  
-    // 1. Initial Data Fetch & Auth Check
-    fetchDoctorData();
-  
-    // 2. Navigation Logic
-    const navLinks = document.querySelectorAll(".nav-link[data-view]");
-    const sections = document.querySelectorAll(".content-section");
-  
-    navLinks.forEach((link) => {
-      link.addEventListener("click", (e) => {
-        e.preventDefault();
-  
-        // Activate Link
-        navLinks.forEach((l) => l.classList.remove("active"));
-        link.classList.add("active");
-  
-        // Show Section
-        const view = link.getAttribute("data-view");
-        sections.forEach((s) => s.classList.remove("active"));
-        document.getElementById("view-" + view).classList.add("active");
-      });
+  const loadingOverlay = document.getElementById("loading");
+
+  /* ── 1. Load Doctor Data on Page Ready ── */
+  fetchDoctorData();
+
+  /* ── 2. Sidebar Navigation ── */
+  // Only select links that actually have a data-view attribute
+  const navLinks = document.querySelectorAll(".nav-link[data-view]");
+  const sections = document.querySelectorAll(".content-section");
+
+  navLinks.forEach((link) => {
+    link.addEventListener("click", (event) => {
+      event.preventDefault();
+
+      // Highlight the active link
+      navLinks.forEach((otherLink) => otherLink.classList.remove("active"));
+      link.classList.add("active");
+
+      // Show the matching section
+      const targetView = link.getAttribute("data-view");
+      sections.forEach((section) => section.classList.remove("active"));
+      document.getElementById("view-" + targetView).classList.add("active");
     });
-  
-    function fetchDoctorData() {
-      // For now, using dashboard_api.php or creating a new one? 
-      // User requested doctor dashboard. Let's assume we can fetch data from doctor_api.php
-      fetch("../php/doctor_api.php")
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.status === "error" && data.message === "Unauthorized") {
-            window.location.href = "../loginReg/login.html";
-            return;
-          }
-  
-          // Populate User Info
-          document.getElementById("user-name").textContent = data.user.name;
-          document.getElementById("user-initial").textContent = data.user.initial;
-          document.getElementById("profile-name").value = data.user.name;
-  
-          // Populate Stats (Mocked or Real)
-          if (data.stats) {
-            document.getElementById("stat-patients").textContent = data.stats.total_patients || 0;
-            document.getElementById("stat-appointments").textContent = data.stats.today_appointments || 0;
-            document.getElementById("stat-pending").textContent = data.stats.pending_reviews || 0;
-          }
-        
-          // Hide Loader
-          loading.style.display = "none";
-        })
-        .catch((err) => {
-          console.error(err);
-          // If api doesn't exist yet, just hide loader to show UI
-          loading.style.display = "none"; 
-        });
-    }
   });
+
+  /* ─────────────────────────────────────────────
+     fetchDoctorData()
+     Pulls the doctor's profile info and statistics
+     from the server API.
+     ───────────────────────────────────────────── */
+  function fetchDoctorData() {
+    fetch("../php/doctor_api.php")
+      .then((response) => response.json())
+      .then((data) => {
+        // If not logged in, redirect to login page
+        if (data.status === "error" && data.message === "Unauthorized") {
+          window.location.href = "../loginReg/login.html";
+          return;
+        }
+
+        /* ── Populate Doctor Info ── */
+        document.getElementById("user-name").textContent   = data.user.name;
+        document.getElementById("user-initial").textContent = data.user.initial;
+        document.getElementById("profile-name").value       = data.user.name;
+
+        /* ── Populate Profile Email & Specialization ── */
+        if (data.user.email) {
+          document.getElementById("profile-email").value = data.user.email;
+        }
+        if (data.specialization) {
+          document.getElementById("profile-specialization").value = data.specialization;
+        }
+
+        /* ── Populate Stat Cards ── */
+        if (data.stats) {
+          const totalPatients     = data.stats.total_patients     || 0;
+          const todayAppointments = data.stats.today_appointments || 0;
+          const pendingReviews    = data.stats.pending_reviews    || 0;
+
+          document.getElementById("stat-patients").textContent     = totalPatients;
+          document.getElementById("stat-appointments").textContent = todayAppointments;
+          document.getElementById("stat-pending").textContent      = pendingReviews;
+        }
+
+        /* ── Hide Loading Overlay ── */
+        loadingOverlay.style.display = "none";
+      })
+      .catch((error) => {
+        console.error("Error fetching doctor data:", error);
+        // Still hide the loader so the UI isn't stuck
+        loadingOverlay.style.display = "none";
+      });
+  }
+});

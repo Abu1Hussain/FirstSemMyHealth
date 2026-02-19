@@ -1,129 +1,587 @@
 <?php
-$servername = "localhost";
-$username = "admin";
-$password = "password123";
-$dbname = "healthcare_ai_db";
+/*
+ * ═══════════════════════════════════════════════════════════
+ * Database Setup & Seeding Script
+ * ═══════════════════════════════════════════════════════════
+ *
+ * This script creates all required database tables inside the
+ * 'medical_center' database and fills them with demo data.
+ *
+ * Tables created:
+ *   1. users            – Login accounts (email, hashed password, role)
+ *   2. patients         – Patient profiles (name, CPR, blood type, etc.)
+ *   3. medical_staff    – Doctor profiles (specialization, image, bio)
+ *   4. appointments     – Patient-doctor bookings
+ *   5. medical_records  – Visit records and summaries
+ *   6. diagnoses        – Diagnosis details linked to records
+ *   7. prescriptions    – Medication details linked to records
+ *   8. lab_results      – Lab test results linked to records
+ *   9. system_logs      – System event logs (admin dashboard)
+ *  10. audit_trail      – User action audit log (admin dashboard)
+ *  11. ai_logs          – AI usage logs (admin dashboard)
+ *  12. document_queue   – Uploaded document queue (admin dashboard)
+ *  13. feedback_reports – User feedback and reports (admin dashboard)
+ *
+ * HOW TO RUN:
+ *   Open in your browser: http://localhost/FirstSemMyHealth/php/setup.php
+ *
+ * NOTE: This uses the 'medical_center' database as the PRIMARY
+ *       and ONLY database for the entire website.
+ * ═══════════════════════════════════════════════════════════
+ */
 
-// Create connection
+/* ── Database credentials (same as db_connect.php) ── */
+$servername = "localhost";
+$username   = "root";
+$password   = "";
+$dbname     = "medical_center";
+
+/* ── Connect to MySQL (without selecting a database yet) ── */
 $conn = new mysqli($servername, $username, $password);
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Create Database
-$sql = "CREATE DATABASE IF NOT EXISTS `$dbname`";
-if ($conn->query($sql) === TRUE) {
-    echo "Database created successfully<br>";
-} else {
-    echo "Error creating database: " . $conn->error . "<br>";
-}
-
+/* ── Create the database if it doesn't exist ── */
+$conn->query("CREATE DATABASE IF NOT EXISTS `$dbname` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 $conn->select_db($dbname);
+$conn->set_charset("utf8mb4");
+echo "✅ Database '$dbname' is ready.<br><br>";
 
-// Create Users Table (Updated with profile fields)
-$sql_users = "CREATE TABLE IF NOT EXISTS users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    cpr VARCHAR(20) NOT NULL UNIQUE,
-    phone VARCHAR(20) NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    role ENUM('patient', 'doctor', 'admin') DEFAULT 'patient',
-    profile_image VARCHAR(255) DEFAULT 'default_user.png',
-    bio TEXT,
+
+/* ────────────────────────────────────────────────────
+   TABLE 1: users
+   Stores login credentials and role for every user.
+   Every person who can log in has a row here.
+   ──────────────────────────────────────────────────── */
+
+$conn->query("CREATE TABLE IF NOT EXISTS users (
+    user_id       INT AUTO_INCREMENT PRIMARY KEY,
+    email         VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    role          ENUM('patient', 'doctor', 'admin') DEFAULT 'patient',
+    created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+echo "📋 Table 'users' created.<br>";
+
+
+/* ────────────────────────────────────────────────────
+   TABLE 2: patients
+   Stores detailed profile info for patients.
+   Linked to the users table via user_id.
+   ──────────────────────────────────────────────────── */
+
+$conn->query("CREATE TABLE IF NOT EXISTS patients (
+    patient_id    INT AUTO_INCREMENT PRIMARY KEY,
+    user_id       INT NOT NULL,
+    first_name    VARCHAR(100) NOT NULL,
+    last_name     VARCHAR(100) NOT NULL,
+    cpr           VARCHAR(20) NOT NULL UNIQUE,
+    date_of_birth DATE,
+    gender        ENUM('Male', 'Female', 'Other'),
+    phone         VARCHAR(20),
+    email         VARCHAR(255),
+    address       TEXT,
+    blood_type    VARCHAR(5),
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+echo "📋 Table 'patients' created.<br>";
+
+
+/* ────────────────────────────────────────────────────
+   TABLE 3: medical_staff
+   Stores detailed profile info for doctors and staff.
+   Linked to the users table via user_id.
+   The profile_image column stores the filename of the
+   doctor's photo from the /image/ folder.
+   ──────────────────────────────────────────────────── */
+
+$conn->query("CREATE TABLE IF NOT EXISTS medical_staff (
+    staff_id       INT AUTO_INCREMENT PRIMARY KEY,
+    user_id        INT NOT NULL,
+    first_name     VARCHAR(100) NOT NULL,
+    last_name      VARCHAR(100) NOT NULL,
+    role           VARCHAR(50) DEFAULT 'Doctor',
     specialization VARCHAR(100),
-    capacity INT DEFAULT 30,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-)";
+    phone          VARCHAR(20),
+    email          VARCHAR(255),
+    department     VARCHAR(100),
+    profile_image  VARCHAR(255) DEFAULT 'default_user.png',
+    bio            TEXT,
+    capacity       INT DEFAULT 30,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+echo "📋 Table 'medical_staff' created.<br>";
 
-if ($conn->query($sql_users) === TRUE) {
-    echo "Users table created/updated successfully<br>";
-} else {
-    echo "Error creating users table: " . $conn->error . "<br>";
-}
 
-// Add columns if they don't exist (for existing DB)
-$conn->query("ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_image VARCHAR(255) DEFAULT 'default_user.png'");
-$conn->query("ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT");
-$conn->query("ALTER TABLE users ADD COLUMN IF NOT EXISTS specialization VARCHAR(100)");
-$conn->query("ALTER TABLE users ADD COLUMN IF NOT EXISTS capacity INT DEFAULT 30");
+/* ────────────────────────────────────────────────────
+   TABLE 4: appointments
+   Tracks patient bookings with doctors.
+   Includes AI triage priority and queue number.
+   ──────────────────────────────────────────────────── */
 
-// Create Appointments Table
-$sql_appointments = "CREATE TABLE IF NOT EXISTS appointments (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    patient_id INT NOT NULL,
-    doctor_id INT, 
-    doctor_name VARCHAR(255),
-    appointment_time DATETIME NOT NULL,
-    reason TEXT NOT NULL,
-    ai_priority ENUM('Highly Important', 'Important', 'Normal') DEFAULT 'Normal',
-    ai_suggestion TEXT,
-    status ENUM('pending', 'confirmed', 'completed', 'cancelled') DEFAULT 'pending',
-    queue_number INT,
+$conn->query("CREATE TABLE IF NOT EXISTS appointments (
+    appointment_id   INT AUTO_INCREMENT PRIMARY KEY,
+    patient_id       INT NOT NULL,
+    staff_id         INT,
+    appointment_date DATETIME NOT NULL,
+    appointment_type VARCHAR(100) DEFAULT 'General',
+    status           ENUM('pending', 'confirmed', 'completed', 'cancelled') DEFAULT 'pending',
+    reason           TEXT,
+    ai_priority      ENUM('Highly Important', 'Important', 'Normal') DEFAULT 'Normal',
+    ai_suggestion    TEXT,
+    queue_number     INT,
+    created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (patient_id) REFERENCES patients(patient_id) ON DELETE CASCADE,
+    FOREIGN KEY (staff_id)   REFERENCES medical_staff(staff_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+echo "📋 Table 'appointments' created.<br>";
+
+
+/* ────────────────────────────────────────────────────
+   TABLE 5: medical_records
+   Stores visit records written by doctors for patients.
+   ──────────────────────────────────────────────────── */
+
+$conn->query("CREATE TABLE IF NOT EXISTS medical_records (
+    record_id   INT AUTO_INCREMENT PRIMARY KEY,
+    created_by  INT,
+    patient_id  INT NOT NULL,
+    record_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    record_type VARCHAR(100),
+    summary     TEXT,
+    source_type VARCHAR(50),
+    FOREIGN KEY (created_by) REFERENCES medical_staff(staff_id) ON DELETE SET NULL,
+    FOREIGN KEY (patient_id) REFERENCES patients(patient_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+echo "📋 Table 'medical_records' created.<br>";
+
+
+/* ────────────────────────────────────────────────────
+   TABLE 6: diagnoses
+   Stores diagnosis details linked to medical records.
+   ──────────────────────────────────────────────────── */
+
+$conn->query("CREATE TABLE IF NOT EXISTS diagnoses (
+    diagnosis_id   INT AUTO_INCREMENT PRIMARY KEY,
+    record_id      INT NOT NULL,
+    diagnosis_name VARCHAR(255) NOT NULL,
+    icd_code       VARCHAR(20),
+    severity       ENUM('Mild', 'Moderate', 'Severe', 'Critical') DEFAULT 'Mild',
+    notes          TEXT,
+    FOREIGN KEY (record_id) REFERENCES medical_records(record_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+echo "📋 Table 'diagnoses' created.<br>";
+
+
+/* ────────────────────────────────────────────────────
+   TABLE 7: prescriptions
+   Stores medication details linked to medical records.
+   ──────────────────────────────────────────────────── */
+
+$conn->query("CREATE TABLE IF NOT EXISTS prescriptions (
+    prescription_id INT AUTO_INCREMENT PRIMARY KEY,
+    record_id       INT NOT NULL,
+    medication_name VARCHAR(255) NOT NULL,
+    dosage          VARCHAR(100),
+    frequency       VARCHAR(100),
+    duration        VARCHAR(100),
+    instructions    TEXT,
+    FOREIGN KEY (record_id) REFERENCES medical_records(record_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+echo "📋 Table 'prescriptions' created.<br>";
+
+
+/* ────────────────────────────────────────────────────
+   TABLE 8: lab_results
+   Stores lab test results linked to medical records.
+   ──────────────────────────────────────────────────── */
+
+$conn->query("CREATE TABLE IF NOT EXISTS lab_results (
+    lab_result_id INT AUTO_INCREMENT PRIMARY KEY,
+    record_id     INT NOT NULL,
+    test_name     VARCHAR(255) NOT NULL,
+    result_value  VARCHAR(255),
+    normal_range  VARCHAR(100),
+    status        ENUM('Normal', 'Abnormal', 'Critical') DEFAULT 'Normal',
+    FOREIGN KEY (record_id) REFERENCES medical_records(record_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+echo "📋 Table 'lab_results' created.<br>";
+
+
+/* ────────────────────────────────────────────────────
+   TABLE 9: system_logs
+   Records system events (logins, errors, etc.)
+   Used by the admin dashboard's "System Logs" tab.
+   ──────────────────────────────────────────────────── */
+
+$conn->query("CREATE TABLE IF NOT EXISTS system_logs (
+    log_id     INT AUTO_INCREMENT PRIMARY KEY,
+    user_id    INT,
+    event      VARCHAR(255) NOT NULL,
+    status     VARCHAR(50) DEFAULT 'info',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (patient_id) REFERENCES users(id)
-)";
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+echo "📋 Table 'system_logs' created.<br>";
 
-if ($conn->query($sql_appointments) === TRUE) {
-    echo "Appointments table created successfully<br>";
-} else {
-    echo "Error creating appointments table: " . $conn->error . "<br>";
+
+/* ────────────────────────────────────────────────────
+   TABLE 10: audit_trail
+   Records who did what and when (for admin auditing).
+   Used by the admin dashboard's "Audit Trail" tab.
+   ──────────────────────────────────────────────────── */
+
+$conn->query("CREATE TABLE IF NOT EXISTS audit_trail (
+    audit_id       INT AUTO_INCREMENT PRIMARY KEY,
+    user_id        INT,
+    action         VARCHAR(255) NOT NULL,
+    table_affected VARCHAR(100),
+    created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+echo "📋 Table 'audit_trail' created.<br>";
+
+
+/* ────────────────────────────────────────────────────
+   TABLE 11: ai_logs
+   Records AI triage actions and results.
+   Used by the admin dashboard's "AI Logs" tab.
+   ──────────────────────────────────────────────────── */
+
+$conn->query("CREATE TABLE IF NOT EXISTS ai_logs (
+    log_id      INT AUTO_INCREMENT PRIMARY KEY,
+    user_id     INT,
+    action_type VARCHAR(100) NOT NULL,
+    details     TEXT,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+echo "📋 Table 'ai_logs' created.<br>";
+
+
+/* ────────────────────────────────────────────────────
+   TABLE 12: document_queue
+   Stores uploaded medical documents from patients.
+   Used by the admin dashboard's "Document Queue" tab.
+   ──────────────────────────────────────────────────── */
+
+$conn->query("CREATE TABLE IF NOT EXISTS document_queue (
+    doc_id      INT AUTO_INCREMENT PRIMARY KEY,
+    patient_id  INT NOT NULL,
+    file_name   VARCHAR(255) NOT NULL,
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (patient_id) REFERENCES patients(patient_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+echo "📋 Table 'document_queue' created.<br>";
+
+
+/* ────────────────────────────────────────────────────
+   TABLE 13: feedback_reports
+   Stores user feedback and bug reports.
+   Used by the admin dashboard's "Reports" tab.
+   ──────────────────────────────────────────────────── */
+
+$conn->query("CREATE TABLE IF NOT EXISTS feedback_reports (
+    report_id  INT AUTO_INCREMENT PRIMARY KEY,
+    user_id    INT,
+    type       VARCHAR(50) NOT NULL,
+    message    TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+echo "📋 Table 'feedback_reports' created.<br>";
+
+
+/* ═══════════════════════════════════════════════════
+   SEEDING DEMO DATA
+   ═══════════════════════════════════════════════════ */
+
+echo "<br><strong>🌱 Seeding demo data...</strong><br><br>";
+
+/*
+ * All demo accounts use this password.
+ * We hash it properly using password_hash() so it's stored securely.
+ * To log in with any demo account, use: pass1234
+ */
+$defaultPassword    = 'pass1234';
+$hashedPassword     = password_hash($defaultPassword, PASSWORD_DEFAULT);
+
+
+/* ── Seed Admin Account ── */
+
+$stmt = $conn->prepare("INSERT INTO users (email, password_hash, role) VALUES (?, ?, 'admin') ON DUPLICATE KEY UPDATE password_hash = ?");
+$stmt->bind_param("sss", $adminEmail, $hashedPassword, $hashedPassword);
+$adminEmail = 'admin@AM.com';
+$stmt->execute();
+$stmt->close();
+echo "👤 Admin: admin@AM.com / pass1234<br>";
+
+
+/* ── Seed Demo Patient ── */
+
+$stmt = $conn->prepare("INSERT INTO users (email, password_hash, role) VALUES (?, ?, 'patient') ON DUPLICATE KEY UPDATE password_hash = ?");
+$stmt->bind_param("sss", $patientEmail, $hashedPassword, $hashedPassword);
+$patientEmail = 'patient@AM.com';
+$stmt->execute();
+$stmt->close();
+
+// Get the user_id we just created for the patient
+$patientUserId = $conn->query("SELECT user_id FROM users WHERE email = 'patient@AM.com'")->fetch_assoc()['user_id'];
+
+// Create the patient profile if it doesn't already exist
+$existingPatient = $conn->query("SELECT patient_id FROM patients WHERE user_id = $patientUserId");
+if ($existingPatient->num_rows === 0) {
+    $stmt = $conn->prepare("INSERT INTO patients (user_id, first_name, last_name, cpr, date_of_birth, gender, phone, email, address, blood_type) VALUES (?, 'Patient', 'Zero', '123456789', '1995-05-15', 'Male', '12345678', 'patient@AM.com', '123 Health St, Manama', 'O+')");
+    $stmt->bind_param("i", $patientUserId);
+    $stmt->execute();
+    $stmt->close();
 }
+echo "👤 Patient: patient@AM.com / pass1234<br>";
 
-// Add doctor_id if missing
-$conn->query("ALTER TABLE appointments ADD COLUMN IF NOT EXISTS doctor_id INT");
 
-// Seed Users
-$pass = 'pass1234';
+/* ── Seed 10 Doctors ── */
 
-// 1. Patient
-$sql_seed_patient = "INSERT INTO users (name, email, cpr, phone, password, role) 
-                     VALUES ('Patient Zero', 'patient@AM.com', '123456789', '12345678', '$pass', 'patient')
-                     ON DUPLICATE KEY UPDATE password='$pass'";
-$conn->query($sql_seed_patient);
+/*
+ * Each doctor has:
+ *   - A login account in the 'users' table
+ *   - A profile in the 'medical_staff' table
+ *   - An image file in the /image/ folder
+ *
+ * The image files are named doc1(Female).jpg, doc2(Male).jpg, etc.
+ * We match each doctor to the correct image based on their gender.
+ *
+ * Doctor names and specializations match the data in
+ * DataBase/schema_medical_center.sql
+ */
 
-// 2. Doctors (Seeding with specific images)
-$doctors = [
-    ['Dr. Confident', 'doc1@AM.com', '100000001', '11111111', 'doc1.jpg', 'Cardiologist', 'Expert in heart health with 15 years experience.', 15],
-    ['Dr. Smiling', 'doc2@AM.com', '100000002', '22222222', 'doc2.jpg', 'Pediatrician', 'Loves children and specializes in early development.', 20],
-    ['Dr. Trusted', 'doc3@AM.com', '100000003', '33333333', 'doc3.jpg', 'General Practitioner', 'Your go-to doctor for general checkups.', 25],
-    ['Dr. Young', 'doc4@AM.com', '100000004', '44444444', 'doc4.jpg', 'Dermatologist', 'Specialist in skin care and cosmetic treatments.', 12],
-    ['Dr. Crossed', 'doc5@AM.com', '100000005', '55555555', 'doc5.jpg', 'Neurologist', 'Focused on brain and nervous system disorders.', 10],
-    ['Dr. Professional', 'doc6@AM.com', '100000006', '66666666', 'doc6.jpg', 'Orthopedic', 'Specialist in bones, joints, and sports injuries.', 18]
+$doctorsList = [
+    // Doctor 1: Ahmed Al-Din (Male) → uses doc2(Male).jpg
+    [
+        'firstName'      => 'Ahmed',
+        'lastName'       => 'Al-Din',
+        'email'          => 'doctor1@example.test',
+        'phone'          => '+97310000001',
+        'image'          => 'doc2(Male).jpg',
+        'specialization' => 'General Medicine',
+        'department'     => 'General',
+        'bio'            => 'Expert in general medicine with 15 years of experience in primary care.',
+        'capacity'       => 25
+    ],
+    // Doctor 2: Fatima Khalid (Female) → uses doc1(Female).jpg
+    [
+        'firstName'      => 'Fatima',
+        'lastName'       => 'Khalid',
+        'email'          => 'doctor2@example.test',
+        'phone'          => '+97310000002',
+        'image'          => 'doc1(Female).jpg',
+        'specialization' => 'Pediatrics',
+        'department'     => 'Pediatrics',
+        'bio'            => 'Loves children and specializes in early development and child health.',
+        'capacity'       => 20
+    ],
+    // Doctor 3: Mohamed Yousif (Male) → uses doc3(Male).jpg
+    [
+        'firstName'      => 'Mohamed',
+        'lastName'       => 'Yousif',
+        'email'          => 'doctor3@example.test',
+        'phone'          => '+97310000003',
+        'image'          => 'doc3(Male).jpg',
+        'specialization' => 'Cardiology',
+        'department'     => 'Cardiology',
+        'bio'            => 'Cardiologist focused on heart health, prevention, and treatment.',
+        'capacity'       => 15
+    ],
+    // Doctor 4: Sara Hassan (Female) → uses doc4(Female).jpg
+    [
+        'firstName'      => 'Sara',
+        'lastName'       => 'Hassan',
+        'email'          => 'doctor4@example.test',
+        'phone'          => '+97310000004',
+        'image'          => 'doc4(Female).jpg',
+        'specialization' => 'Dermatology',
+        'department'     => 'Dermatology',
+        'bio'            => 'Specialist in skin care, cosmetic treatments, and dermatological disorders.',
+        'capacity'       => 12
+    ],
+    // Doctor 5: Omar Saleh (Male) → uses doc5(Male).jpg
+    [
+        'firstName'      => 'Omar',
+        'lastName'       => 'Saleh',
+        'email'          => 'doctor5@example.test',
+        'phone'          => '+97310000005',
+        'image'          => 'doc5(Male).jpg',
+        'specialization' => 'Orthopedics',
+        'department'     => 'Orthopedics',
+        'bio'            => 'Specialist in bones, joints, and sports injuries.',
+        'capacity'       => 18
+    ],
+    // Doctor 6: Huda Nasser (Female) → uses doc7(Female).jpg
+    [
+        'firstName'      => 'Huda',
+        'lastName'       => 'Nasser',
+        'email'          => 'doctor6@example.test',
+        'phone'          => '+97310000006',
+        'image'          => 'doc7(Female).jpg',
+        'specialization' => 'Gynecology',
+        'department'     => 'Gynecology',
+        'bio'            => 'Specialist in women\'s health and reproductive medicine.',
+        'capacity'       => 15
+    ],
+    // Doctor 7: Khalid Abbas (Male) → uses doc6(Male).jpg
+    [
+        'firstName'      => 'Khalid',
+        'lastName'       => 'Abbas',
+        'email'          => 'doctor7@example.test',
+        'phone'          => '+97310000007',
+        'image'          => 'doc6(Male).jpg',
+        'specialization' => 'Neurology',
+        'department'     => 'Neurology',
+        'bio'            => 'Focused on brain and nervous system disorders with advanced diagnostic skills.',
+        'capacity'       => 10
+    ],
+    // Doctor 8: Lina Mahmood (Female) → uses doc8(Female).jpg
+    [
+        'firstName'      => 'Lina',
+        'lastName'       => 'Mahmood',
+        'email'          => 'doctor8@example.test',
+        'phone'          => '+97310000008',
+        'image'          => 'doc8(Female).jpg',
+        'specialization' => 'Endocrinology',
+        'department'     => 'Endocrinology',
+        'bio'            => 'Expert in hormonal disorders, diabetes management, and thyroid conditions.',
+        'capacity'       => 14
+    ],
+    // Doctor 9: Yousef Ibrahim (Male) → uses doc9(Male).jpg
+    [
+        'firstName'      => 'Yousef',
+        'lastName'       => 'Ibrahim',
+        'email'          => 'doctor9@example.test',
+        'phone'          => '+97310000009',
+        'image'          => 'doc9(Male).jpg',
+        'specialization' => 'ENT',
+        'department'     => 'ENT',
+        'bio'            => 'Ear, nose, and throat specialist with expertise in surgical and non-surgical treatments.',
+        'capacity'       => 20
+    ],
+    // Doctor 10: Nada Rashid (Female) → uses doc10(Female).jpg
+    [
+        'firstName'      => 'Nada',
+        'lastName'       => 'Rashid',
+        'email'          => 'doctor10@example.test',
+        'phone'          => '+97310000010',
+        'image'          => 'doc10(Female).jpg',
+        'specialization' => 'Ophthalmology',
+        'department'     => 'Ophthalmology',
+        'bio'            => 'Eye care specialist focused on vision correction and eye disease treatment.',
+        'capacity'       => 16
+    ]
 ];
 
-foreach ($doctors as $doc) {
-    $name = $doc[0];
-    $email = $doc[1];
-    $cpr = $doc[2];
-    $phone = $doc[3];
-    $img = $doc[4];
-    $spec = $doc[5];
-    $bio = $doc[6];
-    $cap = $doc[7];
-    
-    $q = "INSERT INTO users (name, email, cpr, phone, password, role, profile_image, specialization, bio, capacity) 
-          VALUES ('$name', '$email', '$cpr', '$phone', '$pass', 'doctor', '$img', '$spec', '$bio', $cap)
-          ON DUPLICATE KEY UPDATE 
-            name='$name', profile_image='$img', specialization='$spec', bio='$bio', capacity=$cap";
-    
-    if (!$conn->query($q)) {
-        echo "Error seeding $name: " . $conn->error . "<br>";
+foreach ($doctorsList as $doctor) {
+    /*
+     * Step 1: Create or update the login account in the users table.
+     * ON DUPLICATE KEY UPDATE ensures we don't get an error if the
+     * email already exists — it just updates the password instead.
+     */
+    $stmt = $conn->prepare("INSERT INTO users (email, password_hash, role) VALUES (?, ?, 'doctor') ON DUPLICATE KEY UPDATE password_hash = ?");
+    $stmt->bind_param("sss", $doctor['email'], $hashedPassword, $hashedPassword);
+    $stmt->execute();
+    $stmt->close();
+
+    // Get the user_id for this doctor
+    $doctorUserId = $conn->query("SELECT user_id FROM users WHERE email = '" . $conn->real_escape_string($doctor['email']) . "'")->fetch_assoc()['user_id'];
+
+    /*
+     * Step 2: Create or update the staff profile.
+     * This links the doctor's profile to their login account.
+     */
+    $existingStaff = $conn->query("SELECT staff_id FROM medical_staff WHERE user_id = $doctorUserId");
+
+    if ($existingStaff->num_rows === 0) {
+        // New doctor — insert their profile
+        $stmt = $conn->prepare("INSERT INTO medical_staff (user_id, first_name, last_name, role, specialization, phone, email, department, profile_image, bio, capacity) VALUES (?, ?, ?, 'Doctor', ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("issssssssi",
+            $doctorUserId,
+            $doctor['firstName'],
+            $doctor['lastName'],
+            $doctor['specialization'],
+            $doctor['phone'],
+            $doctor['email'],
+            $doctor['department'],
+            $doctor['image'],
+            $doctor['bio'],
+            $doctor['capacity']
+        );
+        $stmt->execute();
+        $stmt->close();
     } else {
-        echo "Seeded $name<br>";
+        // Existing doctor — update their profile
+        $stmt = $conn->prepare("UPDATE medical_staff SET first_name = ?, last_name = ?, specialization = ?, department = ?, profile_image = ?, bio = ?, capacity = ? WHERE user_id = ?");
+        $stmt->bind_param("ssssssii",
+            $doctor['firstName'],
+            $doctor['lastName'],
+            $doctor['specialization'],
+            $doctor['department'],
+            $doctor['image'],
+            $doctor['bio'],
+            $doctor['capacity'],
+            $doctorUserId
+        );
+        $stmt->execute();
+        $stmt->close();
+    }
+
+    echo "🩺 Doctor: {$doctor['firstName']} {$doctor['lastName']} ({$doctor['email']}) — Image: {$doctor['image']}<br>";
+}
+
+
+/* ── Seed Sample Medical Data ── */
+
+$patientIdResult = $conn->query("SELECT patient_id FROM patients WHERE user_id = $patientUserId");
+
+if ($patientIdResult && $patientIdResult->num_rows > 0) {
+    $patientId     = $patientIdResult->fetch_assoc()['patient_id'];
+    $firstDoctorId = $conn->query("SELECT staff_id FROM medical_staff LIMIT 1")->fetch_assoc()['staff_id'];
+
+    // Only seed if no records exist yet (avoid duplicates on re-run)
+    $existingRecords = $conn->query("SELECT record_id FROM medical_records WHERE patient_id = $patientId LIMIT 1");
+
+    if ($existingRecords->num_rows === 0) {
+        // Create a sample medical record
+        $conn->query("INSERT INTO medical_records (created_by, patient_id, record_date, record_type, summary, source_type)
+                      VALUES ($firstDoctorId, $patientId, NOW(), 'Consultation', 'Patient visited for severe migraine and dizziness. Referred for further tests.', 'In-Person')");
+        $recordId = $conn->insert_id;
+
+        // Add a diagnosis for this record
+        $conn->query("INSERT INTO diagnoses (record_id, diagnosis_name, icd_code, severity, notes)
+                      VALUES ($recordId, 'Migraine', 'G43.9', 'Moderate', 'Recurring migraines, triggered by stress.')");
+
+        // Add a prescription for this record
+        $conn->query("INSERT INTO prescriptions (record_id, medication_name, dosage, frequency, duration, instructions)
+                      VALUES ($recordId, 'Ibuprofen', '400mg', 'Twice daily', '7 days', 'Take with food. Avoid on an empty stomach.')");
+
+        // Add a lab result for this record
+        $conn->query("INSERT INTO lab_results (record_id, test_name, result_value, normal_range, status)
+                      VALUES ($recordId, 'Complete Blood Count', '13.5 g/dL', '12.0-17.5 g/dL', 'Normal')");
+
+        echo "<br>📄 Sample medical record, diagnosis, prescription, and lab result seeded.<br>";
+    }
+
+    // Create a sample appointment (if none exists)
+    $existingAppointment = $conn->query("SELECT appointment_id FROM appointments WHERE patient_id = $patientId LIMIT 1");
+    if ($existingAppointment->num_rows === 0) {
+        $conn->query("INSERT INTO appointments (patient_id, staff_id, appointment_date, appointment_type, status, reason, ai_priority, ai_suggestion, queue_number)
+                      VALUES ($patientId, $firstDoctorId, '2026-02-20 10:00:00', 'Follow-up', 'pending', 'Follow-up for migraine treatment', 'Important', 'Schedule within 24 hours.', 1)");
+        echo "📅 Sample appointment seeded.<br>";
     }
 }
 
-// 3. Admin (admin@AM.com)
-$sql_seed_admin = "INSERT INTO users (name, email, cpr, phone, password, role) 
-                     VALUES ('System Admin', 'admin@AM.com', '999999999', '99999999', '$pass', 'admin')
-                     ON DUPLICATE KEY UPDATE password='$pass'";
-if ($conn->query($sql_seed_admin) === TRUE) {
-    echo "Seeded Admin (admin@AM.com)<br>";
-} else {
-    echo "Error seeding admin: " . $conn->error . "<br>";
-}
 
 $conn->close();
-echo "<br><strong>Setup and Seeding Completed.</strong>";
+echo "<br><strong>✅ Setup and seeding completed successfully!</strong>";
+echo "<br><br>📝 <strong>Demo Login Credentials:</strong>";
+echo "<br>   Admin:   admin@AM.com / pass1234";
+echo "<br>   Patient: patient@AM.com / pass1234";
+echo "<br>   Doctors: doctor1@example.test through doctor10@example.test / pass1234";
 ?>

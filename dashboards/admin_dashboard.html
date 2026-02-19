@@ -3,40 +3,50 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin Dashboard - MyHealth AI</title>
+    <title>MyHealth – Admin Dashboard</title>
+
+    <!-- Font Awesome icons & Chart.js -->
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
+      /* ══════════════════════════════════════════════════
+         Admin Dashboard Styles
+         ══════════════════════════════════════════════════ */
+
+      /* ── Design Tokens (Updated to Indigo Theme) ── */
       :root {
-        --admin-primary: #2196f3;
-        --admin-dark: #2d3748;
-        --admin-light: #f5f8fa;
-        --admin-success: #38a169;
-        --admin-warning: #d69e2e;
-        --admin-danger: #e53e3e;
-        --admin-gray: #a0aec0;
+        --admin-primary: #4f46e5;
+        --admin-dark: #1e1b4b;
+        --admin-light: #f5f3ff;
+        --admin-success: #059669;
+        --admin-warning: #d97706;
+        --admin-danger: #dc2626;
+        --admin-gray: #9ca3af;
       }
 
+      /* ── Reset ── */
       * {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
       }
+
       body {
-        font-family:
-          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         background: var(--admin-light);
         color: var(--admin-dark);
       }
 
-      /* Layout */
+      /* ── Layout ── */
       .admin-dashboard {
         display: flex;
         min-height: 100vh;
       }
+
       .admin-sidebar {
         width: 280px;
         background: var(--admin-dark);
@@ -50,6 +60,7 @@
       .admin-sidebar.active {
         transform: translateX(0);
       }
+
       .admin-main {
         flex: 1;
         margin-left: 280px;
@@ -57,7 +68,7 @@
         transition: margin-left 0.3s;
       }
 
-      /* Sidebar Components */
+      /* ── Sidebar Header ── */
       .admin-sidebar-header {
         padding: 25px;
         background: rgba(0, 0, 0, 0.2);
@@ -74,6 +85,8 @@
         color: white;
         text-decoration: none;
       }
+
+      /* ── Sidebar Navigation ── */
       .admin-nav {
         padding: 20px 0;
       }
@@ -87,6 +100,7 @@
         color: var(--admin-gray);
         letter-spacing: 1px;
       }
+
       .nav-item {
         display: flex;
         align-items: center;
@@ -109,7 +123,7 @@
         text-align: center;
       }
 
-      /* Topbar */
+      /* ── Top Bar ── */
       .admin-topbar {
         background: white;
         padding: 15px 25px;
@@ -141,7 +155,7 @@
         color: var(--admin-dark);
       }
 
-      /* Stats Grid */
+      /* ── Stats Grid ── */
       .admin-stats-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -180,11 +194,8 @@
       .stat-icon.appointments {
         background: #667eea;
       }
-      .stat-icon.ai {
-        background: #9f7aea;
-      }
 
-      /* Content Sections (Views) */
+      /* ── Content Sections (Views) ── */
       .content-section {
         display: none;
       }
@@ -192,7 +203,27 @@
         display: block;
       }
 
-      /* Tables */
+      /* ── Chart Card ── */
+      .chart-card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        margin-bottom: 30px;
+      }
+      .chart-header {
+        margin-bottom: 15px;
+      }
+      .chart-header h3 {
+        font-size: 1.1rem;
+        color: var(--admin-dark);
+      }
+      .chart-container {
+        position: relative;
+        height: 300px;
+      }
+
+      /* ── Table Card ── */
       .table-card {
         background: white;
         border-radius: 12px;
@@ -210,6 +241,7 @@
         font-size: 1.2rem;
         color: var(--admin-dark);
       }
+
       .admin-table {
         width: 100%;
         border-collapse: collapse;
@@ -233,7 +265,24 @@
         background: var(--admin-light);
       }
 
-      /* Filters */
+      /* ── Status Badge ── */
+      .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+      }
+      .status-active {
+        background: #c6f6d5;
+        color: #22543d;
+      }
+      .status-pending {
+        background: #fefcbf;
+        color: #744210;
+      }
+
+      /* ── Filters ── */
       .filter-group {
         display: flex;
         gap: 10px;
@@ -245,7 +294,7 @@
         outline: none;
       }
 
-      /* Modal */
+      /* ── Modal ── */
       .modal {
         display: none;
         position: fixed;
@@ -276,10 +325,9 @@
       .close:hover,
       .close:focus {
         color: black;
-        text-decoration: none;
-        cursor: pointer;
       }
 
+      /* ── Responsive ── */
       @media (max-width: 1024px) {
         .admin-sidebar {
           transform: translateX(-100%);
@@ -295,7 +343,9 @@
   </head>
   <body>
     <div class="admin-dashboard">
-      <!-- Sidebar -->
+      <!-- ═══════════════════════════════════════
+           Sidebar Navigation
+           ═══════════════════════════════════════ -->
       <aside class="admin-sidebar" id="adminSidebar">
         <div class="admin-sidebar-header">
           <h2>
@@ -309,6 +359,7 @@
         </div>
 
         <nav class="admin-nav">
+          <!-- Main -->
           <div class="nav-section">
             <div class="nav-section-title">Main</div>
             <a
@@ -319,6 +370,7 @@
             >
           </div>
 
+          <!-- User Management -->
           <div class="nav-section">
             <div class="nav-section-title">User Management</div>
             <a href="#" class="nav-item" onclick="showSection('users')"
@@ -332,6 +384,7 @@
             >
           </div>
 
+          <!-- Healthcare -->
           <div class="nav-section">
             <div class="nav-section-title">Healthcare</div>
             <a href="#" class="nav-item" onclick="showSection('appointments')"
@@ -345,6 +398,7 @@
             >
           </div>
 
+          <!-- AI System -->
           <div class="nav-section">
             <div class="nav-section-title">AI System</div>
             <a href="#" class="nav-item" onclick="showSection('ai-analysis')"
@@ -358,6 +412,7 @@
             >
           </div>
 
+          <!-- System -->
           <div class="nav-section">
             <div class="nav-section-title">System</div>
             <a href="#" class="nav-item" onclick="showSection('system-logs')"
@@ -376,7 +431,9 @@
         </nav>
       </aside>
 
-      <!-- Main Content -->
+      <!-- ═══════════════════════════════════════
+           Main Content Area
+           ═══════════════════════════════════════ -->
       <main class="admin-main">
         <!-- Top Bar -->
         <div class="admin-topbar">
@@ -391,21 +448,21 @@
             <div style="font-weight: 500">System Admin</div>
             <div
               style="cursor: pointer; color: var(--admin-danger)"
-              onclick="logout()"
+              onclick="handleLogout()"
             >
               <i class="fas fa-sign-out-alt"></i> Logout
             </div>
           </div>
         </div>
 
-        <!-- DASHBOARD VIEW -->
+        <!-- ── VIEW: DASHBOARD (Overview Stats) ── -->
         <div id="dashboard-section" class="content-section active">
           <div class="admin-stats-grid">
             <div class="admin-stat-card users">
               <div class="stat-icon users"><i class="fas fa-users"></i></div>
               <div>
                 <h3>Total Users</h3>
-                <div class="stat-value">1,245</div>
+                <div class="stat-value" id="stat-total-users">--</div>
               </div>
             </div>
             <div class="admin-stat-card patients">
@@ -414,7 +471,7 @@
               </div>
               <div>
                 <h3>Patients</h3>
-                <div class="stat-value">1,180</div>
+                <div class="stat-value" id="stat-total-patients">--</div>
               </div>
             </div>
             <div class="admin-stat-card doctors">
@@ -423,7 +480,7 @@
               </div>
               <div>
                 <h3>Doctors</h3>
-                <div class="stat-value">65</div>
+                <div class="stat-value" id="stat-total-doctors">--</div>
               </div>
             </div>
             <div class="admin-stat-card appointments">
@@ -432,10 +489,12 @@
               </div>
               <div>
                 <h3>Appointments</h3>
-                <div class="stat-value">42</div>
+                <div class="stat-value" id="stat-total-appointments">--</div>
               </div>
             </div>
           </div>
+
+          <!-- User Growth Chart -->
           <div class="chart-card">
             <div class="chart-header">
               <h3><i class="fas fa-chart-line"></i> User Growth</h3>
@@ -446,7 +505,7 @@
           </div>
         </div>
 
-        <!-- USERS VIEW -->
+        <!-- ── VIEW: USERS ── -->
         <div id="users-section" class="content-section">
           <div class="table-card">
             <div class="table-card-header"><h3>All Users</h3></div>
@@ -464,7 +523,7 @@
           </div>
         </div>
 
-        <!-- PATIENTS VIEW -->
+        <!-- ── VIEW: PATIENTS ── -->
         <div id="patients-section" class="content-section">
           <div class="table-card">
             <div class="table-card-header"><h3>All Patients</h3></div>
@@ -482,7 +541,7 @@
           </div>
         </div>
 
-        <!-- DOCTORS VIEW -->
+        <!-- ── VIEW: DOCTORS ── -->
         <div id="doctors-section" class="content-section">
           <div class="table-card">
             <div class="table-card-header"><h3>All Doctors</h3></div>
@@ -500,7 +559,7 @@
           </div>
         </div>
 
-        <!-- APPOINTMENTS VIEW -->
+        <!-- ── VIEW: APPOINTMENTS (with year/month filters) ── -->
         <div id="appointments-section" class="content-section">
           <div class="table-card">
             <div class="table-card-header">
@@ -548,7 +607,7 @@
           </div>
         </div>
 
-        <!-- HEALTH RECORDS VIEW -->
+        <!-- ── VIEW: HEALTH RECORDS ── -->
         <div id="records-section" class="content-section">
           <div class="table-card">
             <div class="table-card-header"><h3>Health Records</h3></div>
@@ -566,7 +625,7 @@
           </div>
         </div>
 
-        <!-- PRESCRIPTIONS VIEW -->
+        <!-- ── VIEW: PRESCRIPTIONS ── -->
         <div id="prescriptions-section" class="content-section">
           <div class="table-card">
             <div class="table-card-header"><h3>Prescriptions</h3></div>
@@ -585,7 +644,7 @@
           </div>
         </div>
 
-        <!-- AI ANALYSIS VIEW -->
+        <!-- ── VIEW: AI ANALYSIS (Charts) ── -->
         <div id="ai-analysis-section" class="content-section">
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px">
             <div class="chart-card">
@@ -603,7 +662,7 @@
           </div>
         </div>
 
-        <!-- AI LOGS VIEW -->
+        <!-- ── VIEW: AI LOGS ── -->
         <div id="ai-logs-section" class="content-section">
           <div class="table-card">
             <div class="table-card-header"><h3>AI System Usage Logs</h3></div>
@@ -622,7 +681,7 @@
           </div>
         </div>
 
-        <!-- DOCUMENT QUEUE VIEW -->
+        <!-- ── VIEW: DOCUMENT QUEUE ── -->
         <div id="doc-queue-section" class="content-section">
           <div class="table-card">
             <div class="table-card-header">
@@ -643,7 +702,7 @@
           </div>
         </div>
 
-        <!-- SYSTEM LOGS VIEW -->
+        <!-- ── VIEW: SYSTEM LOGS ── -->
         <div id="system-logs-section" class="content-section">
           <div class="table-card">
             <div class="table-card-header"><h3>User Login Logs</h3></div>
@@ -663,7 +722,7 @@
           </div>
         </div>
 
-        <!-- AUDIT TRAIL VIEW -->
+        <!-- ── VIEW: AUDIT TRAIL ── -->
         <div id="audit-trail-section" class="content-section">
           <div class="table-card">
             <div class="table-card-header"><h3>Audit Trail</h3></div>
@@ -682,11 +741,11 @@
           </div>
         </div>
 
-        <!-- REPORTS VIEW -->
+        <!-- ── VIEW: REPORTS ── -->
         <div id="reports-section" class="content-section">
           <div class="table-card">
             <div class="table-card-header">
-              <h3>User Suggestions & Issues</h3>
+              <h3>User Suggestions &amp; Issues</h3>
             </div>
             <div style="overflow-x: auto">
               <table class="admin-table">
@@ -704,7 +763,7 @@
           </div>
         </div>
 
-        <!-- SETTINGS VIEW -->
+        <!-- ── VIEW: SETTINGS ── -->
         <div id="settings-section" class="content-section">
           <div class="table-card">
             <div class="table-card-header"><h3>Settings</h3></div>
@@ -729,330 +788,464 @@
       </main>
     </div>
 
-    <!-- Document Viewer Modal -->
+    <!-- ═══════════════════════════════════════
+         Document Viewer Modal
+         ═══════════════════════════════════════ -->
     <div id="docModal" class="modal">
       <div class="modal-content">
-        <span class="close" onclick="closeDocModal()">&times;</span>
+        <span class="close" onclick="closeDocumentModal()">&times;</span>
         <h3>Uploaded Documents</h3>
         <div id="docModalContent" style="margin-top: 15px">
-          <!-- Populated by JS -->
+          <!-- Populated dynamically by JavaScript -->
         </div>
       </div>
     </div>
 
+    <!-- ═══════════════════════════════════════
+         Admin Dashboard Script
+         ═══════════════════════════════════════ -->
     <script>
-      // Toggle Sidebar
+      /* ── Toggle Sidebar (Mobile) ── */
       document
         .getElementById("adminMenuToggle")
-        .addEventListener("click", () => {
+        .addEventListener("click", function () {
           document.getElementById("adminSidebar").classList.toggle("active");
         });
 
-      // Navigation Logic
-      function showSection(sectionId) {
-        document
-          .querySelectorAll(".content-section")
-          .forEach((el) => el.classList.remove("active"));
-        document
-          .querySelectorAll(".nav-item")
-          .forEach((el) => el.classList.remove("active"));
-        document.getElementById(sectionId + "-section").classList.add("active");
-        const navLink = document.querySelector(
-          `.nav-item[onclick="showSection('${sectionId}')"]`,
-        );
-        if (navLink) navLink.classList.add("active");
-        document.getElementById("breadcrumbTitle").textContent = sectionId
-          .split("-")
-          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-          .join(" ");
-      }
-
-      // Mock Data
-      const mockUsers = [
-        { name: "Patient Zero", role: "Patient" },
-        { name: "Dr. Confident", role: "Doctor" },
-        { name: "System Admin", role: "Admin" },
-      ];
-      const mockPatients = [
-        { name: "Patient Zero", cpr: "123456789" },
-        { name: "Mr. John Doe", cpr: "987654321" },
-      ];
-      const mockDoctors = [
-        { name: "Dr. Confident", id: "DOC-001" },
-        { name: "Dr. Smiling", id: "DOC-002" },
-        { name: "Dr. Trusted", id: "DOC-003" },
-      ];
-      const mockRecords = [
-        { name: "Patient Zero", reason: "Severe migraine" },
-        { name: "Mr. John Doe", reason: "Annual checkup" },
-      ];
-      const mockPrescriptions = [
-        {
-          patient: "Patient Zero",
-          doctor: "Dr. Confident",
-          rx: "Ibuprofen 400mg",
-        },
-        { patient: "Mr. John Doe", doctor: "Dr. Smiling", rx: "Vitamin D" },
-      ];
-      const mockAppointments = [
-        {
-          date: new Date("2026-01-15"),
-          patient: "Patient Zero",
-          doctor: "Dr. Confident",
-          status: "Confirmed",
-        },
-        {
-          date: new Date("2026-02-10"),
-          patient: "Mr. John Doe",
-          doctor: "Dr. Smiling",
-          status: "Pending",
-        },
-      ];
-
-      // AI System Mock Data
-      const mockAILogs = [
-        {
-          user: "Patient Zero",
-          time: "2026-02-12 10:30 AM",
-          action: "Symptom Checker",
-        },
-        {
-          user: "Mr. John Doe",
-          time: "2026-02-12 11:15 AM",
-          action: "Document Analysis",
-        },
-      ];
-      const mockDocQueue = [
-        {
-          patient: "Patient Zero",
-          date: "2026-02-12",
-          files: ["blood_test.pdf", "mri_scan.jpg"],
-        },
-        {
-          patient: "Ms. Jane Smith",
-          date: "2026-02-11",
-          files: ["prescription.png"],
-        },
-      ];
-
-      // System Ops Mock Data
-      const mockSysLogs = [
-        {
-          user: "System Admin",
-          date: "2026-02-12",
-          time: "09:00 AM",
-          status: "Success",
-        },
-        {
-          user: "Dr. Confident",
-          date: "2026-02-12",
-          time: "09:15 AM",
-          status: "Success",
-        },
-      ];
-      const mockAudit = [
-        {
-          user: "System Admin",
-          action: "Updated System Settings",
-          time: "2026-02-12 09:30 AM",
-        },
-        {
-          user: "Dr. Confident",
-          action: "Updated Patient Record",
-          time: "2026-02-12 10:00 AM",
-        },
-      ];
-      const mockReports = [
-        {
-          user: "Patient Zero",
-          type: "Suggestion",
-          msg: "Add dark mode please",
-          date: "2026-02-10",
-        },
-        {
-          user: "Dr. Smiling",
-          type: "Issue",
-          msg: "Calendar sync delay",
-          date: "2026-02-11",
-        },
-      ];
-
-      // Render Functions
-      function renderTables() {
-        // Basic Tables
-        document.getElementById("usersTableBody").innerHTML = mockUsers
-          .map((u) => `<tr><td>${u.name}</td><td>${u.role}</td></tr>`)
-          .join("");
-        document.getElementById("patientsTableBody").innerHTML = mockPatients
-          .map((p) => `<tr><td>${p.name}</td><td>${p.cpr}</td></tr>`)
-          .join("");
-        document.getElementById("doctorsTableBody").innerHTML = mockDoctors
-          .map((d) => `<tr><td>${d.name}</td><td>${d.id}</td></tr>`)
-          .join("");
-        document.getElementById("recordsTableBody").innerHTML = mockRecords
-          .map((r) => `<tr><td>${r.name}</td><td>${r.reason}</td></tr>`)
-          .join("");
-        document.getElementById("prescriptionsTableBody").innerHTML =
-          mockPrescriptions
-            .map(
-              (p) =>
-                `<tr><td>${p.patient}</td><td>${p.doctor}</td><td>${p.rx}</td></tr>`,
-            )
-            .join("");
-
-        // AI System Tables
-        document.getElementById("aiLogsTableBody").innerHTML = mockAILogs
-          .map(
-            (l) =>
-              `<tr><td>${l.user}</td><td>${l.time}</td><td>${l.action}</td></tr>`,
-          )
-          .join("");
-        document.getElementById("docQueueTableBody").innerHTML = mockDocQueue
-          .map(
-            (d, i) => `
-                <tr>
-                    <td>${d.patient}</td>
-                    <td>${d.date}</td>
-                    <td><button class="status-badge status-active" style="border:none;cursor:pointer;" onclick="viewDocs(${i})"><i class="fas fa-eye"></i> View</button></td>
-                </tr>`,
-          )
-          .join("");
-
-        // System Tables
-        document.getElementById("sysLogsTableBody").innerHTML = mockSysLogs
-          .map(
-            (l) =>
-              `<tr><td>${l.user}</td><td>${l.date}</td><td>${l.time}</td><td><span class="status-badge status-active">${l.status}</span></td></tr>`,
-          )
-          .join("");
-        document.getElementById("auditTableBody").innerHTML = mockAudit
-          .map(
-            (a) =>
-              `<tr><td>${a.user}</td><td>${a.action}</td><td>${a.time}</td></tr>`,
-          )
-          .join("");
-        document.getElementById("reportsTableBody").innerHTML = mockReports
-          .map(
-            (r) =>
-              `<tr><td>${r.user}</td><td>${r.type}</td><td>${r.msg}</td><td>${r.date}</td></tr>`,
-          )
-          .join("");
-
-        filterAppointments();
-      }
-
-      // Logic
-      function filterAppointments() {
-        const yearFilter = document.getElementById("appointYear").value;
-        const monthFilter = document.getElementById("appointMonth").value;
-        const tbody = document.getElementById("appointmentsTableBody");
-        const filtered = mockAppointments.filter((app) => {
-          const yearMatch =
-            yearFilter === "all" ||
-            app.date.getFullYear().toString() === yearFilter;
-          const monthMatch =
-            monthFilter === "all" ||
-            app.date.getMonth().toString() === monthFilter;
-          return yearMatch && monthMatch;
+      /* ─────────────────────────────────────────────
+         showSection(sectionName)
+         Switches the visible content section and
+         highlights the active sidebar link.
+         ───────────────────────────────────────────── */
+      function showSection(sectionName) {
+        var allSections = document.querySelectorAll(".content-section");
+        allSections.forEach(function (section) {
+          section.classList.remove("active");
         });
-        tbody.innerHTML = filtered.length
-          ? filtered
-              .map(
-                (app) =>
-                  `<tr><td>${app.date.toDateString()}</td><td>${app.patient}</td><td>${app.doctor}</td><td><span class="status-badge status-active">${app.status}</span></td></tr>`,
-              )
-              .join("")
-          : '<tr><td colspan="4" style="text-align:center;">No data</td></tr>';
+
+        var allNavItems = document.querySelectorAll(".nav-item");
+        allNavItems.forEach(function (item) {
+          item.classList.remove("active");
+        });
+
+        document
+          .getElementById(sectionName + "-section")
+          .classList.add("active");
+
+        var matchingNavLink = document.querySelector(
+          ".nav-item[onclick=\"showSection('" + sectionName + "')\"" + "]",
+        );
+        if (matchingNavLink) matchingNavLink.classList.add("active");
+
+        var breadcrumbText = sectionName
+          .split("-")
+          .map(function (word) {
+            return word.charAt(0).toUpperCase() + word.slice(1);
+          })
+          .join(" ");
+        document.getElementById("breadcrumbTitle").textContent = breadcrumbText;
       }
 
-      function setupFilters() {
-        const years = [
-          ...new Set(mockAppointments.map((a) => a.date.getFullYear())),
-        ].sort();
-        document.getElementById("appointYear").innerHTML =
+      /* ─────────────────────────────────────────────
+         Helper: fetch data from admin_api.php
+         ───────────────────────────────────────────── */
+      var API_BASE = "../php/admin_api.php";
+
+      function apiFetch(action) {
+        return fetch(API_BASE + "?action=" + action)
+          .then(function (res) {
+            return res.json();
+          })
+          .then(function (json) {
+            if (json.status === "error") {
+              console.error("API error:", json.message);
+              return null;
+            }
+            return json.data;
+          });
+      }
+
+      /* ─────────────────────────────────────────────
+         Store fetched data for filtering / modals
+         ───────────────────────────────────────────── */
+      var allAppointments = [];
+      var allDocumentQueue = [];
+
+      /* ─────────────────────────────────────────────
+         loadDashboardStats()
+         ───────────────────────────────────────────── */
+      function loadDashboardStats() {
+        apiFetch("dashboard").then(function (data) {
+          if (!data) return;
+          document.getElementById("stat-total-users").textContent =
+            data.total_users;
+          document.getElementById("stat-total-patients").textContent =
+            data.total_patients;
+          document.getElementById("stat-total-doctors").textContent =
+            data.total_doctors;
+          document.getElementById("stat-total-appointments").textContent =
+            data.total_appointments;
+        });
+      }
+
+      /* ─────────────────────────────────────────────
+         loadAllTables()
+         ───────────────────────────────────────────── */
+      function loadAllTables() {
+        /* ── Users ── */
+        apiFetch("users").then(function (data) {
+          if (!data) return;
+          document.getElementById("usersTableBody").innerHTML = data
+            .map(function (u) {
+              return "<tr><td>" + u.name + "</td><td>" + u.role + "</td></tr>";
+            })
+            .join("");
+        });
+
+        /* ── Patients ── */
+        apiFetch("patients").then(function (data) {
+          if (!data) return;
+          document.getElementById("patientsTableBody").innerHTML = data
+            .map(function (p) {
+              return "<tr><td>" + p.name + "</td><td>" + p.cpr + "</td></tr>";
+            })
+            .join("");
+        });
+
+        /* ── Doctors ── */
+        apiFetch("doctors").then(function (data) {
+          if (!data) return;
+          document.getElementById("doctorsTableBody").innerHTML = data
+            .map(function (d) {
+              return "<tr><td>" + d.name + "</td><td>" + d.id + "</td></tr>";
+            })
+            .join("");
+        });
+
+        /* ── Appointments ── */
+        apiFetch("appointments").then(function (data) {
+          if (!data) return;
+          allAppointments = data.map(function (a) {
+            return {
+              date: new Date(a.appointment_date),
+              patient: a.patient_name,
+              doctor: a.doctor_name || "N/A",
+              status: a.status
+                ? a.status.charAt(0).toUpperCase() + a.status.slice(1)
+                : "Pending",
+            };
+          });
+          setupYearFilter();
+          filterAppointments();
+        });
+
+        /* ── Records ── */
+        apiFetch("records").then(function (data) {
+          if (!data) return;
+          document.getElementById("recordsTableBody").innerHTML = data
+            .map(function (r) {
+              return (
+                "<tr><td>" +
+                r.patient_name +
+                "</td><td>" +
+                (r.summary || r.record_type) +
+                "</td></tr>"
+              );
+            })
+            .join("");
+        });
+
+        /* ── Prescriptions ── */
+        apiFetch("prescriptions").then(function (data) {
+          if (!data) return;
+          document.getElementById("prescriptionsTableBody").innerHTML = data
+            .map(function (p) {
+              return (
+                "<tr><td>" +
+                p.patient_name +
+                "</td><td>" +
+                p.doctor_name +
+                "</td><td>" +
+                p.medication_name +
+                "</td></tr>"
+              );
+            })
+            .join("");
+        });
+
+        /* ── AI Logs ── */
+        apiFetch("ai_logs").then(function (data) {
+          if (!data) return;
+          document.getElementById("aiLogsTableBody").innerHTML = data
+            .map(function (l) {
+              return (
+                "<tr><td>" +
+                l.user +
+                "</td><td>" +
+                l.time +
+                "</td><td>" +
+                l.action +
+                "</td></tr>"
+              );
+            })
+            .join("");
+        });
+
+        /* ── Document Queue ── */
+        apiFetch("doc_queue").then(function (data) {
+          if (!data) return;
+          allDocumentQueue = data;
+          document.getElementById("docQueueTableBody").innerHTML = data
+            .map(function (q, i) {
+              return (
+                "<tr><td>" +
+                q.patient +
+                "</td><td>" +
+                q.date +
+                '</td><td><button class="status-badge status-active" style="border:none;cursor:pointer;" onclick="viewDocuments(' +
+                i +
+                ')"><i class="fas fa-eye"></i> View</button></td></tr>'
+              );
+            })
+            .join("");
+        });
+
+        /* ── System Logs ── */
+        apiFetch("system_logs").then(function (data) {
+          if (!data) return;
+          document.getElementById("sysLogsTableBody").innerHTML = data
+            .map(function (l) {
+              return (
+                "<tr><td>" +
+                l.user +
+                "</td><td>" +
+                l.date +
+                "</td><td>" +
+                l.time +
+                '</td><td><span class="status-badge status-active">' +
+                l.status +
+                "</span></td></tr>"
+              );
+            })
+            .join("");
+        });
+
+        /* ── Audit Trail ── */
+        apiFetch("audit_trail").then(function (data) {
+          if (!data) return;
+          document.getElementById("auditTableBody").innerHTML = data
+            .map(function (a) {
+              return (
+                "<tr><td>" +
+                a.user +
+                "</td><td>" +
+                a.action +
+                "</td><td>" +
+                a.time +
+                "</td></tr>"
+              );
+            })
+            .join("");
+        });
+
+        /* ── Reports ── */
+        apiFetch("reports").then(function (data) {
+          if (!data) return;
+          document.getElementById("reportsTableBody").innerHTML = data
+            .map(function (r) {
+              return (
+                "<tr><td>" +
+                r.user +
+                "</td><td>" +
+                r.type +
+                "</td><td>" +
+                r.message +
+                "</td><td>" +
+                r.date +
+                "</td></tr>"
+              );
+            })
+            .join("");
+        });
+      }
+
+      /* ─────────────────────────────────────────────
+         filterAppointments()
+         ───────────────────────────────────────────── */
+      function filterAppointments() {
+        var selectedYear = document.getElementById("appointYear").value;
+        var selectedMonth = document.getElementById("appointMonth").value;
+        var tableBody = document.getElementById("appointmentsTableBody");
+
+        var filtered = allAppointments.filter(function (a) {
+          var yearOk =
+            selectedYear === "all" ||
+            a.date.getFullYear().toString() === selectedYear;
+          var monthOk =
+            selectedMonth === "all" ||
+            a.date.getMonth().toString() === selectedMonth;
+          return yearOk && monthOk;
+        });
+
+        if (filtered.length === 0) {
+          tableBody.innerHTML =
+            '<tr><td colspan="4" style="text-align:center;">No data</td></tr>';
+        } else {
+          tableBody.innerHTML = filtered
+            .map(function (a) {
+              return (
+                "<tr><td>" +
+                a.date.toDateString() +
+                "</td><td>" +
+                a.patient +
+                "</td><td>" +
+                a.doctor +
+                '</td><td><span class="status-badge status-active">' +
+                a.status +
+                "</span></td></tr>"
+              );
+            })
+            .join("");
+        }
+      }
+
+      /* ─────────────────────────────────────────────
+         setupYearFilter()
+         ───────────────────────────────────────────── */
+      function setupYearFilter() {
+        var uniqueYears = [];
+        allAppointments.forEach(function (a) {
+          var y = a.date.getFullYear();
+          if (uniqueYears.indexOf(y) === -1) uniqueYears.push(y);
+        });
+        uniqueYears.sort();
+
+        var yearDropdown = document.getElementById("appointYear");
+        yearDropdown.innerHTML =
           '<option value="all">All Years</option>' +
-          years.map((y) => `<option value="${y}">${y}</option>`).join("");
+          uniqueYears
+            .map(function (y) {
+              return '<option value="' + y + '">' + y + "</option>";
+            })
+            .join("");
       }
 
-      function viewDocs(index) {
-        const data = mockDocQueue[index];
-        const content = document.getElementById("docModalContent");
-        content.innerHTML =
-          `<p><strong>Patient:</strong> ${data.patient}</p><ul>` +
-          data.files
-            .map((f) => `<li><a href="#" style="color:#2196f3;">${f}</a></li>`)
+      /* ─────────────────────────────────────────────
+         Document Modal
+         ───────────────────────────────────────────── */
+      function viewDocuments(index) {
+        var queueEntry = allDocumentQueue[index];
+        var modalContent = document.getElementById("docModalContent");
+
+        modalContent.innerHTML =
+          "<p><strong>Patient:</strong> " +
+          queueEntry.patient +
+          "</p><ul>" +
+          queueEntry.files
+            .map(function (f) {
+              return (
+                '<li><a href="#" style="color:#2196f3;">' + f + "</a></li>"
+              );
+            })
             .join("") +
-          `</ul>`;
+          "</ul>";
+
         document.getElementById("docModal").style.display = "block";
       }
 
-      function closeDocModal() {
+      function closeDocumentModal() {
         document.getElementById("docModal").style.display = "none";
       }
+
       window.onclick = function (event) {
-        if (event.target == document.getElementById("docModal"))
-          closeDocModal();
+        if (event.target === document.getElementById("docModal")) {
+          closeDocumentModal();
+        }
       };
 
-      function logout() {
-        if (confirm("Logout?")) window.location.href = "../php/logout.php";
+      /* ── Logout ── */
+      function handleLogout() {
+        if (confirm("Are you sure you want to logout?")) {
+          // Redirect to logout script which handles session destruction and redirects to index.html
+          window.location.href = "../php/logout.php";
+        }
       }
 
-      // Initialize Charts & Data
-      document.addEventListener("DOMContentLoaded", () => {
-        setupFilters();
-        renderTables();
+      /* ─────────────────────────────────────────────
+         loadCharts()
+         Fetches chart data from the API and creates
+         the Chart.js instances.
+         ───────────────────────────────────────────── */
+      function loadCharts() {
+        apiFetch("chart_data").then(function (data) {
+          if (!data) return;
 
-        // User Growth Chart
-        new Chart(document.getElementById("userGrowthChart"), {
-          type: "line",
-          data: {
-            labels: ["Jan", "Feb", "Mar"],
-            datasets: [
-              {
-                label: "Signups",
-                data: [12, 19, 3],
-                borderColor: "#2196f3",
-                fill: false,
-              },
-            ],
-          },
-          options: { responsive: true, maintainAspectRatio: false },
-        });
+          /* ── User Growth Chart (Line) ── */
+          new Chart(document.getElementById("userGrowthChart"), {
+            type: "line",
+            data: {
+              labels: data.signups.labels,
+              datasets: [
+                {
+                  label: "Signups",
+                  data: data.signups.data,
+                  borderColor: "#2196f3",
+                  fill: false,
+                },
+              ],
+            },
+            options: { responsive: true, maintainAspectRatio: false },
+          });
 
-        // AI Doctors Chart
-        new Chart(document.getElementById("aiDoctorsChart"), {
-          type: "bar",
-          data: {
-            labels: ["Dr. Confident", "Dr. Smiling", "Dr. Trusted"],
-            datasets: [
-              {
-                label: "Search Count",
-                data: [45, 30, 25],
-                backgroundColor: ["#2196f3", "#38a169", "#d69e2e"],
-              },
-            ],
-          },
-          options: { responsive: true, maintainAspectRatio: false },
-        });
+          /* ── AI Doctors Chart (Bar) ── */
+          new Chart(document.getElementById("aiDoctorsChart"), {
+            type: "bar",
+            data: {
+              labels: data.doctor_chart.labels,
+              datasets: [
+                {
+                  label: "Appointment Count",
+                  data: data.doctor_chart.data,
+                  backgroundColor: [
+                    "#2196f3",
+                    "#38a169",
+                    "#d69e2e",
+                    "#667eea",
+                    "#e53e3e",
+                  ],
+                },
+              ],
+            },
+            options: { responsive: true, maintainAspectRatio: false },
+          });
 
-        // AI Time Chart
-        new Chart(document.getElementById("aiTimeChart"), {
-          type: "line", // 'line' often visualizes "common times" better than bar
-          data: {
-            labels: ["8 AM", "10 AM", "12 PM", "2 PM", "4 PM"],
-            datasets: [
-              {
-                label: "Visits/Searches",
-                data: [10, 45, 20, 60, 30],
-                borderColor: "#e53e3e",
-                fill: true,
-                backgroundColor: "rgba(229, 62, 62, 0.1)",
-              },
-            ],
-          },
-          options: { responsive: true, maintainAspectRatio: false },
+          /* ── AI Visit Times Chart (Area) ── */
+          new Chart(document.getElementById("aiTimeChart"), {
+            type: "line",
+            data: {
+              labels: data.time_chart.labels,
+              datasets: [
+                {
+                  label: "Visits",
+                  data: data.time_chart.data,
+                  borderColor: "#e53e3e",
+                  fill: true,
+                  backgroundColor: "rgba(229, 62, 62, 0.1)",
+                },
+              ],
+            },
+            options: { responsive: true, maintainAspectRatio: false },
+          });
         });
+      }
+
+      /* ─────────────────────────────────────────────
+         Initialization
+         ───────────────────────────────────────────── */
+      document.addEventListener("DOMContentLoaded", function () {
+        loadDashboardStats();
+        loadAllTables();
+        loadCharts();
       });
     </script>
   </body>

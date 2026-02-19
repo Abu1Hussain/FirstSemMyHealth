@@ -1,201 +1,383 @@
+/* ═══════════════════════════════════════════════════════════
+   Patient Dashboard – Main Script
+   Handles: data loading, navigation, doctor modal,
+            AI triage, appointment booking, and timeline.
+
+   Connected to:
+     - php/dashboard_api.php   (data loading)
+     - Ai/ai_triage.php        (symptom analysis)
+     - Ai/ai_scheduler.php     (availability timeline)
+     - php/appointment_handler.php (booking)
+   ═══════════════════════════════════════════════════════════ */
+
 document.addEventListener("DOMContentLoaded", function () {
-  const loading = document.getElementById("loading");
+  var loadingOverlay = document.getElementById("loading");
 
-  // 1. Initial Data Fetch & Auth Check
+  /* ── 1. Load Dashboard Data on Page Ready ── */
   fetchDashboardData();
+  loadAvailabilityTimeline();
 
-  // 2. Navigation Logic
-  const navLinks = document.querySelectorAll(".nav-link[data-view]");
-  const sections = document.querySelectorAll(".content-section");
+  /* ── 2. Sidebar Navigation ── */
+  // Only select links that actually have a data-view attribute
+  var navLinks = document.querySelectorAll(".nav-link[data-view]");
+  var sections = document.querySelectorAll(".content-section");
 
-  navLinks.forEach((link) => {
-    link.addEventListener("click", (e) => {
-      e.preventDefault();
+  navLinks.forEach(function (link) {
+    link.addEventListener("click", function (event) {
+      event.preventDefault();
 
-      // Activate Link
-      navLinks.forEach((l) => l.classList.remove("active"));
+      // Highlight the active link
+      navLinks.forEach(function (otherLink) {
+        otherLink.classList.remove("active");
+      });
       link.classList.add("active");
 
-      // Show Section
-      const view = link.getAttribute("data-view");
-      sections.forEach((s) => s.classList.remove("active"));
-      document.getElementById("view-" + view).classList.add("active");
+      // Show the matching section
+      var targetView = link.getAttribute("data-view");
+      sections.forEach(function (section) {
+        section.classList.remove("active");
+      });
+      document.getElementById("view-" + targetView).classList.add("active");
+
+      // Refresh availability when switching to appointments tab
+      if (targetView === "appointments") {
+        loadAvailabilityTimeline();
+      }
     });
   });
 
-  // 3. Appointment Form Logic
-  const apptForm = document.getElementById("appointmentForm");
-  if (apptForm) {
-    apptForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      submitAppointment();
+  /* ── 3. Appointment Booking Form ── */
+  var appointmentForm = document.getElementById("appointmentForm");
+  if (appointmentForm) {
+    appointmentForm.addEventListener("submit", function (event) {
+      event.preventDefault();
+      analyzeAndBook();
     });
   }
 
+  /* ─────────────────────────────────────────────
+     fetchDashboardData()
+     Pulls user info, stats, doctors, appointments,
+     and timeline from the API.
+     ───────────────────────────────────────────── */
   function fetchDashboardData() {
     fetch("../php/dashboard_api.php")
-      .then((response) => response.json())
-      .then((data) => {
+      .then(function (response) { return response.json(); })
+      .then(function (data) {
+        // If not logged in, redirect to login page
         if (data.status === "error" && data.message === "Unauthorized") {
           window.location.href = "../loginReg/login.html";
           return;
         }
 
-        // Populate User Info
-        document.getElementById("user-name").textContent = data.user.name;
-        document.getElementById("user-initial").textContent = data.user.initial;
-        document.getElementById("profile-name").value = data.user.name;
+        /* ── Populate User Info ── */
+        document.getElementById("user-name").textContent    = data.user.name;
+        document.getElementById("user-initial").textContent  = data.user.initial;
+        document.getElementById("profile-name").value        = data.user.name;
 
-        // Populate Stats
-        document.getElementById("stat-upcoming").textContent =
-          data.stats.upcoming;
+        /* ── Populate Profile Email ── */
+        if (data.user.email) {
+          document.getElementById("profile-email").value = data.user.email;
+        }
 
-        // Populate Appointments
-        const tbody = document.getElementById("appointments-list");
-        tbody.innerHTML = "";
+        /* ── Populate Stat Cards ── */
+        document.getElementById("stat-upcoming").textContent = data.stats.upcoming;
+
+        /* ── Populate Appointments Table ── */
+        var appointmentsBody = document.getElementById("appointments-list");
+        appointmentsBody.innerHTML = "";
 
         if (data.appointments.length === 0) {
-          tbody.innerHTML =
+          appointmentsBody.innerHTML =
             '<tr><td colspan="5">No appointments found.</td></tr>';
         } else {
-          data.appointments.forEach((appt) => {
-            let pClass = "priority-normal";
-            if (appt.priority === "Highly Important") pClass = "priority-high";
-            if (appt.priority === "Important") pClass = "priority-medium";
+          var allRows = "";
+          data.appointments.forEach(function (appointment) {
+            // Decide the badge colour based on priority
+            var priorityClass = "priority-normal";
+            if (appointment.priority === "Highly Important") priorityClass = "priority-high";
+            if (appointment.priority === "Important")        priorityClass = "priority-medium";
 
-            const row = `
-                        <tr>
-                            <td>${appt.date}</td>
-                            <td>${appt.reason}</td>
-                            <td><span class="${pClass}">${appt.priority}</span></td>
-                            <td>${appt.status}</td>
-                            <td>
-                                <strong>#${appt.queue_number}</strong><br>
-                                <small class="text-muted">~${appt.wait_time} mins</small>
-                            </td>
-                        </tr>
-                    `;
-            tbody.innerHTML += row;
-            tbody.innerHTML += row;
+            allRows +=
+              '<tr>' +
+                '<td>' + appointment.date + '</td>' +
+                '<td>' + appointment.reason + '</td>' +
+                '<td><span class="' + priorityClass + '">' + appointment.priority + '</span></td>' +
+                '<td>' + appointment.status + '</td>' +
+                '<td>' +
+                  '<strong>#' + appointment.queue_number + '</strong><br>' +
+                  '<small style="color:#7f8c8d;">~' + appointment.wait_time + ' mins</small>' +
+                '</td>' +
+              '</tr>';
+          });
+          appointmentsBody.innerHTML = allRows;
+        }
+
+        /* ── Populate Doctors Grid ── */
+        var doctorsList = document.getElementById("doctors-list");
+        if (doctorsList && data.doctors) {
+          doctorsList.innerHTML = "";
+
+          data.doctors.forEach(function (doctor) {
+            var card = document.createElement("div");
+            card.className = "doctor-card-mini";
+            card.innerHTML =
+              '<img src="' + doctor.image_url + '"' +
+              '     class="doctor-img-mini"' +
+              '     onerror="this.src=\'../image/default_user.png\'">' +
+              '<div class="doctor-name-mini">' + doctor.name + '</div>' +
+              '<div class="doctor-spec-mini">' + (doctor.specialization || "General") + '</div>';
+            card.onclick = function () { openDoctorModal(doctor); };
+            doctorsList.appendChild(card);
           });
         }
 
-        // Populate Timeline
-        const timelineDiv = document.getElementById("daily-timeline");
-        if (timelineDiv && data.timeline) {
-            timelineDiv.innerHTML = "";
-            let timelineHtml = "";
-            data.timeline.forEach(slot => {
-                let badgeClass = 'badge-available';
-                let icon = '🪑'; // Default chair
-                
-                if (slot.chairs_left === 0) {
-                    badgeClass = 'badge-full';
-                    icon = '🚫';
-                } else if (slot.chairs_left < 10) {
-                    badgeClass = 'badge-limited';
-                }
-
-                timelineHtml += `
-                    <div class="timeline-hour">
-                        <div style="font-weight:600; color:#444;">${slot.hour}</div>
-                        <div class="chairs-badge ${badgeClass}">
-                            <span class="chair-icon">${icon}</span>
-                            <span>${slot.chairs_left} Chairs Left</span>
-                        </div>
-                    </div>
-                `;
-            });
-            timelineDiv.innerHTML = timelineHtml;
-        }
-
-        // Populate Doctors List
-        const doctorsList = document.getElementById("doctors-list");
-        if (doctorsList && data.doctors) {
-            doctorsList.innerHTML = "";
-            data.doctors.forEach(doc => {
-                const div = document.createElement('div');
-                div.className = 'doctor-card-mini';
-                div.innerHTML = `
-                    <img src="${doc.image_url}" class="doctor-img-mini" onerror="this.src='../image/default_user.png'">
-                    <div class="doctor-name-mini">${doc.name}</div>
-                    <div class="doctor-spec-mini">${doc.specialization || 'General'}</div>
-                `;
-                div.onclick = () => openDoctorModal(doc);
-                doctorsList.appendChild(div);
-            });
-        }
-
-        // Hide Loader
-        loading.style.display = "none";
+        /* ── Hide Loading Overlay ── */
+        loadingOverlay.style.display = "none";
       })
-      .catch(error => {
-        console.error('Error fetching dashboard data:', error);
-        loading.style.display = "none";
+      .catch(function (error) {
+        console.error("Error fetching dashboard data:", error);
+        loadingOverlay.style.display = "none";
       });
   }
 
-  // Doctor Modal Logic
-  const modal = document.getElementById("doctor-modal");
-  const closeModal = document.querySelector(".close-modal");
-  let currentDoctor = null;
+  /* ─────────────────────────────────────────────
+     loadAvailabilityTimeline()
+     Calls the AI Scheduler to get today's hourly
+     chair availability and renders the timeline.
+     Connected to: 📊 Today's Availability
+     ───────────────────────────────────────────── */
+  function loadAvailabilityTimeline() {
+    var today = new Date().toISOString().split("T")[0];
 
-  if (closeModal) {
-      closeModal.onclick = () => {
-          modal.style.display = "none";
-      };
+    fetch("../Ai/ai_scheduler.php?date=" + today)
+      .then(function (response) { return response.json(); })
+      .then(function (data) {
+        if (data.status !== "success") return;
+
+        var timelineContainer = document.getElementById("daily-timeline");
+        if (!timelineContainer) return;
+
+        timelineContainer.innerHTML = "";
+        var timelineHtml = "";
+
+        data.timeline.forEach(function (slot) {
+          var badgeClass = "badge-available";
+          var chairIcon  = "🪑";
+
+          if (slot.chairs_left === 0) {
+            badgeClass = "badge-full";
+            chairIcon  = "🚫";
+          } else if (slot.status === "Almost Full") {
+            badgeClass = "badge-limited";
+          }
+
+          timelineHtml +=
+            '<div class="timeline-hour">' +
+              '<div class="time-slot">' + slot.hour + '</div>' +
+              '<div class="chairs-badge ' + badgeClass + '">' +
+                '<span class="chair-icon">' + chairIcon + '</span>' +
+                '<span>' + slot.chairs_left + ' Chairs Left</span>' +
+              '</div>' +
+            '</div>';
+        });
+
+        timelineContainer.innerHTML = timelineHtml;
+      })
+      .catch(function (error) {
+        console.error("Error loading availability:", error);
+      });
   }
 
-  window.onclick = (event) => {
-      if (event.target == modal) {
-          modal.style.display = "none";
-      }
+  /* ─────────────────────────────────────────────
+     Doctor Profile Modal
+     Shows doctor details and lets users book.
+     ───────────────────────────────────────────── */
+  var doctorModal      = document.getElementById("doctor-modal");
+  var closeModalButton = document.querySelector(".close-modal");
+  var selectedDoctor   = null;
+
+  // Close when clicking ×
+  if (closeModalButton) {
+    closeModalButton.onclick = function () { doctorModal.style.display = "none"; };
+  }
+
+  // Close when clicking backdrop
+  window.onclick = function (event) {
+    if (event.target === doctorModal) {
+      doctorModal.style.display = "none";
+    }
   };
 
-  function openDoctorModal(doc) {
-      currentDoctor = doc;
-      document.getElementById("modal-doc-img").src = doc.image_url;
-      document.getElementById("modal-doc-name").textContent = doc.name;
-      document.getElementById("modal-doc-spec").textContent = doc.specialization;
-      document.getElementById("modal-doc-bio").textContent = doc.bio || "No biography available.";
-      document.getElementById("modal-doc-capacity").textContent = doc.capacity;
-      
-      modal.style.display = "flex";
+  function openDoctorModal(doctor) {
+    selectedDoctor = doctor;
+
+    document.getElementById("modal-doc-img").src          = doctor.image_url;
+    document.getElementById("modal-doc-name").textContent  = doctor.name;
+    document.getElementById("modal-doc-spec").textContent  = doctor.specialization;
+    document.getElementById("modal-doc-bio").textContent   = doctor.bio || "No biography available.";
+    document.getElementById("modal-doc-capacity").textContent = doctor.capacity;
+
+    doctorModal.style.display = "flex";
   }
 
-  document.getElementById("btn-book-doc").onclick = () => {
-      if (currentDoctor) {
-          // Set hidden input
-          document.getElementById("selected-doctor-id").value = currentDoctor.id;
-          
-          // Update display
-          document.getElementById("display-doc-img").src = currentDoctor.image_url;
-          document.getElementById("display-doc-name").textContent = currentDoctor.name;
+  /* ── "Book Appointment" inside modal ── */
+  document.getElementById("btn-book-doc").onclick = function () {
+    if (!selectedDoctor) return;
+
+    // Fill the hidden input with the doctor's ID
+    document.getElementById("selected-doctor-id").value = selectedDoctor.id;
+
+    // Show the selected-doctor display strip
+    document.getElementById("display-doc-img").src           = selectedDoctor.image_url;
+    document.getElementById("display-doc-name").textContent   = selectedDoctor.name;
+    document.getElementById("selected-doctor-display").style.display = "flex";
+
+    // Scroll down to the booking form
+    document.getElementById("appointmentForm").scrollIntoView({ behavior: "smooth" });
+
+    // Close the modal
+    doctorModal.style.display = "none";
+  };
+
+  /* ── "Change" doctor link ── */
+  document.getElementById("change-doc-btn").onclick = function () {
+    document.getElementById("selected-doctor-id").value           = "";
+    document.getElementById("selected-doctor-display").style.display = "none";
+    selectedDoctor = null;
+  };
+
+  /* ─────────────────────────────────────────────
+     analyzeAndBook()
+     Two-step booking flow:
+       Step 1 – Call AI Triage to analyze symptoms
+       Step 2 – Show AI results, then book the appointment
+     Connected to: 📅 Book New Appointment
+     ───────────────────────────────────────────── */
+  function analyzeAndBook() {
+    var reasonText      = document.getElementById("reason").value;
+    var appointmentDate = document.getElementById("appointment-date").value;
+    var doctorIdInput   = document.getElementById("selected-doctor-id").value;
+    var fileInput       = document.getElementById("document");
+
+    if (!reasonText || !appointmentDate) {
+      alert("Please fill in the date and reason.");
+      return;
+    }
+
+    // Show the AI loading spinner
+    var aiLoading    = document.getElementById("ai-loading");
+    var aiResultPanel = document.getElementById("ai-result-panel");
+    var submitButton  = document.getElementById("btn-book-submit");
+
+    aiLoading.style.display    = "block";
+    aiResultPanel.style.display = "none";
+    submitButton.disabled       = true;
+    submitButton.textContent    = "Analyzing...";
+
+    /* ── Step 1: Call AI Triage ── */
+    fetch("../Ai/ai_triage.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        reason:    reasonText,
+        date:      appointmentDate,
+        doctor_id: doctorIdInput || null
+      })
+    })
+    .then(function (response) { return response.json(); })
+    .then(function (aiData) {
+      // Hide the loading spinner
+      aiLoading.style.display = "none";
+
+      // Show the AI result panel
+      if (aiData.status === "success" && aiData.triage) {
+        displayAiResults(aiData);
+      }
+
+      /* ── Step 2: Now book the appointment ── */
+      bookAppointment(reasonText, appointmentDate, doctorIdInput, fileInput);
+    })
+    .catch(function (error) {
+      console.error("AI triage error:", error);
+      aiLoading.style.display = "none";
+
+      // Even if AI fails, still book the appointment
+      bookAppointment(reasonText, appointmentDate, doctorIdInput, fileInput);
+    });
+  }
+
+  /* ─────────────────────────────────────────────
+     displayAiResults(aiData)
+     Shows the AI triage analysis in the result panel.
+     ───────────────────────────────────────────── */
+  function displayAiResults(aiData) {
+    var triageInfo  = aiData.triage;
+    var resultPanel = document.getElementById("ai-result-panel");
+
+    // Fill in the priority, suggestion, specialty
+    document.getElementById("ai-priority").textContent   = triageInfo.priority;
+    document.getElementById("ai-suggestion").textContent  = triageInfo.suggestion;
+    document.getElementById("ai-specialty").textContent   = triageInfo.recommended_specialty;
+
+    // Color the priority text based on level
+    var priorityElement = document.getElementById("ai-priority");
+    if (triageInfo.priority === "Highly Important") {
+      priorityElement.style.color = "#c62828";
+    } else if (triageInfo.priority === "Important") {
+      priorityElement.style.color = "#e65100";
+    } else {
+      priorityElement.style.color = "#2e7d32";
+    }
+
+    // Show matching doctors if available
+    var matchingDoctorsSection = document.getElementById("ai-matching-doctors");
+    var doctorsListContainer   = document.getElementById("ai-doctors-list");
+
+    if (aiData.matching_doctors && aiData.matching_doctors.length > 0) {
+      matchingDoctorsSection.style.display = "block";
+      doctorsListContainer.innerHTML = "";
+
+      aiData.matching_doctors.forEach(function (doctor) {
+        var doctorChip = document.createElement("div");
+        doctorChip.style.cssText = "background:white; padding:8px 14px; border-radius:20px; font-size:13px; display:flex; align-items:center; gap:6px; cursor:pointer; border:1px solid #e0e0e0;";
+        doctorChip.innerHTML = '👨‍⚕️ <strong>' + doctor.name + '</strong> <small>(' + doctor.specialization + ')</small>';
+
+        // Clicking a recommended doctor selects them
+        doctorChip.onclick = function () {
+          document.getElementById("selected-doctor-id").value = doctor.id;
+          document.getElementById("display-doc-name").textContent = doctor.name;
           document.getElementById("selected-doctor-display").style.display = "flex";
-          
-          // Scroll to form
-          document.getElementById("appointmentForm").scrollIntoView({behavior: "smooth"});
-          
-          // Close modal
-          modal.style.display = "none";
-      }
-  };
+          if (doctor.image_url) {
+            document.getElementById("display-doc-img").src = doctor.image_url;
+          }
+        };
 
-  document.getElementById("change-doc-btn").onclick = () => {
-      document.getElementById("selected-doctor-id").value = "";
-      document.getElementById("selected-doctor-display").style.display = "none";
-      currentDoctor = null;
-  };
+        doctorsListContainer.appendChild(doctorChip);
+      });
+    } else {
+      matchingDoctorsSection.style.display = "none";
+    }
 
-  function submitAppointment() {
-    const reason = document.getElementById("reason").value;
-    const date = document.getElementById("appointment-date").value;
-    const fileInput = document.getElementById("document");
+    // Show the panel
+    resultPanel.style.display = "block";
+  }
 
-    const formData = new FormData();
+  /* ─────────────────────────────────────────────
+     bookAppointment()
+     Sends the booking form to the server and
+     shows success / error feedback.
+     ───────────────────────────────────────────── */
+  function bookAppointment(reasonText, appointmentDate, doctorIdInput, fileInput) {
+    var formData = new FormData();
     formData.append("book_appointment", "1");
-    formData.append("reason", reason);
-    formData.append("date", date);
+    formData.append("reason", reasonText);
+    formData.append("date", appointmentDate);
+
+    if (doctorIdInput) {
+      formData.append("doctor_id", doctorIdInput);
+    }
+
     if (fileInput.files.length > 0) {
       formData.append("document", fileInput.files[0]);
     }
@@ -204,26 +386,38 @@ document.addEventListener("DOMContentLoaded", function () {
       method: "POST",
       body: formData,
     })
-      .then((response) => response.json())
-      .then((data) => {
-        const msgDiv = document.getElementById("appt-message");
-        msgDiv.style.display = "block";
+      .then(function (response) { return response.json(); })
+      .then(function (result) {
+        var messageDiv   = document.getElementById("appt-message");
+        var submitButton = document.getElementById("btn-book-submit");
 
-        if (data.status === "success") {
-          msgDiv.style.background = "#e8f5e9";
-          msgDiv.style.color = "#2e7d32";
-          msgDiv.innerHTML = `<strong>Success!</strong> ${data.message}`;
+        messageDiv.style.display = "block";
+        submitButton.disabled    = false;
+        submitButton.textContent = "Analyze & Book Appointment";
+
+        if (result.status === "success") {
+          messageDiv.style.background = "#e8f5e9";
+          messageDiv.style.color      = "#2e7d32";
+          messageDiv.innerHTML = '<strong>Success!</strong> ' + result.message;
+
+          // Reset the form and refresh data
           document.getElementById("appointmentForm").reset();
-          fetchDashboardData(); // Refresh list
+          document.getElementById("ai-result-panel").style.display = "none";
+          document.getElementById("selected-doctor-display").style.display = "none";
+          fetchDashboardData();
+          loadAvailabilityTimeline();
         } else {
-          msgDiv.style.background = "#ffebee";
-          msgDiv.style.color = "#c62828";
-          msgDiv.textContent = data.message;
+          messageDiv.style.background = "#ffebee";
+          messageDiv.style.color      = "#c62828";
+          messageDiv.textContent      = result.message;
         }
       })
-      .catch((err) => {
-        console.error(err);
-        alert("Submission failed.");
+      .catch(function (error) {
+        console.error("Booking error:", error);
+        var submitButton = document.getElementById("btn-book-submit");
+        submitButton.disabled    = false;
+        submitButton.textContent = "Analyze & Book Appointment";
+        alert("Submission failed. Please try again.");
       });
   }
 });
