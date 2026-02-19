@@ -36,6 +36,82 @@ if (!isset($_SESSION['user_id'])) {
 
 
 /* ══════════════════════════════════════════════════════
+   TAKE A TICKET (Walk-in / Immediate)
+   ══════════════════════════════════════════════════════ */
+
+if (isset($_POST['take_ticket'])) {
+    $userId    = $_SESSION['user_id'];
+    $requestDate = date('Y-m-d');
+    $doctorId    = $_POST['doctor_id'] ?? null;
+
+    // Look up the patient profile
+    $stmt = $conn->prepare("SELECT patient_id FROM patients WHERE user_id = ?");
+    $stmt->bind_param("i", $userId);
+    $stmt->execute();
+    $patientResult = $stmt->get_result();
+
+    if (!$patientResult || $patientResult->num_rows === 0) {
+        $stmt->close();
+        echo json_encode(['status' => 'error', 'message' => 'Patient profile not found.']);
+        exit();
+    }
+    $patientId = $patientResult->fetch_assoc()['patient_id'];
+    $stmt->close();
+
+    // Assign to next available slot today
+    // For ticket logic, we just find the current hour's slot or next available
+    $currentHour = (int)date('H');
+    if ($currentHour < 9) $currentHour = 9;
+    if ($currentHour >= 17) {
+        echo json_encode(['status' => 'error', 'message' => 'Clinic is closed. Please come back tomorrow.']);
+        exit();
+    }
+
+    $slotStart = "$requestDate " . str_pad($currentHour, 2, '0', STR_PAD_LEFT) . ":00:00";
+    
+    // Calculate Daily Queue Number (Ticket Number)
+    // We want the total count of appointments for the entire day, regardless of doctor or slot
+    $dailyCountSql = "SELECT COUNT(*) as daily_total FROM appointments WHERE DATE(appointment_date) = ?";
+    $stmt = $conn->prepare($dailyCountSql);
+    $stmt->bind_param("s", $requestDate);
+    $stmt->execute();
+    $dailyTotal = $stmt->get_result()->fetch_assoc()['daily_total'] ?? 0;
+    $stmt->close();
+
+    $newQueueNumber = $dailyTotal + 1;
+
+    // Calculate Letter based on Hour (9=A, 10=B, etc.)
+    $hour = (int)date('H', strtotime($slotStart));
+    $letter = chr(ord('A') + ($hour - 9)); 
+    // Ensure valid letter range (A-H ideally, but logic holds for extended hours too)
+    
+    $ticketCode = $letter . '-' . str_pad($newQueueNumber, 2, '0', STR_PAD_LEFT);
+
+    // Insert Appointment
+    $stmt = $conn->prepare(
+        "INSERT INTO appointments
+         (patient_id, staff_id, appointment_date, appointment_type, status, reason, ai_priority, queue_number)
+         VALUES (?, ?, ?, 'Walk-in', 'pending', 'Walk-in Ticket', 'Normal', ?)"
+    );
+
+    $docIdVal = $doctorId ? $doctorId : null;
+    $stmt->bind_param("iissi", $patientId, $docIdVal, $slotStart, $newQueueNumber);
+
+    if ($stmt->execute()) {
+        echo json_encode([
+            'status'        => 'success',
+            'ticket_number' => $ticketCode,
+            'message'       => 'Ticket generated successfully.'
+        ]);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Failed to generate ticket.']);
+    }
+    $stmt->close();
+    exit();
+}
+
+
+/* ══════════════════════════════════════════════════════
    BOOK A NEW APPOINTMENT
    ══════════════════════════════════════════════════════ */
 
@@ -129,45 +205,79 @@ Return ONLY valid JSON. Example: {\"priority\": \"Important\", \"suggestion\": \
 
 
     /* ── Find an Available Time Slot ── */
-    /*
-     * Loop through each hour from 9 AM to 5 PM and check
-     * how many appointments are already booked. Pick the
-     * first slot that still has room.
-     */
 
     $assignedTime = null;
     $queueNumber  = 0;
-    $startHour    = 9;   // First appointment at 9 AM
-    $endHour      = 17;  // Last slot starts at 4 PM
+    $startHour    = 9;
+    $endHour      = 17;
+    $selectedTimePost = $_POST['selected_time'] ?? null;
 
-    for ($hour = $startHour; $hour < $endHour; $hour++) {
-        $slotStart = "$requestDate " . str_pad($hour, 2, '0', STR_PAD_LEFT) . ":00:00";
-        $slotEnd   = "$requestDate " . str_pad($hour + 1, 2, '0', STR_PAD_LEFT) . ":00:00";
-
-        // Count existing appointments in this slot
-        if ($doctorId) {
-            $stmt = $conn->prepare(
-                "SELECT COUNT(*) as booked FROM appointments
-                 WHERE appointment_date >= ? AND appointment_date < ? AND staff_id = ?"
-            );
-            $stmt->bind_param("ssi", $slotStart, $slotEnd, $doctorId);
-        } else {
-            $stmt = $conn->prepare(
-                "SELECT COUNT(*) as booked FROM appointments
-                 WHERE appointment_date >= ? AND appointment_date < ?"
-            );
-            $stmt->bind_param("ss", $slotStart, $slotEnd);
+    if ($selectedTimePost) {
+        // User selected a specific time (e.g. "14:00:00")
+        // Combine date and time
+        $requestedSlotStart = "$requestDate " . $selectedTimePost;
+        
+        // Validate it's within bounds
+        $reqHour = (int)explode(':', $selectedTimePost)[0];
+        if ($reqHour < $startHour || $reqHour >= $endHour) {
+            echo json_encode(['status' => 'error', 'message' => "Selected time is outside clinic hours."]);
+            exit();
         }
 
+        $slotStart = $requestedSlotStart;
+        $slotEnd   = date('Y-m-d H:i:s', strtotime($slotStart . ' +1 hour'));
+
+        // Check availability for this specific slot
+        if ($doctorId) {
+            $stmt = $conn->prepare("SELECT COUNT(*) as booked FROM appointments WHERE appointment_date >= ? AND appointment_date < ? AND staff_id = ?");
+            $stmt->bind_param("ssi", $slotStart, $slotEnd, $doctorId);
+        } else {
+            $stmt = $conn->prepare("SELECT COUNT(*) as booked FROM appointments WHERE appointment_date >= ? AND appointment_date < ?");
+            $stmt->bind_param("ss", $slotStart, $slotEnd);
+        }
         $stmt->execute();
         $bookedCount = $stmt->get_result()->fetch_assoc()['booked'];
         $stmt->close();
 
-        // If there's room in this slot, assign it
         if ($bookedCount < $capacity) {
             $assignedTime = $slotStart;
-            $queueNumber  = $bookedCount + 1;
-            break;
+            // queueNumber calculated later based on daily total
+        } else {
+            echo json_encode(['status' => 'error', 'message' => "Selected time slot is fully booked. Please choose another."]);
+            exit();
+        }
+
+    } else {
+        // Fallback: Auto-assign logic (First available)
+        for ($hour = $startHour; $hour < $endHour; $hour++) {
+            $slotStart = "$requestDate " . str_pad($hour, 2, '0', STR_PAD_LEFT) . ":00:00";
+            $slotEnd   = "$requestDate " . str_pad($hour + 1, 2, '0', STR_PAD_LEFT) . ":00:00";
+
+            // Count existing appointments in this slot
+            if ($doctorId) {
+                $stmt = $conn->prepare(
+                    "SELECT COUNT(*) as booked FROM appointments
+                     WHERE appointment_date >= ? AND appointment_date < ? AND staff_id = ?"
+                );
+                $stmt->bind_param("ssi", $slotStart, $slotEnd, $doctorId);
+            } else {
+                $stmt = $conn->prepare(
+                    "SELECT COUNT(*) as booked FROM appointments
+                     WHERE appointment_date >= ? AND appointment_date < ?"
+                );
+                $stmt->bind_param("ss", $slotStart, $slotEnd);
+            }
+
+            $stmt->execute();
+            $bookedCount = $stmt->get_result()->fetch_assoc()['booked'];
+            $stmt->close();
+
+            // If there's room in this slot, assign it
+            if ($bookedCount < $capacity) {
+                $assignedTime = $slotStart;
+                // queueNumber calculated later
+                break;
+            }
         }
     }
 
@@ -179,6 +289,16 @@ Return ONLY valid JSON. Example: {\"priority\": \"Important\", \"suggestion\": \
         ]);
         exit();
     }
+
+    // Calculate Daily Queue Number
+    $dailyCountSql = "SELECT COUNT(*) as daily_total FROM appointments WHERE DATE(appointment_date) = ?";
+    $stmt = $conn->prepare($dailyCountSql);
+    $stmt->bind_param("s", $requestDate);
+    $stmt->execute();
+    $dailyTotal = $stmt->get_result()->fetch_assoc()['daily_total'] ?? 0;
+    $stmt->close();
+
+    $queueNumber = $dailyTotal + 1;
 
 
     /* ── Handle Document Upload (if any) ── */

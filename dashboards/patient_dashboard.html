@@ -167,9 +167,30 @@
 
                 <!-- Daily Chair Availability Timeline -->
                 <div class="dashboard-card">
-                    <h3>📊 Today's Availability</h3>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                        <h3>📊 Today's Availability</h3>
+                        
+                        <!-- Doctor Filter for Availability -->
+                        <select id="availability-doctor-filter" style="padding:8px; border-radius:6px; border:1px solid #d1d9e0;">
+                            <option value="">All Doctors</option>
+                            <!-- Populated by JS -->
+                        </select>
+                    </div>
+
                     <div id="daily-timeline" class="timeline-container">
                         <p>Loading availability...</p>
+                    </div>
+
+                    <!-- Take a Ticket Section -->
+                    <div style="margin-top:20px; padding-top:20px; border-top:1px solid #eee; text-align:center;">
+                        <p style="margin-bottom:15px; color:#555;">Need to see a doctor immediately?</p>
+                        <button id="btn-take-ticket" class="btn-primary" style="background:#e91e63; border-color:#e91e63;">
+                            🎟️ Take a Ticket (Walk-in)
+                        </button>
+                        <div id="ticket-result" style="display:none; margin-top:15px; background:#fce4ec; padding:15px; border-radius:8px; border:1px solid #f8bbd0;">
+                            <h3 style="margin:0; color:#c2185b;">Your Ticket: <span id="ticket-number">#00</span></h3>
+                            <p style="margin:5px 0 0 0; font-size:14px; color:#880e4f;">Please wait for your number to be called.</p>
+                        </div>
                     </div>
                 </div>
 
@@ -201,41 +222,49 @@
                             <small style="color: var(--primary-color);">🤖 AI will analyze your symptoms before booking.</small>
                         </div>
 
-                        <!-- ── AI Analysis Result (hidden until analysis runs) ── -->
-                        <div id="ai-result-panel" style="display:none; background: linear-gradient(135deg, #e8f5e9 0%, #e3f2fd 100%); border: 2px solid #81c784; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
-                            <h4 style="margin:0 0 12px 0; color:#2e7d32;">🤖 AI Analysis Result</h4>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
-                                <div>
-                                    <small style="color:#777;">Priority Level</small>
-                                    <div id="ai-priority" style="font-weight:bold; font-size:16px; color:#2c3e50;">—</div>
-                                </div>
-                                <div>
-                                    <small style="color:#777;">Recommended Specialty</small>
-                                    <div id="ai-specialty" style="font-weight:bold; font-size:16px; color:#1565c0;">—</div>
-                                </div>
-                            </div>
-                            <div style="background:white; padding:12px; border-radius:8px; margin-bottom:12px;">
-                                <small style="color:#777;">AI Suggestion</small>
-                                <div id="ai-suggestion" style="color:#333; margin-top:4px;">—</div>
-                            </div>
-                            <div id="ai-matching-doctors" style="display:none;">
-                                <small style="color:#777;">Recommended Doctors</small>
-                                <div id="ai-doctors-list" style="display:flex; gap:10px; flex-wrap:wrap; margin-top:8px;"></div>
-                            </div>
-                        </div>
+                        <!-- ── AI Analysis Result (New Panel Below) ── -->
+            <div id="ai-result-panel" style="display:none; background:#f0f4f8; padding:15px; border-radius:8px; margin-bottom:15px; border-left:4px solid #3f51b5;">
+                <h4 style="margin-top:0; color:#1a237e;">🤖 AI Analysis Result</h4>
+                <p><strong>Priority:</strong> <span id="ai-priority" style="font-weight:bold;">Normal</span></p>
+                <p><strong>Suggestion:</strong> <span id="ai-suggestion">Please proceed with booking.</span></p>
+                <p><strong>Recommended Specialty:</strong> <span id="ai-specialty">General Practice</span></p>
+                
+                <div id="ai-matching-doctors" style="margin-top:10px; display:none;">
+                    <p style="margin-bottom:5px; font-size:0.9em; color:#555;">Recommended Doctors:</p>
+                    <div id="ai-doctors-list" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
+                </div>
+            </div>
 
-                        <!-- AI Loading Spinner (hidden until analysis runs) -->
-                        <div id="ai-loading" style="display:none; text-align:center; padding:20px;">
-                            <div class="spinner" style="margin:0 auto 10px;"></div>
-                            <p style="color:#1976d2; font-weight:600;">🤖 AI is analyzing your symptoms...</p>
-                        </div>
+            <!-- Time Slot Selection (Hidden initially) -->
+            <div id="time-slot-section" style="display:none; margin-bottom:20px;">
+                <h4 style="margin-bottom:10px;">🕒 Select a Time:</h4>
+                <div id="time-slots-container" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap:10px;">
+                    <!-- Slots injected by JS -->
+                </div>
+                <input type="hidden" id="selected-time-slot" name="selected_time">
+            </div>
 
-                        <div class="form-group">
-                            <label>Upload Document (Optional)</label>
-                            <input type="file" id="document" class="form-control">
-                        </div>
-                        <button type="submit" class="btn-primary" id="btn-book-submit">Analyze &amp; Book Appointment</button>
-                    </form>
+            <!-- AI Loading Spinner -->
+            <div id="ai-loading" style="display:none; text-align:center; padding:15px;">
+                <div class="spinner"></div> <!-- Ensure spinner CSS exists -->
+                <p>AI is analyzing your symptoms...</p>
+            </div>
+
+            <div class="form-group">
+                <label>Upload Document (Optional)</label>
+                <input type="file" id="document" class="form-control">
+            </div>
+
+            <!-- Step 1 Button -->
+            <button type="button" class="btn-primary" id="btn-analyze" style="width:100%;">
+                🔍 Analyze Symptoms & Find Time
+            </button>
+
+            <!-- Step 2 Button (Hidden) -->
+            <button type="button" class="btn-primary" id="btn-confirm-book" style="display:none; width:100%; background:#43a047; margin-top:10px;">
+                ✅ Confirm Appointment
+            </button>
+        </form>
                 </div>
 
                 <!-- Upcoming Appointments Table -->
@@ -261,16 +290,41 @@
             <!-- ── VIEW: HEALTH RECORDS ── -->
             <div id="view-records" class="content-section">
                 <div class="dashboard-card">
-                    <h3>📋 Health Records</h3>
-                    <p>No records found.</p>
+                    <h3>📋 My Health Records</h3>
+                    <table style="width:100%; border-collapse:collapse; margin-top:15px;">
+                        <thead>
+                            <tr style="background:#f5f5f5; text-align:left;">
+                                <th style="padding:10px;">Date</th>
+                                <th style="padding:10px;">Type</th>
+                                <th style="padding:10px;">Summary</th>
+                                <th style="padding:10px;">Doctor</th>
+                            </tr>
+                        </thead>
+                        <tbody id="records-list">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
             <!-- ── VIEW: PRESCRIPTIONS ── -->
             <div id="view-prescriptions" class="content-section">
                 <div class="dashboard-card">
-                    <h3>💊 Prescriptions</h3>
-                    <p>No prescriptions found.</p>
+                    <h3>💊 My Prescriptions</h3>
+                    <table style="width:100%; border-collapse:collapse; margin-top:15px;">
+                        <thead>
+                            <tr style="background:#f5f5f5; text-align:left;">
+                                <th style="padding:10px;">Medication</th>
+                                <th style="padding:10px;">Dosage</th>
+                                <th style="padding:10px;">Frequency</th>
+                                <th style="padding:10px;">Duration</th>
+                                <th style="padding:10px;">Prescribed By</th>
+                            </tr>
+                        </thead>
+                        <tbody id="prescriptions-list">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -278,14 +332,6 @@
             <div id="view-profile" class="content-section">
                 <div class="dashboard-card">
                     <h3>👤 My Profile</h3>
-                    <form>
-                        <div class="form-group">
-                            <label>Name</label>
-                            <input type="text" class="form-control" id="profile-name" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label>Email</label>
-                            <input type="email" class="form-control" id="profile-email" readonly>
                         </div>
                         <button type="button" class="btn-primary">Update Profile</button>
                     </form>

@@ -154,7 +154,8 @@ if ($action === 'users') {
 if ($action === 'patients') {
     $patients = [];
     $result = $conn->query(
-        "SELECT p.patient_id, p.first_name, p.last_name, p.cpr, p.gender,
+        "SELECT p.patient_id, CONCAT(p.first_name, ' ', p.last_name) as name,
+                p.first_name, p.last_name, p.cpr, p.gender,
                 p.phone, p.blood_type, p.date_of_birth, u.email
          FROM patients p
          JOIN users u ON p.user_id = u.user_id
@@ -178,7 +179,8 @@ if ($action === 'patients') {
 if ($action === 'doctors') {
     $doctors = [];
     $result = $conn->query(
-        "SELECT ms.staff_id, ms.first_name, ms.last_name, ms.specialization,
+        "SELECT ms.staff_id as id, ms.staff_id, CONCAT(ms.first_name, ' ', ms.last_name) as name,
+                ms.first_name, ms.last_name, ms.specialization,
                 ms.department, ms.phone, ms.profile_image, ms.capacity, u.email
          FROM medical_staff ms
          JOIN users u ON ms.user_id = u.user_id
@@ -259,10 +261,12 @@ if ($action === 'prescriptions') {
     $result = $conn->query(
         "SELECT pr.prescription_id, pr.medication_name, pr.dosage,
                 pr.frequency, pr.duration, pr.instructions,
-                CONCAT(p.first_name, ' ', p.last_name) as patient_name
+                CONCAT(p.first_name, ' ', p.last_name) as patient_name,
+                CONCAT(ms.first_name, ' ', ms.last_name) as doctor_name
          FROM prescriptions pr
          JOIN medical_records mr ON pr.record_id = mr.record_id
          JOIN patients p ON mr.patient_id = p.patient_id
+         LEFT JOIN medical_staff ms ON mr.created_by = ms.staff_id
          ORDER BY pr.prescription_id DESC"
     );
 

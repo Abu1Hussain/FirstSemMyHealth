@@ -36,6 +36,33 @@ $response = [];
    dashboard header)
    ═══════════════════════════════ */
 
+/* ═══════════════════════════════
+   HANDLE STATUS UPDATES (POST)
+   (Terminate ticket / Complete)
+   ═══════════════════════════════ */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['appointment_id'], $_POST['status'])) {
+    $apptId = $_POST['appointment_id'];
+    $status = $_POST['status']; // e.g., 'completed' or 'calling'
+
+    $stmt = $conn->prepare("UPDATE appointments SET status = ? WHERE appointment_id = ?");
+    $stmt->bind_param("si", $status, $apptId);
+    
+    if ($stmt->execute()) {
+        echo json_encode(['status' => 'success', 'message' => 'Status updated']);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Failed to update status']);
+    }
+    $stmt->close();
+    exit();
+}
+
+
+/* ═══════════════════════════════
+   DOCTOR'S INFO
+   (Name, email, initial for the
+   dashboard header)
+   ═══════════════════════════════ */
+
 $doctorName = $_SESSION['user_name'] ?? 'Doctor';
 
 // Fetch the doctor's email from the users table
@@ -48,12 +75,6 @@ if ($emailRow = $stmt->get_result()->fetch_assoc()) {
 }
 $stmt->close();
 
-$response['user'] = [
-    'name'    => $doctorName,
-    'initial' => strtoupper(substr($doctorName, 0, 1)),
-    'email'   => $doctorEmail
-];
-
 
 /* ═══════════════════════════════
    FIND DOCTOR'S STAFF PROFILE
@@ -62,8 +83,10 @@ $response['user'] = [
    ═══════════════════════════════ */
 
 $staffId = null;
+$profileImage = 'default_user.png';
+
 $stmt = $conn->prepare(
-    "SELECT staff_id, specialization, department
+    "SELECT staff_id, specialization, department, profile_image
      FROM medical_staff
      WHERE user_id = ?"
 );
@@ -75,8 +98,18 @@ if ($staffRow = $staffResult->fetch_assoc()) {
     $staffId = $staffRow['staff_id'];
     $response['specialization'] = $staffRow['specialization'];
     $response['department']     = $staffRow['department'];
+    if (!empty($staffRow['profile_image'])) {
+        $profileImage = $staffRow['profile_image'];
+    }
 }
 $stmt->close();
+
+$response['user'] = [
+    'name'    => $doctorName,
+    'initial' => strtoupper(substr($doctorName, 0, 1)),
+    'email'   => $doctorEmail,
+    'image_url' => '../image/' . $profileImage
+];
 
 
 /* ═══════════════════════════════
@@ -154,7 +187,7 @@ if ($staffId) {
                 CONCAT(p.first_name, ' ', p.last_name) as patient_name, p.cpr
          FROM appointments a
          JOIN patients p ON a.patient_id = p.patient_id
-         WHERE a.staff_id = ? AND DATE(a.appointment_date) = ?
+         WHERE a.staff_id = ? AND DATE(appointment_date) = ?
          ORDER BY a.appointment_date ASC"
     );
     $stmt->bind_param("is", $staffId, $today);

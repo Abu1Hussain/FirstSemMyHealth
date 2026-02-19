@@ -52,6 +52,20 @@ if ($emailRow = $emailResult->fetch_assoc()) {
 }
 $stmt->close();
 
+// Force default name "Ali Mohamed" if current name is generic or empty
+// (Per user request to have default name as Ali Mohamed)
+if ($userName === 'User' || empty($userName)) {
+    $userName = 'Ali Mohamed';
+    $_SESSION['user_name'] = $userName;
+    
+    // Auto-update DB to reflect this
+    $conn->query("UPDATE users SET name = 'Ali Mohamed' WHERE user_id = $userId");
+    // Also update patient table if exists
+    $conn->query("UPDATE patients SET first_name = 'Ali', last_name = 'Mohamed' WHERE user_id = $userId");
+}
+
+$stmt->close();
+
 $response['user'] = [
     'name'    => $userName,
     'initial' => strtoupper(substr($userName, 0, 1)),  // First letter of name
@@ -178,6 +192,40 @@ $response['timeline'] = $timeline;
 
 
 /* ═══════════════════════════════
+   HANDLE PROFILE UPDATE (POST)
+   ═══════════════════════════════ */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
+    $newName  = trim($_POST['name']);
+    $newEmail = trim($_POST['email']);
+    $newPhone = trim($_POST['phone'] ?? '');
+
+    // Split name into First and Last
+    $parts = explode(' ', $newName, 2);
+    $firstName = $parts[0];
+    $lastName  = $parts[1] ?? '';
+
+    // Update Users table (Email)
+    $stmt = $conn->prepare("UPDATE users SET email = ? WHERE user_id = ?");
+    $stmt->bind_param("si", $newEmail, $userId);
+    $stmt->execute();
+    $stmt->close();
+
+    // Update Patients table (Name, Phone)
+    $stmt = $conn->prepare("UPDATE patients SET first_name = ?, last_name = ?, phone = ? WHERE user_id = ?");
+    $stmt->bind_param("sssi", $firstName, $lastName, $newPhone, $userId);
+    
+    if ($stmt->execute()) {
+        $_SESSION['user_name'] = $newName; // Update session
+        echo json_encode(['status' => 'success', 'message' => 'Profile updated successfully.']);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Failed to update profile.']);
+    }
+    $stmt->close();
+    exit();
+}
+
+
+/* ═══════════════════════════════
    PATIENT'S APPOINTMENTS LIST
    (All past and upcoming appointments
    with doctor name and wait time)
@@ -198,8 +246,14 @@ if ($patientId) {
     $appointmentsQuery = $stmt->get_result();
 
     while ($appt = $appointmentsQuery->fetch_assoc()) {
-        // Estimate wait time based on queue position
-        // (roughly 15 minutes per 6 patients)
+        // Calculate Ticket Code (e.g. A-05)
+        $hour = (int)date('H', strtotime($appt['appointment_date']));
+        $startChar = ord('A');
+        $offset = $hour - 9;
+        if ($offset < 0) $offset = 0;
+        $letter = chr($startChar + $offset);
+        $ticketCode = $letter . '-' . str_pad($appt['queue_number'], 2, '0', STR_PAD_LEFT);
+
         $estimatedWait = ceil(($appt['queue_number'] / 6) * 15);
 
         $appointments[] = [
@@ -208,6 +262,7 @@ if ($patientId) {
             'priority'     => $appt['ai_priority'],
             'status'       => ucfirst($appt['status']),
             'queue_number' => $appt['queue_number'],
+            'ticket_code'  => $ticketCode,
             'wait_time'    => $estimatedWait,
             'doctor'       => $appt['doctor_name'] ?? 'General'
         ];
@@ -215,6 +270,65 @@ if ($patientId) {
     $stmt->close();
 }
 $response['appointments'] = $appointments;
+
+
+/* ═══════════════════════════════
+   MEDICAL RECORDS
+   ═══════════════════════════════ */
+$records = [];
+if ($patientId) {
+    $stmt = $conn->prepare(
+        "SELECT mr.*, CONCAT(ms.first_name, ' ', ms.last_name) as doctor_name
+         FROM medical_records mr
+         LEFT JOIN medical_staff ms ON mr.created_by = ms.staff_id
+         WHERE mr.patient_id = ?
+         ORDER BY mr.record_date DESC"
+    );
+    $stmt->bind_param("i", $patientId);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) {
+        $records[] = [
+            'date'    => date('M d, Y', strtotime($row['record_date'])),
+            'type'    => $row['record_type'],
+            'summary' => $row['summary'],
+            'doctor'  => $row['doctor_name'] ?? 'System'
+        ];
+    }
+    $stmt->close();
+}
+$response['records'] = $records;
+
+
+/* ═══════════════════════════════
+   PRESCRIPTIONS
+   ═══════════════════════════════ */
+$prescriptions = [];
+if ($patientId) {
+    $stmt = $conn->prepare(
+        "SELECT pr.*, 
+                CONCAT(ms.first_name, ' ', ms.last_name) as doctor_name
+         FROM prescriptions pr
+         JOIN medical_records mr ON pr.record_id = mr.record_id
+         LEFT JOIN medical_staff ms ON mr.created_by = ms.staff_id
+         WHERE mr.patient_id = ?
+         ORDER BY pr.prescription_id DESC"
+    );
+    $stmt->bind_param("i", $patientId);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) {
+        $prescriptions[] = [
+            'medication'   => $row['medication_name'],
+            'dosage'       => $row['dosage'],
+            'frequency'    => $row['frequency'],
+            'duration'     => $row['duration'],
+            'doctor'       => $row['doctor_name'] ?? 'System'
+        ];
+    }
+    $stmt->close();
+}
+$response['prescriptions'] = $prescriptions;
 
 
 /* ═══════════════════════════════

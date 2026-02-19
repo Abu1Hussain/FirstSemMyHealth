@@ -98,7 +98,7 @@ for ($hour = $startHour; $hour < $endHour; $hour++) {
     if ($doctorId) {
         // Use the specific doctor's capacity
         $capQuery = $conn->query("SELECT capacity FROM medical_staff WHERE staff_id = '$doctorId'");
-        if ($capRow = $capQuery->fetch_assoc()) {
+        if ($capQuery && $capRow = $capQuery->fetch_assoc()) {
             $maxChairs = $capRow['capacity'];
         }
     }
