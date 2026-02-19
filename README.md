@@ -73,7 +73,9 @@ A comprehensive web-based Medical Center Management System designed to streamlin
 
 ## 🔑 Demo Credentials
 
-Use these accounts to test different roles in the system. **Password for all accounts:** `pass1234`
+Use these accounts to test different roles in the system.
+**Password for all accounts:** `pass1234`
+**MFA Code:** `111111`
 
 | Role        | Email                  | Password   |
 | :---------- | :--------------------- | :--------- |
