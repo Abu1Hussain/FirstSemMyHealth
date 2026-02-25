@@ -35,7 +35,7 @@ A comprehensive web-based Medical Center Management System designed to streamlin
 
 ### Prerequisites
 
-- A local server environment (e.g., [XAMPP](https://www.apachefriends.org/), [WAMP](https://www.wampserver.com/), or [MAMP](https://www.mamp.info/)).
+- A local server environment ([XAMPP](https://www.apachefriends.org/)).
 - PHP 7.4 or higher.
 - MySQL 5.7 or higher.
 
