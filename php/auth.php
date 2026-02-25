@@ -111,7 +111,7 @@ if ($isRegistering) {
 
     // --- Step 5: Create the login account in the users table ---
 
-    $stmt = $conn->prepare("INSERT INTO users (email, password_hash, role) VALUES (?, ?, 'patient')");
+    $stmt = $conn->prepare("INSERT INTO users (email, hash_password, role) VALUES (?, ?, 'patient')");
     $stmt->bind_param("ss", $email, $hashedPassword);
 
     if ($stmt->execute()) {
@@ -156,7 +156,7 @@ if ($isLoggingIn) {
 
     // --- Step 1: Try to find the user by email ---
 
-    $stmt = $conn->prepare("SELECT user_id, email, password_hash, role FROM users WHERE email = ?");
+    $stmt = $conn->prepare("SELECT user_id, email, hash_password, role FROM users WHERE email = ?");
     $stmt->bind_param("s", $identifier);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -168,7 +168,7 @@ if ($isLoggingIn) {
 
     if (!$user) {
         $stmt = $conn->prepare(
-            "SELECT u.user_id, u.email, u.password_hash, u.role
+            "SELECT u.user_id, u.email, u.hash_password, u.role
              FROM users u
              JOIN patients p ON u.user_id = p.user_id
              WHERE p.cpr = ?"
@@ -192,7 +192,7 @@ if ($isLoggingIn) {
      * just typed with the hashed version stored in the database.
      * It returns true if they match, false if they don't.
      */
-    if (!password_verify($password, $user['password_hash'])) {
+    if (!password_verify($password, $user['hash_password'])) {
         sendResponse('error', 'Incorrect email/CPR or password. Please try again.');
     }
 

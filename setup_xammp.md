@@ -47,21 +47,43 @@ Follow these steps to set up the **FirstSemMyHealth** project on your local mach
 
 ---
 
-## 4️⃣ Automated Database Setup
+## 4️⃣ Database Setup (3 Methods)
+
+You can set up the database using any of the following three methods. **Method A is the recommended and fastest way.**
+
+### Method A: Automated Setup (Quickest) ✅
 
 We have included a setup script that automatically creates the database, tables, and demo data.
 
-1.  Open your web browser (Chrome, Edge, Firefox).
-2.  Go to the following URL:
-    👉 [http://localhost/FirstSemMyHealth/php/setup.php](http://localhost/FirstSemMyHealth/php/setup.php)
+1.  Open your web browser.
+2.  Go to: 👉 [http://localhost/FirstSemMyHealth/php/setup.php](http://localhost/FirstSemMyHealth/php/setup.php)
+3.  Wait for the message **"Setup and seeding completed successfully!"**.
 
-> **What this script does:**
->
-> - Creates the `medical_center` database.
-> - Creates all required tables (users, patients, doctors, medical records, etc.).
-> - **Seeds demo accounts** (Admin, Patient, and Doctors).
+---
 
-✅ Once you see the message **"Setup and seeding completed successfully!"**, you are ready to use the site.
+### Method B: Manual Setup (via phpMyAdmin UI)
+
+If you prefer using the XAMPP interface:
+
+1.  Open the **XAMPP Control Panel** and click the **Admin** button next to **MySQL**.
+2.  In the phpMyAdmin dashboard, click the **Import** tab at the top.
+3.  Click **Choose File** and navigate to:
+    `C:\xampp\htdocs\FirstSemMyHealth\DataBase\master_setup.sql`
+4.  Scroll to the bottom and click **Go** (or **Import**).
+5.  ✅ This will create the `medical_center` database and all required tables.
+
+---
+
+### Method C: Command Line Setup (For Developers)
+
+If you have MySQL in your PATH:
+
+1.  Open a terminal or CMD.
+2.  Run the following command:
+    ```bash
+    mysql -u root -p < "C:\xampp\htdocs\FirstSemMyHealth\DataBase\master_setup.sql"
+    ```
+3.  (Press Enter when asked for a password, as XAMPP's default is empty).
 
 ---
 
@@ -77,36 +99,32 @@ We have included a setup script that automatically creates the database, tables,
 | **Admin**     | `admin@AM.com`          | `pass1234` |
 | **Patient**   | `patient@AM.com`        | `pass1234` |
 | **Doctor 1**  | `doctor1@example.test`  | `pass1234` |
-| **Doctor 2**  | `doctor2@example.test`  | `pass1234` |
 | ...           | ...                     | ...        |
 | **Doctor 10** | `doctor10@example.test` | `pass1234` |
 
 ---
 
-## ❓ Troubleshooting
+## ❓ Troubleshooting & Verification
 
-### ❌ Database Connection Error?
+### ✅ Verify Database Connection
 
-If you see a "Connection failed" error:
+Open `DataBase/db_connect.php` and verify these settings (default XAMPP):
 
-1.  Open the file `php/db_connect.php` in a text editor.
-2.  Ensure the settings match your XAMPP configuration (default is usually correct):
-    ```php
-    $servername = "localhost";
-    $username   = "root";     // Default XAMPP user
-    $password   = "";         // Default XAMPP password is empty
-    $dbname     = "medical_center";
-    ```
+```php
+$servername = "localhost";
+$username   = "root";     // Default XAMPP user
+$password   = "";         // Default XAMPP password is empty
+$dbname     = "medical_center";
+```
 
 ### ❌ Apache Won't Start?
 
-If existing software (like Skype or IIS) is using port 80:
+If port 80 is blocked:
 
 1.  Click **Config** > **Apache (httpd.conf)** in XAMPP.
 2.  Change `Listen 80` to `Listen 8080`.
-3.  Restart Apache.
-4.  Access the site at `http://localhost:8080/FirstSemMyHealth/`.
+3.  Access the site at `http://localhost:8080/FirstSemMyHealth/`.
 
-### ❌ Images Not Loading?
+### ❌ "Table not found" Errors?
 
-Ensure the `image` folder is inside `FirstSemMyHealth` and contains the doctor images (e.g., `doc1(Female).jpg`, `doc2(Male).jpg`).
+If you manually imported `schema_medical_center.sql` but see errors about missing data, make sure to also run the seeding files in the `DataBase/` folder (e.g., `allusers_simple.sql`, `doctors_simple.sql`) or simply use **Method A** above.

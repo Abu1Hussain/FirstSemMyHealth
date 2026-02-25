@@ -43,6 +43,7 @@ if (isset($_POST['take_ticket'])) {
     $userId    = $_SESSION['user_id'];
     $requestDate = date('Y-m-d');
     $doctorId    = $_POST['doctor_id'] ?? null;
+    $selectedTime = $_POST['selected_time'] ?? null; // e.g. "14:00:00"
 
     // Look up the patient profile
     $stmt = $conn->prepare("SELECT patient_id FROM patients WHERE user_id = ?");
@@ -58,19 +59,35 @@ if (isset($_POST['take_ticket'])) {
     $patientId = $patientResult->fetch_assoc()['patient_id'];
     $stmt->close();
 
-    // Assign to next available slot today
-    // For ticket logic, we just find the current hour's slot or next available
-    $currentHour = (int)date('H');
-    if ($currentHour < 9) $currentHour = 9;
-    if ($currentHour >= 17) {
-        echo json_encode(['status' => 'error', 'message' => 'Clinic is closed. Please come back tomorrow.']);
+    // --- Daily Ticket Limit (Max 2 per day) ---
+    $limitCheckSql = "SELECT COUNT(*) as ticket_count FROM appointments WHERE patient_id = ? AND DATE(appointment_date) = ?";
+    $stmt = $conn->prepare($limitCheckSql);
+    $stmt->bind_param("is", $patientId, $requestDate);
+    $stmt->execute();
+    $ticketCount = $stmt->get_result()->fetch_assoc()['ticket_count'] ?? 0;
+    $stmt->close();
+
+    if ($ticketCount >= 2) {
+        echo json_encode(['status' => 'error', 'message' => 'Daily limit reached. You can only take 2 tickets per day.']);
         exit();
     }
 
-    $slotStart = "$requestDate " . str_pad($currentHour, 2, '0', STR_PAD_LEFT) . ":00:00";
+    // --- Handle Time Selection ---
+    $currentHour = (int)date('H');
+    if ($selectedTime) {
+        $hour = (int)explode(':', $selectedTime)[0];
+        $slotStart = "$requestDate " . $selectedTime;
+    } else {
+        if ($currentHour < 9) $currentHour = 9;
+        if ($currentHour >= 17) {
+            echo json_encode(['status' => 'error', 'message' => 'Clinic is closed. Please come back tomorrow.']);
+            exit();
+        }
+        $hour = $currentHour;
+        $slotStart = "$requestDate " . str_pad($currentHour, 2, '0', STR_PAD_LEFT) . ":00:00";
+    }
     
-    // Calculate Daily Queue Number (Ticket Number)
-    // We want the total count of appointments for the entire day, regardless of doctor or slot
+    // Calculate Daily Queue Number
     $dailyCountSql = "SELECT COUNT(*) as daily_total FROM appointments WHERE DATE(appointment_date) = ?";
     $stmt = $conn->prepare($dailyCountSql);
     $stmt->bind_param("s", $requestDate);
@@ -81,23 +98,34 @@ if (isset($_POST['take_ticket'])) {
     $newQueueNumber = $dailyTotal + 1;
 
     // Calculate Letter based on Hour (9=A, 10=B, etc.)
-    $hour = (int)date('H', strtotime($slotStart));
     $letter = chr(ord('A') + ($hour - 9)); 
-    // Ensure valid letter range (A-H ideally, but logic holds for extended hours too)
-    
     $ticketCode = $letter . '-' . str_pad($newQueueNumber, 2, '0', STR_PAD_LEFT);
 
     // Insert Appointment
     $stmt = $conn->prepare(
         "INSERT INTO appointments
-         (patient_id, staff_id, appointment_date, appointment_type, status, reason, ai_priority, queue_number)
-         VALUES (?, ?, ?, 'Walk-in', 'pending', 'Walk-in Ticket', 'Normal', ?)"
+         (patient_id, staff_id, appointment_date, appointment_type, status, reason, ai_priority, queue_number, created_by)
+         VALUES (?, ?, ?, 'Walk-in', 'pending', 'Walk-in Ticket', 'Normal', ?, ?)"
     );
 
     $docIdVal = $doctorId ? $doctorId : null;
-    $stmt->bind_param("iissi", $patientId, $docIdVal, $slotStart, $newQueueNumber);
+    $stmt->bind_param("iisii", $patientId, $docIdVal, $slotStart, $newQueueNumber, $userId);
 
     if ($stmt->execute()) {
+        // Log the event
+        $logMsg = "Ticket Generated: $ticketCode at $slotStart";
+        $stmtLog = $conn->prepare("INSERT INTO system_logs (user_id, event, status) VALUES (?, ?, 'info')");
+        $stmtLog->bind_param("is", $userId, $logMsg);
+        $stmtLog->execute();
+        $stmtLog->close();
+
+        // --- NEW: Insert into TICKETS table ---
+        $apptId = $conn->insert_id;
+        $stmtTick = $conn->prepare("INSERT INTO tickets (patient_id, appointment_id, ticket_code) VALUES (?, ?, ?)");
+        $stmtTick->bind_param("iis", $patientId, $apptId, $ticketCode);
+        $stmtTick->execute();
+        $stmtTick->close();
+
         echo json_encode([
             'status'        => 'success',
             'ticket_number' => $ticketCode,
@@ -120,20 +148,28 @@ if (isset($_POST['book_appointment'])) {
     $userId = $_SESSION['user_id'];
     $reason = trim($_POST['reason'] ?? '');
 
-    // Look up the patient profile for this user
-    $stmt = $conn->prepare("SELECT patient_id FROM patients WHERE user_id = ?");
-    $stmt->bind_param("i", $userId);
-    $stmt->execute();
-    $patientResult = $stmt->get_result();
+    $userRole = $_SESSION['user_role'] ?? 'patient';
+    $patientId = null;
 
-    if (!$patientResult || $patientResult->num_rows === 0) {
+    if ($userRole === 'admin' && isset($_POST['patient_id'])) {
+        // Admin booking for a specific patient
+        $patientId = $_POST['patient_id'];
+    } else {
+        // Look up the patient profile for this user
+        $stmt = $conn->prepare("SELECT patient_id FROM patients WHERE user_id = ?");
+        $stmt->bind_param("i", $userId);
+        $stmt->execute();
+        $patientResult = $stmt->get_result();
+
+        if (!$patientResult || $patientResult->num_rows === 0) {
+            $stmt->close();
+            echo json_encode(['status' => 'error', 'message' => 'Patient profile not found. Please contact support.']);
+            exit();
+        }
+
+        $patientId = $patientResult->fetch_assoc()['patient_id'];
         $stmt->close();
-        echo json_encode(['status' => 'error', 'message' => 'Patient profile not found. Please contact support.']);
-        exit();
     }
-
-    $patientId = $patientResult->fetch_assoc()['patient_id'];
-    $stmt->close();
 
 
     /* ── AI Triage: Determine Priority via OpenAI ── */
@@ -320,28 +356,108 @@ Return ONLY valid JSON. Example: {\"priority\": \"Important\", \"suggestion\": \
 
     $stmt = $conn->prepare(
         "INSERT INTO appointments
-         (patient_id, staff_id, appointment_date, appointment_type, status, reason, ai_priority, ai_suggestion, queue_number)
-         VALUES (?, ?, ?, 'General', 'pending', ?, ?, ?, ?)"
+         (patient_id, staff_id, appointment_date, appointment_type, status, reason, ai_priority, ai_suggestion, queue_number, created_by)
+         VALUES (?, ?, ?, 'General', 'pending', ?, ?, ?, ?, ?)"
     );
 
     // If no doctor was selected, staff_id will be NULL
     if ($doctorId) {
-        $stmt->bind_param("iissssi", $patientId, $doctorId, $assignedTime, $reason, $priority, $aiSuggestion, $queueNumber);
+        $stmt->bind_param("iissssii", $patientId, $doctorId, $assignedTime, $reason, $priority, $aiSuggestion, $queueNumber, $userId);
     } else {
         $nullDoctor = null;
-        $stmt->bind_param("iissssi", $patientId, $nullDoctor, $assignedTime, $reason, $priority, $aiSuggestion, $queueNumber);
+        $stmt->bind_param("iissssii", $patientId, $nullDoctor, $assignedTime, $reason, $priority, $aiSuggestion, $queueNumber, $userId);
     }
 
     if ($stmt->execute()) {
+        $apptId = $conn->insert_id;
+
+        // --- NEW: Insert into TICKETS table for Booked Appointment ---
+        // Reuse ticket code logic
+        $hour = (int)date('H', strtotime($assignedTime));
+        $letter = chr(ord('A') + ($hour - 9)); 
+        $ticketCode = $letter . '-' . str_pad($queueNumber, 2, '0', STR_PAD_LEFT);
+
+        $stmtTick = $conn->prepare("INSERT INTO tickets (patient_id, appointment_id, ticket_code) VALUES (?, ?, ?)");
+        $stmtTick->bind_param("iis", $patientId, $apptId, $ticketCode);
+        $stmtTick->execute();
+        $stmtTick->close();
+
         echo json_encode([
             'status'  => 'success',
-            'message' => "Appointment booked successfully! AI Priority: $priority"
+            'message' => "Appointment booked successfully! AI Priority: $priority. Ticket: $ticketCode"
         ]);
     } else {
         echo json_encode([
             'status'  => 'error',
             'message' => "Failed to book appointment. Please try again."
         ]);
+    }
+    $stmt->close();
+    exit();
+}
+
+
+
+/* ══════════════════════════════════════════════════════
+   TERMINATE APPOINTMENT
+   ══════════════════════════════════════════════════════ */
+
+if (isset($_POST['terminate_appointment'])) {
+    $userId = $_SESSION['user_id'];
+    $userRole = $_SESSION['user_role'] ?? 'patient';
+    $apptId = $_POST['appointment_id'] ?? null;
+    $today = date('Y-m-d');
+
+    if (!$apptId) {
+        echo json_encode(['status' => 'error', 'message' => 'Appointment ID is required.']);
+        exit();
+    }
+
+    // --- Daily Cancellation Limit (Max 2 per day) for Patients ---
+    if ($userRole === 'patient') {
+        $cancelCheckSql = "SELECT COUNT(*) as cancel_count FROM system_logs 
+                          WHERE created_by = ? AND event_type = 'Appointment Cancelled' 
+                          AND DATE(created_at) = ?";
+        $stmt = $conn->prepare($cancelCheckSql);
+        $stmt->bind_param("is", $userId, $today);
+        $stmt->execute();
+        $cancelCount = $stmt->get_result()->fetch_assoc()['cancel_count'] ?? 0;
+        $stmt->close();
+
+        if ($cancelCount >= 2) {
+            echo json_encode(['status' => 'error', 'message' => 'Daily cancellation limit reached. You can only cancel 2 tickets per day.']);
+            exit();
+        }
+    }
+
+    // Admins can terminate anything. Patients can only terminate their OWN appointments.
+    if ($userRole === 'admin') {
+        $stmt = $conn->prepare("DELETE FROM appointments WHERE appointment_id = ?");
+        $stmt->bind_param("i", $apptId);
+    } else {
+        // Patient check: must own the patient_id or have created it
+        $stmt = $conn->prepare(
+            "UPDATE appointments a
+             JOIN patients p ON a.patient_id = p.patient_id
+             SET a.status = 'terminated'
+             WHERE a.appointment_id = ? AND (p.user_id = ? OR a.created_by = ?)"
+        );
+        $stmt->bind_param("iii", $apptId, $userId, $userId);
+    }
+
+    if ($stmt->execute()) {
+        $msg = ($userRole === 'admin') ? 'Appointment deleted successfully.' : 'Appointment terminated successfully.';
+        
+        // Log the cancellation
+        $logMsg = "Appointment $apptId Cancelled by User $userId";
+        $stmtLog = $conn->prepare("INSERT INTO system_logs (user_id, event, status) VALUES (?, ?, 'warning')");
+        $stmtLog->bind_param("is", $userId, $logMsg);
+        $stmtLog->execute();
+        $stmtLog->close();
+
+        echo json_encode(['status' => 'success', 'message' => $msg]);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Failed to process termination request.']);
     }
     $stmt->close();
     exit();

@@ -44,31 +44,26 @@ $userName = $_SESSION['user_name'] ?? 'User';
 // Fetch the user's email from the users table
 $userEmail = '';
 $stmt = $conn->prepare("SELECT email FROM users WHERE user_id = ?");
-$stmt->bind_param("i", $userId);
-$stmt->execute();
-$emailResult = $stmt->get_result();
-if ($emailRow = $emailResult->fetch_assoc()) {
-    $userEmail = $emailRow['email'];
+if ($stmt) {
+    $stmt->bind_param("i", $userId);
+    $stmt->execute();
+    $emailResult = $stmt->get_result();
+    if ($emailRow = $emailResult->fetch_assoc()) {
+        $userEmail = $emailRow['email'];
+    }
+    $stmt->close();
 }
-$stmt->close();
 
 // Force default name "Ali Mohamed" if current name is generic or empty
-// (Per user request to have default name as Ali Mohamed)
 if ($userName === 'User' || empty($userName)) {
     $userName = 'Ali Mohamed';
     $_SESSION['user_name'] = $userName;
-    
-    // Auto-update DB to reflect this
-    $conn->query("UPDATE users SET name = 'Ali Mohamed' WHERE user_id = $userId");
-    // Also update patient table if exists
     $conn->query("UPDATE patients SET first_name = 'Ali', last_name = 'Mohamed' WHERE user_id = $userId");
 }
 
-$stmt->close();
-
 $response['user'] = [
     'name'    => $userName,
-    'initial' => strtoupper(substr($userName, 0, 1)),  // First letter of name
+    'initial' => strtoupper(substr($userName, 0, 1)),
     'email'   => $userEmail
 ];
 
@@ -235,9 +230,12 @@ $appointments = [];
 
 if ($patientId) {
     $stmt = $conn->prepare(
-        "SELECT a.*, CONCAT(ms.first_name, ' ', ms.last_name) as doctor_name
+        "SELECT a.*, 
+                CONCAT(ms.first_name, ' ', ms.last_name) as doctor_name,
+                t.ticket_code
          FROM appointments a
          LEFT JOIN medical_staff ms ON a.staff_id = ms.staff_id
+         LEFT JOIN tickets t ON a.appointment_id = t.appointment_id
          WHERE a.patient_id = ?
          ORDER BY a.appointment_date DESC"
     );
@@ -246,23 +244,16 @@ if ($patientId) {
     $appointmentsQuery = $stmt->get_result();
 
     while ($appt = $appointmentsQuery->fetch_assoc()) {
-        // Calculate Ticket Code (e.g. A-05)
-        $hour = (int)date('H', strtotime($appt['appointment_date']));
-        $startChar = ord('A');
-        $offset = $hour - 9;
-        if ($offset < 0) $offset = 0;
-        $letter = chr($startChar + $offset);
-        $ticketCode = $letter . '-' . str_pad($appt['queue_number'], 2, '0', STR_PAD_LEFT);
-
         $estimatedWait = ceil(($appt['queue_number'] / 6) * 15);
 
         $appointments[] = [
-            'date'         => date('M d, Y h:i A', strtotime($appt['appointment_date'])),
+            'appointment_id' => $appt['appointment_id'],
+            'date'           => date('M d, Y h:i A', strtotime($appt['appointment_date'])),
             'reason'       => $appt['reason'],
             'priority'     => $appt['ai_priority'],
             'status'       => ucfirst($appt['status']),
             'queue_number' => $appt['queue_number'],
-            'ticket_code'  => $ticketCode,
+            'ticket_code'  => $appt['ticket_code'] ?? 'N/A',
             'wait_time'    => $estimatedWait,
             'doctor'       => $appt['doctor_name'] ?? 'General'
         ];

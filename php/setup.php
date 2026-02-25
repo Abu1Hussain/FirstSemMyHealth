@@ -58,11 +58,19 @@ echo "✅ Database '$dbname' is ready.<br><br>";
 $conn->query("CREATE TABLE IF NOT EXISTS users (
     user_id       INT AUTO_INCREMENT PRIMARY KEY,
     email         VARCHAR(255) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
+    hash_password VARCHAR(255) NOT NULL,
     role          ENUM('patient', 'doctor', 'admin') DEFAULT 'patient',
     created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-echo "📋 Table 'users' created.<br>";
+
+// --- Migration: Rename password_hash to hash_password if it exists ---
+$checkColumn = $conn->query("SHOW COLUMNS FROM users LIKE 'password_hash'");
+if ($checkColumn && $checkColumn->num_rows > 0) {
+    $conn->query("ALTER TABLE users CHANGE password_hash hash_password VARCHAR(255) NOT NULL");
+    echo "🔄 Migrated 'users' table: Renamed 'password_hash' to 'hash_password'.<br>";
+}
+
+echo "📋 Table 'users' ready.<br>";
 
 
 /* ────────────────────────────────────────────────────
@@ -126,14 +134,16 @@ $conn->query("CREATE TABLE IF NOT EXISTS appointments (
     staff_id         INT,
     appointment_date DATETIME NOT NULL,
     appointment_type VARCHAR(100) DEFAULT 'General',
-    status           ENUM('pending', 'confirmed', 'completed', 'cancelled') DEFAULT 'pending',
+    status           VARCHAR(50) DEFAULT 'pending',
     reason           TEXT,
     ai_priority      ENUM('Highly Important', 'Important', 'Normal') DEFAULT 'Normal',
     ai_suggestion    TEXT,
     queue_number     INT,
+    created_by       INT,
     created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (patient_id) REFERENCES patients(patient_id) ON DELETE CASCADE,
-    FOREIGN KEY (staff_id)   REFERENCES medical_staff(staff_id) ON DELETE SET NULL
+    FOREIGN KEY (staff_id)   REFERENCES medical_staff(staff_id) ON DELETE SET NULL,
+    FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 echo "📋 Table 'appointments' created.<br>";
 
@@ -310,7 +320,7 @@ $hashedPassword     = password_hash($defaultPassword, PASSWORD_DEFAULT);
 
 /* ── Seed Admin Account ── */
 
-$stmt = $conn->prepare("INSERT INTO users (email, password_hash, role) VALUES (?, ?, 'admin') ON DUPLICATE KEY UPDATE password_hash = ?");
+$stmt = $conn->prepare("INSERT INTO users (email, hash_password, role) VALUES (?, ?, 'admin') ON DUPLICATE KEY UPDATE hash_password = ?");
 $stmt->bind_param("sss", $adminEmail, $hashedPassword, $hashedPassword);
 $adminEmail = 'admin@AM.com';
 $stmt->execute();
@@ -320,7 +330,7 @@ echo "👤 Admin: admin@AM.com / pass1234<br>";
 
 /* ── Seed Demo Patient ── */
 
-$stmt = $conn->prepare("INSERT INTO users (email, password_hash, role) VALUES (?, ?, 'patient') ON DUPLICATE KEY UPDATE password_hash = ?");
+$stmt = $conn->prepare("INSERT INTO users (email, hash_password, role) VALUES (?, ?, 'patient') ON DUPLICATE KEY UPDATE hash_password = ?");
 $stmt->bind_param("sss", $patientEmail, $hashedPassword, $hashedPassword);
 $patientEmail = 'patient@AM.com';
 $stmt->execute();
@@ -484,7 +494,7 @@ foreach ($doctorsList as $doctor) {
      * ON DUPLICATE KEY UPDATE ensures we don't get an error if the
      * email already exists — it just updates the password instead.
      */
-    $stmt = $conn->prepare("INSERT INTO users (email, password_hash, role) VALUES (?, ?, 'doctor') ON DUPLICATE KEY UPDATE password_hash = ?");
+    $stmt = $conn->prepare("INSERT INTO users (email, hash_password, role) VALUES (?, ?, 'doctor') ON DUPLICATE KEY UPDATE hash_password = ?");
     $stmt->bind_param("sss", $doctor['email'], $hashedPassword, $hashedPassword);
     $stmt->execute();
     $stmt->close();
@@ -568,13 +578,10 @@ if ($patientIdResult && $patientIdResult->num_rows > 0) {
         echo "<br>📄 Sample medical record, diagnosis, prescription, and lab result seeded.<br>";
     }
 
-    // Create a sample appointment (if none exists)
-    $existingAppointment = $conn->query("SELECT appointment_id FROM appointments WHERE patient_id = $patientId LIMIT 1");
-    if ($existingAppointment->num_rows === 0) {
-        $conn->query("INSERT INTO appointments (patient_id, staff_id, appointment_date, appointment_type, status, reason, ai_priority, ai_suggestion, queue_number)
-                      VALUES ($patientId, $firstDoctorId, '2026-02-20 10:00:00', 'Follow-up', 'pending', 'Follow-up for migraine treatment', 'Important', 'Schedule within 24 hours.', 1)");
-        echo "📅 Sample appointment seeded.<br>";
-    }
+    /* 
+       Dummy appointments for TODAY have been removed 
+       to allow for a clean testing environment.
+    */
 }
 
 

@@ -533,6 +533,7 @@
                   <tr>
                     <th>Name</th>
                     <th>CPR</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody id="patientsTableBody"></tbody>
@@ -599,6 +600,7 @@
                     <th>Patient</th>
                     <th>Doctor</th>
                     <th>Status</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody id="appointmentsTableBody"></tbody>
@@ -907,7 +909,7 @@
           if (!data) return;
           document.getElementById("patientsTableBody").innerHTML = data
             .map(function (p) {
-              return "<tr><td>" + p.name + "</td><td>" + p.cpr + "</td></tr>";
+              return '<tr><td>' + p.name + '</td><td>' + p.cpr + '</td><td><button class="status-badge status-active" style="border:none;cursor:pointer;" onclick="bookForPatient(' + p.id + ', \'' + p.name + '\')"><i class="fas fa-calendar-plus"></i> Book</button></td></tr>';
             })
             .join("");
         });
@@ -933,6 +935,7 @@
               status: a.status
                 ? a.status.charAt(0).toUpperCase() + a.status.slice(1)
                 : "Pending",
+              id: a.appointment_id
             };
           });
           setupYearFilter();
@@ -1102,7 +1105,11 @@
                 a.doctor +
                 '</td><td><span class="status-badge status-active">' +
                 a.status +
-                "</span></td></tr>"
+                "</span></td><td>" + 
+                ((a.status.toLowerCase() !== 'terminated' && a.status.toLowerCase() !== 'completed') ? 
+                  '<button class="status-badge status-danger" style="background:#f44336; color:white; border:none; cursor:pointer;" onclick="terminateAppointment(' + a.id + ')">Terminate</button>' : 
+                  '—') +
+                "</td></tr>"
               );
             })
             .join("");
@@ -1157,6 +1164,33 @@
         document.getElementById("docModal").style.display = "none";
       }
 
+      /* ── Terminate Appointment ── */
+      function terminateAppointment(apptId) {
+        if (!confirm("Are you sure you want to terminate this appointment?")) return;
+
+        var formData = new FormData();
+        formData.append("terminate_appointment", "1");
+        formData.append("appointment_id", apptId);
+
+        fetch("../php/appointment_handler.php", {
+          method: "POST",
+          body: formData
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (data.status === "success") {
+            alert("Appointment terminated successfully.");
+            loadAllTables(); // Refresh
+          } else {
+            alert("Error: " + data.message);
+          }
+        })
+        .catch(function(err) {
+          console.error("Termination error:", err);
+          alert("Failed to terminate appointment.");
+        });
+      }
+
       window.onclick = function (event) {
         if (event.target === document.getElementById("docModal")) {
           closeDocumentModal();
@@ -1176,6 +1210,43 @@
          Fetches chart data from the API and creates
          the Chart.js instances.
          ───────────────────────────────────────────── */
+      /* ── Book for Patient ── */
+      function bookForPatient(patientId, patientName) {
+        var reason = prompt("Enter reason for appointment for " + patientName + ":");
+        if (!reason) return;
+
+        var date = prompt("Enter date (YYYY-MM-DD HH:MM):", new Date().toISOString().slice(0, 16).replace('T', ' '));
+        if (!date) return;
+
+        var doctorId = prompt("Enter Doctor ID (Staff ID):");
+        if (!doctorId) return;
+
+        var formData = new FormData();
+        formData.append("book_appointment", "1");
+        formData.append("patient_id", patientId);
+        formData.append("reason", reason);
+        formData.append("date", date);
+        formData.append("doctor_id", doctorId);
+
+        fetch("../php/appointment_handler.php", {
+          method: "POST",
+          body: formData
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (data.status === "success") {
+            alert("Appointment booked successfully for " + patientName);
+            loadAllTables();
+          } else {
+            alert("Error: " + data.message);
+          }
+        })
+        .catch(function(err) {
+          console.error("Booking error:", err);
+          alert("Failed to book appointment.");
+        });
+      }
+
       function loadCharts() {
         apiFetch("chart_data").then(function (data) {
           if (!data) return;

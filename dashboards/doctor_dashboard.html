@@ -1,214 +1,707 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MyHealth – Doctor Dashboard</title>
-    <link rel="stylesheet" href="../css/dashboard.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
     <style>
+        body { font-family: 'Inter', sans-serif; }
+
+        /* ── Scrollbar ── */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+        .dark ::-webkit-scrollbar-track { background: #2d3748; }
+        .dark ::-webkit-scrollbar-thumb { background: #4a5568; }
+        .dark ::-webkit-scrollbar-thumb:hover { background: #718096; }
+
+        /* ── Sidebar ── */
+        .sidebar { transition: width 0.3s ease-in-out; }
+        .sidebar-collapsed { width: 4.5rem; }
+        .sidebar-expanded  { width: 16rem; }
+        .sidebar-collapsed .sidebar-text,
+        .sidebar-collapsed .sidebar-logo-text,
+        .sidebar-collapsed .profile-info { display: none; }
+        .sidebar-expanded .sidebar-text,
+        .sidebar-expanded .sidebar-logo-text,
+        .sidebar-expanded .profile-info { display: inline; }
+        .sidebar-expanded .sidebar-logo-text { display: block; }
+
         /* ── Section Visibility ── */
-        .content-section        { display: none; }
+        .content-section { display: none; }
         .content-section.active { display: block; }
 
         /* ── Loading Overlay ── */
-        #loading {
+        #loading-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(255,255,255,0.8);
-            z-index: 1000;
+            background: rgba(255,255,255,0.85); z-index: 9999;
             display: flex; justify-content: center; align-items: center;
         }
+        .dark #loading-overlay { background: rgba(17,24,39,0.85); }
         .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
-            border-radius: 50%;
-            width: 40px; height: 40px;
-            animation: spin 1s linear infinite;
+            border: 4px solid #e5e7eb;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%; width: 44px; height: 44px;
+            animation: spin 0.8s linear infinite;
         }
-        @keyframes spin {
-            0%   { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Patient Detail Modal ── */
+        .pd-modal {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 2500; display: flex; justify-content: center; align-items: center;
         }
+        .pd-modal-overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);
+        }
+        .pd-modal-content {
+            position: relative; border-radius: 20px;
+            padding: 35px 30px; width: 90%; max-width: 540px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+            animation: pdSlideIn 0.3s ease;
+            background: #fff;
+        }
+        .dark .pd-modal-content { background: #1f2937; color: #f9fafb; }
+        @keyframes pdSlideIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .pd-modal-close {
+            position: absolute; top: 15px; right: 20px;
+            background: none; border: none; font-size: 28px;
+            cursor: pointer; color: #9ca3af; transition: color 0.2s;
+        }
+        .pd-modal-close:hover { color: #374151; }
+        .dark .pd-modal-close:hover { color: #f9fafb; }
+        .pd-modal-header {
+            display: flex; align-items: center; gap: 16px;
+            margin-bottom: 25px; padding-bottom: 20px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .dark .pd-modal-header { border-bottom-color: #374151; }
+        .pd-avatar {
+            width: 56px; height: 56px; border-radius: 50%;
+            background: linear-gradient(135deg, #4f46e5, #6366f1);
+            color: #fff; display: flex; align-items: center; justify-content: center;
+            font-size: 24px; font-weight: 700; flex-shrink: 0;
+        }
+        .pd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .pd-item {
+            background: #f8f9fb; border-radius: 12px; padding: 12px 14px;
+        }
+        .dark .pd-item { background: #374151; }
+        .pd-label {
+            display: block; font-size: 11px; color: #6b7280;
+            font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        .pd-value { display: block; font-size: 14px; color: #1a237e; font-weight: 500; }
+        .dark .pd-value { color: #93c5fd; }
+
+        /* ── Timer Modal ── */
+        #timer-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 3000;
+            display: none; justify-content: center; align-items: center;
+        }
+
+        /* ── DataTable dark mode ── */
+        .dark .dataTables_wrapper { color: #d1d5db; }
+        .dark .dataTables_wrapper input,
+        .dark .dataTables_wrapper select { background: #374151; color: #f9fafb; border-color: #4b5563; }
+        .dark table.dataTable thead th { background: #374151; color: #f9fafb; border-bottom: 2px solid #4b5563; }
+        .dark table.dataTable tbody tr { background: #1f2937; }
+        .dark table.dataTable tbody tr:hover { background: #374151; }
+        .dark table.dataTable tbody td { border-bottom-color: #374151; color: #d1d5db; }
+        .dark .dataTables_wrapper .dataTables_paginate .paginate_button { color: #d1d5db !important; }
+        .dark .dataTables_wrapper .dataTables_paginate .paginate_button.current { background: #3b82f6 !important; color: #fff !important; border-color: #3b82f6 !important; }
+
+        /* ── Appointment category table styles ── */
+        .appt-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        .appt-table thead tr { background: #f9fafb; }
+        .dark .appt-table thead tr { background: #374151; }
+        .appt-table thead th { padding: 12px 14px; text-align: left; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7280; border-bottom: 2px solid #e5e7eb; }
+        .dark .appt-table thead th { color: #9ca3af; border-bottom-color: #4b5563; }
+        .appt-table tbody td { padding: 12px 14px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
+        .dark .appt-table tbody td { border-bottom-color: #374151; color: #d1d5db; }
+        .appt-table tbody tr:hover { background: #f9fafb; }
+        .dark .appt-table tbody tr:hover { background: #374151; }
+        .badge { padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+        .badge-green  { background: #dcfce7; color: #166534; }
+        .badge-red    { background: #fee2e2; color: #991b1b; }
+        .badge-orange { background: #ffedd5; color: #9a3412; }
+        .badge-blue   { background: #dbeafe; color: #1e40af; }
+        .badge-gray   { background: #f3f4f6; color: #374151; }
+        .dark .badge-green  { background: #166534; color: #bbf7d0; }
+        .dark .badge-red    { background: #991b1b; color: #fecaca; }
+        .dark .badge-orange { background: #9a3412; color: #fed7aa; }
+        .dark .badge-blue   { background: #1e40af; color: #bfdbfe; }
+        .dark .badge-gray   { background: #374151; color: #d1d5db; }
+
+        /* ── Today's schedule card ── */
+        .schedule-item { display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: 12px; transition: background 0.15s; }
+        .schedule-item:hover { background: #f3f4f6; }
+        .dark .schedule-item:hover { background: #374151; }
+        .schedule-time { font-size: 13px; font-weight: 600; color: #3b82f6; min-width: 58px; }
+        .schedule-name { font-size: 14px; font-weight: 500; }
+        .dark .schedule-name { color: #f9fafb; }
+        .schedule-reason { font-size: 12px; color: #6b7280; }
     </style>
-
-    <!-- Ionicons for sidebar icons -->
-    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
-    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
 </head>
-<body>
+<body class="flex h-screen overflow-hidden bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
 
-    <!-- Loading spinner (hidden after data loads) -->
-    <div id="loading"><div class="spinner"></div></div>
-
-    <!-- ═══════════════════════════════════════
-         Sidebar Navigation
-         ═══════════════════════════════════════ -->
-    <div class="sidebar">
-        <div class="logo-section">
-            <div class="logo-text">MyHealth AI</div>
-        </div>
-        <ul class="nav-links">
-            <li class="nav-item">
-                <a href="#" class="nav-link active" data-view="dashboard">
-                    <ion-icon name="grid-outline" class="nav-icon"></ion-icon> Dashboard
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="#" class="nav-link" data-view="patients">
-                    <ion-icon name="people-outline" class="nav-icon"></ion-icon> My Patients
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="#" class="nav-link" data-view="appointments">
-                    <ion-icon name="calendar-outline" class="nav-icon"></ion-icon> Appointments
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="#" class="nav-link" data-view="prescriptions">
-                    <ion-icon name="medkit-outline" class="nav-icon"></ion-icon> Prescriptions
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="#" class="nav-link" data-view="records">
-                    <ion-icon name="document-text-outline" class="nav-icon"></ion-icon> Medical Records
-                </a>
-            </li>
-            <li class="nav-item">
-                <a href="#" class="nav-link" data-view="profile">
-                    <ion-icon name="person-outline" class="nav-icon"></ion-icon> My Profile
-                </a>
-            </li>
-            <li class="nav-item" style="margin-top: auto;">
-                <a href="../php/logout.php" class="nav-link">
-                    <ion-icon name="log-out-outline" class="nav-icon"></ion-icon> Logout
-                </a>
-            </li>
-        </ul>
+    <!-- ── Loading Overlay ── -->
+    <div id="loading-overlay">
+        <div class="spinner"></div>
     </div>
 
-    <!-- ═══════════════════════════════════════
-         Main Content Area
-         ═══════════════════════════════════════ -->
-    <div class="main-content">
-
-        <!-- Header Bar -->
-        <div class="header">
-            <div class="welcome-text">
-                <h2>Welcome, Dr. <span id="user-name">Loading...</span>! 👨‍⚕️</h2>
-            </div>
-            <div class="user-profile">
-                <!-- Added doctor profile image -->
-                <img id="header-doc-img" src="../image/default_user.png" style="width:40px; height:40px; border-radius:50%; object-fit:cover; margin-right:10px; display:none;">
-                <span>Doctor Account</span>
-                <div class="avatar" id="user-initial">?</div>
+    <!-- ══════════════════════════════════════
+         SIDEBAR
+    ══════════════════════════════════════ -->
+    <aside id="sidebar" class="sidebar sidebar-expanded bg-white dark:bg-gray-800 shadow-xl flex flex-col space-y-2 border-r border-gray-200 dark:border-gray-700 fixed inset-y-0 left-0 z-30 overflow-y-auto">
+        <!-- Logo -->
+        <div class="h-16 flex items-center justify-center px-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+            <div class="flex items-center">
+                <svg class="h-10 w-10 text-blue-600 dark:text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                </svg>
+                <span class="sidebar-logo-text ml-3 text-2xl font-bold text-gray-800 dark:text-white">MyHealth</span>
             </div>
         </div>
 
+        <!-- Nav Links -->
+        <nav class="flex-grow px-2 space-y-1 pt-2">
+            <a href="#" data-section="dashboard" class="sidebar-link active flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 group transition-all">
+                <ion-icon name="grid-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
+                <span class="sidebar-text ml-3 text-sm font-medium">Dashboard</span>
+            </a>
+            <a href="#" data-section="patients" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 group transition-all">
+                <ion-icon name="people-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
+                <span class="sidebar-text ml-3 text-sm font-medium">Patient Management</span>
+            </a>
+            <a href="#" data-section="doctors-list" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 group transition-all">
+                <ion-icon name="medkit-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
+                <span class="sidebar-text ml-3 text-sm font-medium">Doctor Management</span>
+            </a>
+            <a href="#" data-section="appointments" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 group transition-all">
+                <ion-icon name="calendar-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
+                <span class="sidebar-text ml-3 text-sm font-medium">Schedule</span>
+            </a>
+            <a href="#" data-section="records" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 group transition-all">
+                <ion-icon name="document-text-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
+                <span class="sidebar-text ml-3 text-sm font-medium">Medical Records</span>
+            </a>
+            <a href="#" data-section="prescriptions" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 group transition-all">
+                <ion-icon name="flask-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
+                <span class="sidebar-text ml-3 text-sm font-medium">Pharmacy & Rx</span>
+            </a>
+            <a href="#" data-section="billing" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 group transition-all">
+                <ion-icon name="card-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
+                <span class="sidebar-text ml-3 text-sm font-medium">Billing</span>
+            </a>
+            <a href="#" data-section="staff" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 group transition-all">
+                <ion-icon name="shield-checkmark-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
+                <span class="sidebar-text ml-3 text-sm font-medium">Staff & Admin</span>
+            </a>
+            <a href="#" data-section="profile" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 group transition-all">
+                <ion-icon name="person-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
+                <span class="sidebar-text ml-3 text-sm font-medium">My Profile</span>
+            </a>
+        </nav>
+
+        <!-- Bottom: User Info + Logout -->
+        <div class="mt-auto p-4 border-t border-gray-200 dark:border-gray-700">
+            <div class="flex items-center">
+                <img id="sidebar-doc-img" src="../image/default_user.png" alt="Doctor Avatar" class="h-10 w-10 rounded-full object-cover" style="display:none;">
+                <div id="sidebar-initial-avatar" class="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-lg">?</div>
+                <div class="profile-info ml-3">
+                    <p id="sidebar-doc-name" class="text-sm font-medium text-gray-800 dark:text-white">Loading…</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Doctor</p>
+                </div>
+            </div>
+            <a href="../php/logout.php" class="w-full mt-3 flex items-center justify-center py-2 px-4 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <ion-icon name="log-out-outline" class="text-lg mr-2"></ion-icon>
+                <span class="sidebar-text">Logout</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- ══════════════════════════════════════
+         MAIN CONTENT
+    ══════════════════════════════════════ -->
+    <div id="mainContent" class="flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ml-64">
+
+        <!-- Top Header -->
+        <header class="h-16 bg-white dark:bg-gray-800 shadow-md flex items-center justify-between px-6 flex-shrink-0 border-b border-gray-200 dark:border-gray-700">
+            <div class="flex items-center">
+                <button id="sidebarToggle" class="flex p-2 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500">
+                    <ion-icon name="menu-outline" class="text-2xl"></ion-icon>
+                </button>
+                <div class="relative ml-4 hidden sm:block">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <ion-icon name="search-outline" class="text-gray-400"></ion-icon>
+                    </span>
+                    <input type="text" placeholder="Search patients or records..." class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all shadow-sm">
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button id="darkModeToggle" class="flex p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none transition-all">
+                    <ion-icon name="moon-outline" id="darkModeIcon" class="text-xl"></ion-icon>
+                </button>
+                <button class="flex relative p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none transition-all">
+                    <ion-icon name="notifications-outline" class="text-xl"></ion-icon>
+                    <span class="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
+                </button>
+                <div class="relative">
+                    <button id="userMenuButton" class="flex items-center space-x-2 focus:outline-none p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all">
+                        <div class="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold" id="header-avatar">?</div>
+                        <span class="hidden md:inline text-sm font-medium text-gray-700 dark:text-gray-300" id="user-name">Loading...</span>
+                        <ion-icon name="chevron-down-outline" class="hidden md:inline text-xs text-gray-500 dark:text-gray-400"></ion-icon>
+                    </button>
+                    <!-- User Dropdown Menu -->
+                    <div id="userMenu" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl py-1 hidden ring-1 ring-black ring-opacity-5 z-20 border border-gray-100 dark:border-gray-700 animate-fade-in">
+                        <a href="#" data-section="profile" class="sidebar-link block px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors">
+                            <ion-icon name="person-outline" class="mr-2 align-middle"></ion-icon> My Profile
+                        </a>
+                        <a href="#" class="block px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors border-t border-gray-100 dark:border-gray-700">
+                            <ion-icon name="settings-outline" class="mr-2 align-middle"></ion-icon> Settings
+                        </a>
+                        <a href="../logout.php" class="block px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-gray-700 transition-colors border-t border-gray-100 dark:border-gray-700">
+                            <ion-icon name="log-out-outline" class="mr-2 align-middle"></ion-icon> Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
         <!-- Content Body -->
-        <div class="content-body">
+        <main class="flex-1 overflow-x-hidden overflow-y-auto p-6 space-y-6">
 
-            <!-- ── VIEW: DASHBOARD (Stats Overview) ── -->
-            <div id="view-dashboard" class="content-section active">
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <span class="stat-value" id="stat-patients">0</span>
-                        <span class="stat-label">Total Patients</span>
+            <!-- ═══════════════════════════════
+                 VIEW: DASHBOARD
+            ═══════════════════════════════ -->
+            <div id="view-dashboard" class="content-section active" data-aos="fade-up">
+                <h1 class="text-3xl font-semibold text-gray-800 dark:text-white mb-6">Dashboard</h1>
+
+                <!-- Stat Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <!-- Total Patients -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 flex items-center justify-between hover:shadow-md transition-all">
+                        <div>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Total Patients</p>
+                            <p class="text-3xl font-black text-gray-800 dark:text-white" id="stat-patients">0</p>
+                        </div>
+                        <div class="p-3 bg-blue-50 dark:bg-blue-900/30 rounded-xl">
+                            <ion-icon name="people-outline" class="text-2xl text-blue-600"></ion-icon>
+                        </div>
                     </div>
-                    <div class="stat-card">
-                        <span class="stat-value" id="stat-appointments">0</span>
-                        <span class="stat-label">Today's Appointments</span>
+                    <!-- Today's Appts -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 flex items-center justify-between hover:shadow-md transition-all">
+                        <div>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Today's List</p>
+                            <p class="text-3xl font-black text-gray-800 dark:text-white" id="stat-appointments">0</p>
+                        </div>
+                        <div class="p-3 bg-green-50 dark:bg-green-900/30 rounded-xl">
+                            <ion-icon name="calendar-outline" class="text-2xl text-green-600"></ion-icon>
+                        </div>
                     </div>
-                    <div class="stat-card">
-                        <span class="stat-value" id="stat-pending">0</span>
-                        <span class="stat-label">Pending Reviews</span>
+                    <!-- Pending Reviews -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 flex items-center justify-between hover:shadow-md transition-all">
+                        <div>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Pending Rx</p>
+                            <p class="text-3xl font-black text-gray-800 dark:text-white" id="stat-pending">0</p>
+                        </div>
+                        <div class="p-3 bg-purple-50 dark:bg-purple-900/30 rounded-xl">
+                            <ion-icon name="flask-outline" class="text-2xl text-purple-600"></ion-icon>
+                        </div>
+                    </div>
+                    <!-- New Stat: Average Wait -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 flex items-center justify-between hover:shadow-md transition-all">
+                        <div>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Avg. Wait</p>
+                            <p class="text-3xl font-black text-gray-800 dark:text-white">12m</p>
+                        </div>
+                        <div class="p-3 bg-orange-50 dark:bg-orange-900/30 rounded-xl">
+                            <ion-icon name="time-outline" class="text-2xl text-orange-600"></ion-icon>
+                        </div>
                     </div>
                 </div>
 
-                <div class="dashboard-card">
-                    <h3>Today's Schedule</h3>
-                    <div id="today-schedule">
-                        <p>No appointments for today.</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ── VIEW: MY PATIENTS / LIVE CONSULTATION ── -->
-            <div id="view-patients" class="content-section">
-                <div class="dashboard-card">
-                    <h3>👥 My Patients (Today)</h3>
-                    <div id="patients-list-container">
-                        Loading patients...
-                    </div>
-                </div>
-            </div>
-
-            <!-- ── TIMER MODAL (Circular Numerical Timer) ── -->
-            <div id="timer-modal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:3000; justify-content:center; align-items:center; flex-direction:column;">
-                <div style="background:white; padding:40px; border-radius:20px; text-align:center; width:90%; max-width:400px; position:relative;">
-                    
-                    <h2 style="margin-bottom:20px; color:#2c3e50;">Patient Consultation</h2>
-                    <h3 id="timer-patient-name" style="color:#1976d2; margin-bottom:30px;">Patient Name</h3>
-
-                    <!-- Circular Timer -->
-                    <div class="timer-container" style="position:relative; width:200px; height:200px; margin:0 auto 30px;">
-                        <svg class="timer-svg" width="200" height="200" viewBox="0 0 200 200" style="transform: rotate(-90deg);">
-                            <circle cx="100" cy="100" r="90" fill="none" stroke="#e0e0e0" stroke-width="10" />
-                            <circle id="timer-progress" cx="100" cy="100" r="90" fill="none" stroke="#4caf50" stroke-width="10" stroke-dasharray="565.48" stroke-dashoffset="0" style="transition: stroke-dashoffset 1s linear;" />
-                        </svg>
-                        <div class="timer-text" style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:48px; font-weight:bold; color:#333;">
-                            <span id="timer-display">10:00</span>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                    <!-- Today's Sessions -->
+                    <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                        <div class="p-6 border-b border-gray-50 dark:border-gray-700 flex justify-between items-center">
+                            <h2 class="text-lg font-bold text-gray-800 dark:text-white">Today's Sessions</h2>
+                            <button class="text-blue-600 text-xs font-bold hover:underline" onclick="showSection('appointments')">View All</button>
+                        </div>
+                        <div class="p-6" id="today-schedule">
+                            <p class="text-gray-400 text-center py-10">Preparing your schedule...</p>
                         </div>
                     </div>
 
-                    <p style="color:#666; margin-bottom:20px;">Standard consultation time is 10 minutes.</p>
+                    <!-- Quick Actions -->
+                    <div class="space-y-6">
+                        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+                            <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-4">Quick Actions</h2>
+                            <div class="grid grid-cols-2 gap-3">
+                                <button onclick="showSection('patients')" class="flex flex-col items-center gap-2 p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 hover:bg-blue-100 transition-all group">
+                                    <ion-icon name="person-add-outline" class="text-xl group-hover:scale-125 transition-transform"></ion-icon>
+                                    <span class="text-[10px] font-bold uppercase">Add Patient</span>
+                                </button>
+                                <button onclick="showSection('records')" class="flex flex-col items-center gap-2 p-4 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-600 hover:bg-green-100 transition-all group">
+                                    <ion-icon name="document-text-outline" class="text-xl group-hover:scale-125 transition-transform"></ion-icon>
+                                    <span class="text-[10px] font-bold uppercase">New Record</span>
+                                </button>
+                                <button onclick="showSection('prescriptions')" class="flex flex-col items-center gap-2 p-4 rounded-xl bg-purple-50 dark:bg-purple-900/20 text-purple-600 hover:bg-purple-100 transition-all group">
+                                    <ion-icon name="flask-outline" class="text-xl group-hover:scale-125 transition-transform"></ion-icon>
+                                    <span class="text-[10px] font-bold uppercase">Issue Meds</span>
+                                </button>
+                                <button onclick="showSection('billing')" class="flex flex-col items-center gap-2 p-4 rounded-xl bg-orange-50 dark:bg-orange-900/20 text-orange-600 hover:bg-orange-100 transition-all group">
+                                    <ion-icon name="receipt-outline" class="text-xl group-hover:scale-125 transition-transform"></ion-icon>
+                                    <span class="text-[10px] font-bold uppercase">Billing</span>
+                                </button>
+                            </div>
+                        </div>
 
-                    <button id="btn-terminate-ticket" class="btn-primary" style="background:#d32f2f; border-color:#d32f2f; width:100%; padding:15px; font-size:18px;">
-                        🛑 Terminate Ticket (Finish)
+                        <!-- Mini Chart or Activity -->
+                        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+                            <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-4">Recent Activity</h2>
+                            <div class="space-y-4" id="mini-activity-log">
+                                 <p class="text-xs text-gray-400">Syncing logs...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row (Ported from test dashboard) -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+                        <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-4">Patient Admissions</h2>
+                        <canvas id="patientAdmissionsChart" height="200"></canvas>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+                        <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-4">Department Popularity</h2>
+                        <canvas id="departmentPopularityChart" height="200"></canvas>
+                    </div>
+                </div>
+
+            <!-- ═══════════════════════════════
+                 VIEW: PATIENT MANAGEMENT
+            ═══════════════════════════════ -->
+            <div id="view-patients" class="content-section hidden" data-aos="fade-up">
+                <div class="flex justify-between items-center mb-6">
+                    <h1 class="text-3xl font-semibold text-gray-800 dark:text-white m-0">👥 Patient Management</h1>
+                    <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl shadow-lg flex items-center gap-2 text-sm transition-all transform active:scale-95">
+                        <ion-icon name="person-add-outline"></ion-icon> Register New Patient
                     </button>
                 </div>
-            </div>
-
-            <!-- ── VIEW: PRESCRIPTIONS ── -->
-            <div id="view-prescriptions" class="content-section">
-                <div class="dashboard-card">
-                    <h3>💊 Manage Prescriptions</h3>
-                    <p>Prescription tools will appear here.</p>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-100 dark:border-gray-700">
+                    <div class="p-6 border-b border-gray-50 dark:border-gray-700">
+                         <h2 class="text-lg font-bold text-gray-800 dark:text-white">Active Patient List</h2>
+                    </div>
+                    <div class="p-6 overflow-x-auto" id="patients-full-list">
+                         <p class="text-gray-500 text-center py-8">Loading patient directory...</p>
+                    </div>
                 </div>
             </div>
 
-            <!-- ── VIEW: MEDICAL RECORDS ── -->
-            <div id="view-records" class="content-section">
-                <div class="dashboard-card">
-                    <h3>📋 Medical Records</h3>
-                    <p>Search and view patient records.</p>
+            <!-- ═══════════════════════════════
+                 VIEW: DOCTOR MANAGEMENT
+            ═══════════════════════════════ -->
+            <div id="view-doctors-list" class="content-section hidden" data-aos="fade-up">
+                <h1 class="text-3xl font-semibold text-gray-800 dark:text-white mb-6">👨‍⚕️ Doctor Management</h1>
+                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6" id="doctors-grid-container">
+                    <!-- Cards will be injected by JS -->
+                    <p class="col-span-full text-center py-10 text-gray-400">Loading staff profiles...</p>
                 </div>
             </div>
 
-            <!-- ── VIEW: MY PROFILE ── -->
-            <div id="view-profile" class="content-section">
-                <div class="dashboard-card">
-                    <h3>👤 My Profile</h3>
-                    <form>
-                        <div class="form-group">
-                            <label>Name</label>
-                            <input type="text" class="form-control" id="profile-name" readonly>
+            <!-- ═══════════════════════════════
+                 VIEW: APPOINTMENTS (HISTORY)
+            ═══════════════════════════════ -->
+            <div id="view-appointments" class="content-section" data-aos="fade-up">
+                <h1 class="text-3xl font-semibold text-gray-800 dark:text-white mb-6">📅 My Appointment History</h1>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
+                    <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">All Appointments</h2>
+                        <!-- Filter Tabs -->
+                        <div id="appt-filters" class="flex space-x-2">
+                            <button onclick="showApptCategory('past')"
+                                class="appt-filter-btn px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-500 hover:text-white" data-cat="past">
+                                📜 Past
+                            </button>
+                            <button onclick="showApptCategory('today')"
+                                class="appt-filter-btn px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-blue-600 text-white" data-cat="today">
+                                ⭐ Today
+                            </button>
+                            <button onclick="showApptCategory('upcoming')"
+                                class="appt-filter-btn px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-500 hover:text-white" data-cat="upcoming">
+                                🚀 Upcoming
+                            </button>
                         </div>
-                        <div class="form-group">
-                            <label>Email</label>
-                            <input type="email" class="form-control" id="profile-email" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label>Specialization</label>
-                            <input type="text" class="form-control" id="profile-specialization" readonly>
-                        </div>
-                        <button type="button" class="btn-primary">Update Profile</button>
-                    </form>
+                    </div>
+                    <div class="p-6">
+                        <div id="appt-list-past"     class="appt-category" style="display:none;"><div class="list-content overflow-x-auto"><p class="text-gray-500 dark:text-gray-400">Loading…</p></div></div>
+                        <div id="appt-list-today"    class="appt-category">                     <div class="list-content overflow-x-auto"><p class="text-gray-500 dark:text-gray-400">Loading…</p></div></div>
+                        <div id="appt-list-upcoming" class="appt-category" style="display:none;"><div class="list-content overflow-x-auto"><p class="text-gray-500 dark:text-gray-400">Loading…</p></div></div>
+                    </div>
                 </div>
             </div>
 
-        </div><!-- /content-body -->
-    </div><!-- /main-content -->
+            <!-- ═══════════════════════════════
+                 VIEW: PRESCRIPTIONS / PHARMACY
+            ═══════════════════════════════ -->
+            <div id="view-prescriptions" class="content-section hidden" data-aos="fade-up">
+                <h1 class="text-3xl font-semibold text-gray-800 dark:text-white mb-6">💊 Manage Prescriptions</h1>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                    <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-100 dark:border-gray-700">
+                        <div class="p-6 border-b border-gray-50 dark:border-gray-700 flex justify-between items-center">
+                            <h2 class="text-lg font-bold text-gray-800 dark:text-white">Recent Meds Issued</h2>
+                        </div>
+                        <div class="p-6 overflow-x-auto" id="prescriptions-list-container">
+                             <p class="text-gray-500 py-4">Loading medications...</p>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
+                         <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-4">Stock Alerts</h2>
+                         <div class="space-y-4">
+                              <div class="flex justify-between items-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                                   <div class="text-sm font-medium text-red-700 dark:text-red-300">Amoxicillin 250mg</div>
+                                   <div class="text-xs font-bold text-red-600">0 Units</div>
+                              </div>
+                              <div class="flex justify-between items-center p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                                   <div class="text-sm font-medium text-yellow-700 dark:text-yellow-300">Paracetamol 500mg</div>
+                                   <div class="text-xs font-bold text-yellow-600">12 Units</div>
+                              </div>
+                         </div>
+                    </div>
+                </div>
+            </div>
 
-    <!-- Doctor Dashboard Script -->
+            <!-- ═══════════════════════════════
+                 VIEW: MEDICAL RECORDS
+            ═══════════════════════════════ -->
+            <div id="view-records" class="content-section hidden" data-aos="fade-up">
+                <h1 class="text-3xl font-semibold text-gray-800 dark:text-white mb-6">📋 Medical Records</h1>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-100 dark:border-gray-700">
+                    <div class="p-6">
+                        <div id="records-list-container" class="overflow-x-auto">
+                            <p class="text-gray-500 dark:text-gray-400">Loading records…</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══════════════════════════════
+                 VIEW: BILLING
+            ═══════════════════════════════ -->
+            <div id="view-billing" class="content-section hidden" data-aos="fade-up">
+                <h1 class="text-3xl font-semibold text-gray-800 dark:text-white mb-6">💳 Billing & Invoices</h1>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="billing-history">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+                         <div class="flex justify-between mb-2">
+                             <span class="text-[10px] font-bold text-gray-400 uppercase">INV-2024-001</span>
+                             <span class="text-[10px] font-bold text-green-600">PAID</span>
+                         </div>
+                         <h3 class="text-lg font-bold text-gray-800 dark:text-white">John Doe</h3>
+                         <p class="text-2xl font-black text-gray-900 dark:text-white mt-1">$150.00</p>
+                    </div>
+                    <!-- More mock bills or real data -->
+                </div>
+            </div>
+
+            <!-- ═══════════════════════════════
+                 VIEW: STAFF & ADMIN
+            ═══════════════════════════════ -->
+            <div id="view-staff" class="content-section hidden" data-aos="fade-up">
+                <h1 class="text-3xl font-semibold text-gray-800 dark:text-white mb-6">🛡️ Staff & Admin</h1>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
+                         <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-4">Roles & Permissions</h2>
+                         <div class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                              <p>• Administrator: All Access</p>
+                              <p>• Doctor: Patient Mgt, Schedule, Clinical</p>
+                              <p>• Nurse: Vitals, Charting</p>
+                         </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
+                         <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-4">System Activity</h2>
+                         <div class="space-y-3" id="system-activity-log">
+                              <p class="text-xs text-gray-400">Loading activity logs...</p>
+                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══════════════════════════════
+                 VIEW: MY PROFILE
+            ═══════════════════════════════ -->
+            <div id="view-profile" class="content-section" data-aos="fade-up">
+                <h1 class="text-3xl font-semibold text-gray-800 dark:text-white mb-6">👤 My Profile</h1>
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden max-w-xl">
+                    <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">Profile Information</h2>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Name</label>
+                            <input type="text" id="profile-name" readonly
+                                class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white text-sm focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Email</label>
+                            <input type="email" id="profile-email" readonly
+                                class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white text-sm focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Specialization</label>
+                            <input type="text" id="profile-specialization" readonly
+                                class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white text-sm focus:outline-none">
+                        </div>
+                        <button type="button" class="mt-2 px-6 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition-colors">
+                            Update Profile
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div><!-- /mainContent -->
+
+    <!-- ══════════════════════════════════════
+         PATIENT DETAIL MODAL
+    ══════════════════════════════════════ -->
+    <div id="patient-detail-modal" class="pd-modal" style="display:none;">
+        <div class="pd-modal-overlay" onclick="closePatientModal()"></div>
+        <div class="pd-modal-content">
+            <button class="pd-modal-close" onclick="closePatientModal()">&times;</button>
+            <div class="pd-modal-header mb-4">
+                <div class="pd-avatar" id="pd-avatar">?</div>
+                <div>
+                    <h2 id="pd-name" class="text-xl font-bold text-gray-900 dark:text-white m-0">Patient Name</h2>
+                    <p id="pd-cpr" class="text-sm text-gray-500 dark:text-gray-400 mt-1">CPR: —</p>
+                </div>
+            </div>
+
+            <!-- Modal Tabs -->
+            <div class="flex border-b border-gray-200 dark:border-gray-700 mb-4">
+                <button onclick="switchModalTab('info')" id="tab-btn-info" class="modal-tab-btn py-2 px-4 text-sm font-medium border-b-2 border-blue-600 text-blue-600">Info</button>
+                <button onclick="switchModalTab('history')" id="tab-btn-history" class="modal-tab-btn py-2 px-4 text-sm font-medium text-gray-500 hover:text-gray-700 border-b-2 border-transparent">History</button>
+                <button onclick="switchModalTab('action')" id="tab-btn-action" class="modal-tab-btn py-2 px-4 text-sm font-medium text-gray-500 hover:text-gray-700 border-b-2 border-transparent">Add Record</button>
+            </div>
+
+            <!-- Tab: Info -->
+            <div id="modal-tab-info" class="modal-tab-content">
+                <div class="pd-grid">
+                    <div class="pd-item"><span class="pd-label">📧 Email</span><span class="pd-value" id="pd-email">—</span></div>
+                    <div class="pd-item"><span class="pd-label">📞 Phone</span><span class="pd-value" id="pd-phone">—</span></div>
+                    <div class="pd-item"><span class="pd-label">🎂 Date of Birth</span><span class="pd-value" id="pd-dob">—</span></div>
+                    <div class="pd-item"><span class="pd-label">⚧ Gender</span><span class="pd-value" id="pd-gender">—</span></div>
+                    <div class="pd-item"><span class="pd-label">🩸 Blood Type</span><span class="pd-value" id="pd-blood">—</span></div>
+                    <div class="pd-item"><span class="pd-label">📋 Appt Type</span><span class="pd-value" id="pd-appt-type">—</span></div>
+                    <div class="pd-item col-span-2"><span class="pd-label">📝 Reason</span><span class="pd-value" id="pd-reason">—</span></div>
+                </div>
+            </div>
+
+            <!-- Tab: History -->
+            <div id="modal-tab-history" class="modal-tab-content hidden">
+                <div class="max-h-[300px] overflow-y-auto space-y-3" id="pd-history-list">
+                    <p class="text-center text-gray-500 py-4 italic text-sm">Loading history...</p>
+                </div>
+            </div>
+
+            <!-- Tab: Action (Add Record) -->
+            <div id="modal-tab-action" class="modal-tab-content hidden">
+                <form id="clinical-action-form" class="space-y-4">
+                    <input type="hidden" id="form-patient-id">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Record Type</label>
+                            <select id="form-record-type" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option value="Consultation">Consultation</option>
+                                <option value="Follow-up">Follow-up</option>
+                                <option value="Emergency">Emergency</option>
+                                <option value="Routine checkup">Routine checkup</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Diagnosis</label>
+                            <input type="text" id="form-diagnosis" placeholder="e.g. Common Cold" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Clinical Summary</label>
+                        <textarea id="form-summary" rows="2" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Enter findings..."></textarea>
+                    </div>
+                    <div class="border-t border-gray-100 dark:border-gray-700 pt-3">
+                        <label class="flex items-center gap-2 mb-2 cursor-pointer">
+                            <input type="checkbox" id="add-prescription-toggle" class="rounded border-gray-300 text-blue-600">
+                            <span class="text-xs font-bold text-blue-600">Attach Prescription?</span>
+                        </label>
+                        <div id="prescription-fields" class="hidden space-y-3">
+                            <div class="grid grid-cols-2 gap-3">
+                                <input type="text" id="form-medication" placeholder="Medication Name" class="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-xs">
+                                <input type="text" id="form-dosage" placeholder="Dosage (e.g. 500mg)" class="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-xs">
+                                <input type="text" id="form-frequency" placeholder="Frequency (e.g. 2x Daily)" class="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-xs">
+                                <input type="text" id="form-duration" placeholder="Duration (e.g. 7 Days)" class="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-xs">
+                            </div>
+                            <input type="text" id="form-instructions" placeholder="Instructions (Optional)" class="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-xs">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg transition-all transform active:scale-95">💾 Save Clinical Record</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         TIMER MODAL
+    ══════════════════════════════════════ -->
+    <div id="timer-modal">
+        <div style="background:#fff; padding:40px; border-radius:20px; text-align:center; width:90%; max-width:400px; position:relative;" class="dark:bg-gray-800">
+            <h2 style="margin-bottom:20px; color:#2c3e50;" class="text-gray-800 dark:text-white font-bold text-2xl">Patient Consultation</h2>
+            <h3 id="timer-patient-name" style="color:#3b82f6; margin-bottom:30px;" class="font-semibold text-lg">Patient Name</h3>
+            <!-- Circular Timer -->
+            <div style="position:relative; width:200px; height:200px; margin:0 auto 30px;">
+                <svg width="200" height="200" viewBox="0 0 200 200" style="transform:rotate(-90deg)">
+                    <circle cx="100" cy="100" r="90" fill="none" stroke="#e5e7eb" stroke-width="10"/>
+                    <circle id="timer-progress" cx="100" cy="100" r="90" fill="none" stroke="#4caf50" stroke-width="10"
+                        stroke-dasharray="565.48" stroke-dashoffset="0" style="transition:stroke-dashoffset 1s linear"/>
+                </svg>
+                <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:48px; font-weight:bold; color:#1f2937;">
+                    <span id="timer-display">10:00</span>
+                </div>
+            </div>
+            <p style="color:#6b7280; margin-bottom:20px;">Standard consultation time is 10 minutes.</p>
+            <button id="btn-terminate-ticket"
+                class="w-full py-4 px-6 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-lg transition-colors">
+                🛑 Terminate Ticket (Finish)
+            </button>
+        </div>
+    </div>
+
+    <!-- ══ Scripts ══ -->
+    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Doctor Dashboard Backend & UI Script -->
     <script src="../js/doctor_dashboard.js"></script>
 </body>
 </html>

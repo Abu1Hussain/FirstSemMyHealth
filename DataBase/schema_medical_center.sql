@@ -3,6 +3,11 @@
 
 USE `medical_center`;
 
+-- Disable checks to prevent order-of-insertion errors
+SET FOREIGN_KEY_CHECKS = 0;
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+SET time_zone = "+00:00";
+
 -- USERS table (central authentication)
 CREATE TABLE IF NOT EXISTS `users` (
   `user_id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -18,6 +23,7 @@ CREATE TABLE IF NOT EXISTS `patients` (
   `patient_id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `first_name` VARCHAR(100) NOT NULL,
   `last_name` VARCHAR(100) NOT NULL,
+  `cpr` VARCHAR(20) NULL,
   `date_of_birth` DATE NULL,
   `gender` ENUM('male','female','other') NULL,
   `phone` VARCHAR(30) NULL,
@@ -109,15 +115,22 @@ CREATE TABLE IF NOT EXISTS `lab_results` (
 CREATE TABLE IF NOT EXISTS `appointments` (
   `appointment_id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `patient_id` INT UNSIGNED NOT NULL,
-  `staff_id` INT UNSIGNED NOT NULL,
+  `staff_id` INT UNSIGNED NULL,
   `appointment_date` DATETIME NOT NULL,
   `appointment_type` VARCHAR(100) NULL,
-  `status` VARCHAR(50) NULL,
+  `status` VARCHAR(50) NULL DEFAULT 'pending',
+  `reason` TEXT NULL,
+  `ai_priority` VARCHAR(50) NULL,
+  `ai_suggestion` TEXT NULL,
+  `queue_number` INT UNSIGNED DEFAULT 0,
+  `created_by` INT UNSIGNED NULL,
   PRIMARY KEY (`appointment_id`),
   INDEX (`patient_id`),
   INDEX (`staff_id`),
+  INDEX (`created_by`),
   CONSTRAINT `fk_appointments_patient` FOREIGN KEY (`patient_id`) REFERENCES `patients` (`patient_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_appointments_staff` FOREIGN KEY (`staff_id`) REFERENCES `medical_staff` (`staff_id`) ON DELETE RESTRICT ON UPDATE CASCADE
+  CONSTRAINT `fk_appointments_staff` FOREIGN KEY (`staff_id`) REFERENCES `medical_staff` (`staff_id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `fk_appointments_creator` FOREIGN KEY (`created_by`) REFERENCES `users` (`user_id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Useful example views (in medical_center) that mirror the "all users / patients / doctors / admins" concept:

@@ -115,6 +115,7 @@ for ($hour = $startHour; $hour < $endHour; $hour++) {
 
     $timeline[] = [
         'hour'         => date('h:00 A', strtotime($slotStart)) . ' - ' . date('h:00 A', strtotime($slotEnd)),
+        'time_24h'     => str_pad($hour, 2, '0', STR_PAD_LEFT) . ':00:00',
         'chairs_left'  => $availableChairs,
         'total_chairs' => $maxChairs,
         'status'       => $slotStatus,
