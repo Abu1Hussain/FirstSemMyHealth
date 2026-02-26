@@ -111,7 +111,7 @@ if (isset($_POST['take_ticket'])) {
          VALUES (?, ?, ?, 'Walk-in', 'pending', 'Walk-in Ticket', 'Normal', ?, ?, ?)"
     );
 
-    $dIdVal = $doctorIdVal ? $doctorIdVal : null;
+    $dIdVal = $doctorIdVal ? $doctorIdVal : 1;
     $aiSugDummy = 'Walk-in automated ticket.';
     // Parameters: patient_id (i), doctor_id (i), appointment_date (s), ai_suggestion (s), queue_number (i), created_by (i)
     $stmt->bind_param("iisssi", $patientId, $dIdVal, $slotStart, $aiSugDummy, $newQueueNumber, $userId);
@@ -226,7 +226,7 @@ Return ONLY valid JSON. Example: {\"priority\": \"Important\", \"suggestion\": \
     /* ── Doctor Selection ── */
 
     $requestDate = $_POST['date'] ?? date('Y-m-d');
-    $doctorId    = $_POST['doctor_id'] ?? null;
+    $doctorId    = $_POST['doctor_id'] ?? 1;
     $doctorName  = "General Doctor";
     $capacity    = 4;  // Default chairs per hour (logical max)
 

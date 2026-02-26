@@ -749,6 +749,40 @@ document.addEventListener("DOMContentLoaded", function () {
     // Set hidden ID for form
     document.getElementById("form-patient-id").value = pId;
 
+    // Set hidden appointment ID
+    let apptIdField = document.getElementById("form-appointment-id");
+    if(!apptIdField) {
+        apptIdField = document.createElement("input");
+        apptIdField.type = "hidden";
+        apptIdField.id = "form-appointment-id";
+        document.getElementById("clinical-action-form").appendChild(apptIdField);
+    }
+    apptIdField.value = appt.appointment_id;
+
+    // Check Global Timer
+    const timerContainer = document.getElementById("pd-timer-container");
+    if(timerContainer) {
+        if(window.activeConsultation && window.activeConsultation.appointmentId == appt.appointment_id) {
+            timerContainer.classList.remove("hidden");
+            timerContainer.classList.add("flex");
+        } else {
+            timerContainer.classList.add("hidden");
+            timerContainer.classList.remove("flex");
+        }
+    }
+
+    // Populate transfer dropdown if empty
+    const transferSelect = document.getElementById("modal-transfer-doctor");
+    if (transferSelect && transferSelect.options.length <= 1) {
+      if (typeof allDoctorsData !== 'undefined' && allDoctorsData && allDoctorsData.length > 0) {
+        let options = '<option value="">Select a doctor or department...</option>';
+        allDoctorsData.forEach(d => {
+          options += `<option value="${d.doctor_id}">${d.name || d.first_name + ' ' + d.last_name} (${d.department || d.specialization || 'General'})</option>`;
+        });
+        transferSelect.innerHTML = options;
+      }
+    }
+
     document.getElementById("pd-name").textContent =
       appt.patient_name || "Unknown";
     document.getElementById("pd-avatar").textContent = (appt.patient_name ||
@@ -878,6 +912,105 @@ document.addEventListener("DOMContentLoaded", function () {
   };
 
   /* ─────────────────────────────────────────────
+     Global Timer & Transfer Logic for Modal
+     ───────────────────────────────────────────── */
+  window.activeConsultation = {
+    appointmentId: null,
+    startTime: null,
+    interval: null
+  };
+
+  window.startGlobalTimer = function(appointmentId) {
+     if(window.activeConsultation.interval) clearInterval(window.activeConsultation.interval);
+     window.activeConsultation.appointmentId = appointmentId;
+     window.activeConsultation.startTime = new Date().getTime();
+     
+     window.activeConsultation.interval = setInterval(() => {
+        if(document.getElementById("patient-detail-modal").style.display === "flex") {
+            const currentModalApptId = document.getElementById("form-appointment-id")?.value;
+            if(currentModalApptId == appointmentId) {
+                const now = new Date().getTime();
+                const diff = now - window.activeConsultation.startTime;
+                
+                let m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, "0");
+                let s = Math.floor((diff % (1000 * 60)) / 1000).toString().padStart(2, "0");
+                
+                const timerDisplay = document.getElementById("pd-timer-display");
+                if(timerDisplay) {
+                    timerDisplay.textContent = `${m}:${s}`;
+                }
+            }
+        }
+     }, 1000);
+  };
+
+  window.transferPatientFromModal = function() {
+      const apptId = document.getElementById("form-appointment-id")?.value;
+      const targetDoctorId = document.getElementById("modal-transfer-doctor")?.value;
+
+      if (!apptId) {
+          Swal.fire("Error", "No active appointment selected.", "error");
+          return;
+      }
+      if (!targetDoctorId) {
+          Swal.fire("Warning", "Please select a doctor or department to transfer to.", "warning");
+          return;
+      }
+
+      Swal.fire({
+          title: "Transfer Patient?",
+          text: "Are you sure you want to transfer this patient?",
+          icon: "question",
+          showCancelButton: true,
+          confirmButtonColor: "#f97316",
+          cancelButtonColor: "#9ca3af",
+          confirmButtonText: "Yes, transfer",
+      }).then((result) => {
+          if (result.isConfirmed) {
+              const formData = new FormData();
+              formData.append("action", "transfer_appointment");
+              formData.append("appointment_id", apptId);
+              formData.append("target_doctor_id", targetDoctorId);
+
+              fetch("../php/doctor_api.php", {
+                  method: "POST",
+                  body: formData,
+              })
+              .then((res) => res.json())
+              .then((data) => {
+                  if (data.status === "success") {
+                      Swal.fire("Transferred!", "The patient has been transferred successfully.", "success");
+                      closePatientModal();
+                      fetchDoctorData();
+                  } else {
+                      Swal.fire("Error", data.message, "error");
+                  }
+              })
+              .catch((err) => {
+                  console.error("Error transferring patient:", err);
+                  Swal.fire("Error", "Failed to transfer patient.", "error");
+              });
+          }
+      });
+  };
+
+  window.finishAppointmentDirectly = function (appointmentId) {
+    Swal.fire({
+      title: "Complete Consultation?",
+      text: "Are you sure you want to mark this appointment as completed?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#10b981",
+      cancelButtonColor: "#9ca3af",
+      confirmButtonText: "Yes, complete it",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        window.updateStatus(appointmentId, "completed");
+      }
+    });
+  };
+
+  /* ─────────────────────────────────────────────
      renderPatientsList(patients)
      Renders the list of today's patients with
      patient details, CPR, phone, and action buttons.
@@ -925,21 +1058,30 @@ document.addEventListener("DOMContentLoaded", function () {
                 <div class="flex items-center gap-2">
                   <button class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors" onclick="window.updateStatus(${patient.appointment_id}, 'accepted')">Accept</button>
                   <button class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors" onclick="window.updateStatus(${patient.appointment_id}, 'delayed')">Delay</button>
-                  <button class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors" onclick="window.startTimer(${patient.appointment_id}, '${patient.patient_name}')">Call</button>
+                  <button class="bg-teal-600 hover:bg-teal-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors" onclick="window.finishAppointmentDirectly(${patient.appointment_id})">Finish</button>
                 </div>
             `;
-      } else if (
-        patient.status === "accepted" ||
-        patient.status === "delayed"
-      ) {
+      } else if (patient.status === "accepted") {
         actionBtn = `
                 <div class="flex items-center gap-2">
-                  <span class="badge badge-blue">${patient.status}</span>
-                  <button class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors" onclick="window.startTimer(${patient.appointment_id}, '${patient.patient_name}')">Call</button>
+                  <span class="badge badge-blue">Accepted</span>
+                  <button class="bg-teal-600 hover:bg-teal-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors" onclick="window.finishAppointmentDirectly(${patient.appointment_id})">Finish</button>
+                </div>
+            `;
+      } else if (patient.status === "delayed") {
+        actionBtn = `
+                <div class="flex items-center gap-2">
+                  <span class="badge badge-blue">Delayed</span>
+                  <button class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors" onclick="window.updateStatus(${patient.appointment_id}, 'accepted')">Accept</button>
+                  <button class="bg-teal-600 hover:bg-teal-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors" onclick="window.finishAppointmentDirectly(${patient.appointment_id})">Finish</button>
                 </div>
             `;
       } else {
-        actionBtn = `<button class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors" onclick="window.startTimer(${patient.appointment_id}, '${patient.patient_name}')">Call Patient</button>`;
+        actionBtn = `
+                <div class="flex items-center gap-2">
+                  <button class="bg-teal-600 hover:bg-teal-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors" onclick="window.finishAppointmentDirectly(${patient.appointment_id})">Finish</button>
+                </div>
+            `;
       }
 
       actionBtn += ` <button onclick="showPatientDetail('${safeData}')" class="bg-indigo-600 hover:bg-indigo-700 text-white p-1.5 rounded-lg transition-colors inline-flex items-center justify-center ml-1" title="View details"><ion-icon name="eye-outline" class="text-sm"></ion-icon></button>`;
@@ -968,9 +1110,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     <div class="text-sm font-bold text-gray-800 dark:text-white">${patient.patient_name}</div>
                     <div class="text-[10px] text-gray-500 truncate max-w-[150px]">${patient.reason}</div>
                 </div>
-                <button onclick="window.startTimer(${patient.appointment_id}, '${patient.patient_name}')" class="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors">
-                    <ion-icon name="call-outline" class="text-lg"></ion-icon>
-                </button>
             </div>
           </div>`;
       }
@@ -1175,6 +1314,15 @@ document.addEventListener("DOMContentLoaded", function () {
             timer: 2000,
             showConfirmButton: false,
           });
+          if (status === 'accepted') {
+              window.startGlobalTimer(appointmentId);
+          }
+          if (status === 'completed') {
+              if (window.activeConsultation && window.activeConsultation.appointmentId == appointmentId) {
+                  clearInterval(window.activeConsultation.interval);
+                  window.activeConsultation.appointmentId = null;
+              }
+          }
           fetchDoctorData(); // Refresh list
         } else {
           Swal.fire("Error", data.message, "error");

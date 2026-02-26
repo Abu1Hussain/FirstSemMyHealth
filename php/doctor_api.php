@@ -53,35 +53,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($stmt->execute()) {
             $stmt->close();
 
-            // Automatic Archival for 'completed' or 'terminated'
+            // Automatic Ticket Cleanup for 'completed' or 'terminated'
             if ($status === 'completed' || $status === 'terminated') {
-                // Fetch info for archival
-                $infoStmt = $conn->prepare(
-                    "SELECT a.patient_id, a.doctor_id, a.reason, 
-                            CONCAT(ms.first_name, ' ', ms.last_name) as doctor_name
-                     FROM appointments a
-                     LEFT JOIN doctors ms ON a.doctor_id = ms.doctor_id
-                     WHERE a.appointment_id = ?"
-                );
-                $infoStmt->bind_param("i", $apptId);
-                $infoStmt->execute();
-                $appt = $infoStmt->get_result()->fetch_assoc();
-                $infoStmt->close();
-
-                if ($appt) {
-                    $pId = $appt['patient_id'];
-                    $dId = $appt['doctor_id'];
-                    $summary = ucfirst($status) . " (Appointment Tip: " . $appt['reason'] . ")";
-                    
-                    $archiveStmt = $conn->prepare(
-                        "INSERT INTO medical_records (patient_id, doctor_id, record_date, record_type, summary, source_type) 
-                         VALUES (?, ?, NOW(), ?, ?, 'In-Person')"
-                    );
-                    $type = ($status === 'completed') ? 'Consultation' : 'Termination';
-                    $archiveStmt->bind_param("iiss", $pId, $dId, $type, $summary);
-                    $archiveStmt->execute();
-                    $archiveStmt->close();
-                }
 
                 // Delete the ticket since the appointment is finished/terminated
                 $ticketStmt = $conn->prepare("DELETE FROM tickets WHERE appointment_id = ?");
@@ -307,7 +280,7 @@ if ($doctorId) {
     $stmt = $conn->prepare(
         "SELECT COUNT(DISTINCT patient_id) as total
          FROM appointments
-         WHERE doctor_id = ?"
+         WHERE doctor_id = ? AND status = 'completed'"
     );
     $stmt->bind_param("i", $doctorId);
     $stmt->execute();
