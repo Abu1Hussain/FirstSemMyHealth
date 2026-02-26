@@ -10,7 +10,7 @@
  * Tables created:
  *   1. users            – Login accounts (email, hashed password, role)
  *   2. patients         – Patient profiles (name, CPR, blood type, etc.)
- *   3. medical_staff    – Doctor profiles (specialization, image, bio)
+ *   3. doctors         – Doctor profiles (specialization, image, bio)
  *   4. appointments     – Patient-doctor bookings
  *   5. medical_records  – Visit records and summaries
  *   6. diagnoses        – Diagnosis details linked to records
@@ -97,15 +97,15 @@ echo "📋 Table 'patients' created.<br>";
 
 
 /* ────────────────────────────────────────────────────
-   TABLE 3: medical_staff
+   TABLE 3: doctors
    Stores detailed profile info for doctors and staff.
    Linked to the users table via user_id.
    The profile_image column stores the filename of the
    doctor's photo from the /image/ folder.
    ──────────────────────────────────────────────────── */
 
-$conn->query("CREATE TABLE IF NOT EXISTS medical_staff (
-    staff_id       INT AUTO_INCREMENT PRIMARY KEY,
+$conn->query("CREATE TABLE IF NOT EXISTS doctors (
+    doctor_id      INT AUTO_INCREMENT PRIMARY KEY,
     user_id        INT NOT NULL,
     first_name     VARCHAR(100) NOT NULL,
     last_name      VARCHAR(100) NOT NULL,
@@ -119,7 +119,7 @@ $conn->query("CREATE TABLE IF NOT EXISTS medical_staff (
     capacity       INT DEFAULT 30,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-echo "📋 Table 'medical_staff' created.<br>";
+echo "📋 Table 'doctors' created.<br>";
 
 
 /* ────────────────────────────────────────────────────
@@ -131,7 +131,7 @@ echo "📋 Table 'medical_staff' created.<br>";
 $conn->query("CREATE TABLE IF NOT EXISTS appointments (
     appointment_id   INT AUTO_INCREMENT PRIMARY KEY,
     patient_id       INT NOT NULL,
-    staff_id         INT,
+    doctor_id        INT,
     appointment_date DATETIME NOT NULL,
     appointment_type VARCHAR(100) DEFAULT 'General',
     status           VARCHAR(50) DEFAULT 'pending',
@@ -142,7 +142,7 @@ $conn->query("CREATE TABLE IF NOT EXISTS appointments (
     created_by       INT,
     created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (patient_id) REFERENCES patients(patient_id) ON DELETE CASCADE,
-    FOREIGN KEY (staff_id)   REFERENCES medical_staff(staff_id) ON DELETE SET NULL,
+    FOREIGN KEY (doctor_id)   REFERENCES doctors(doctor_id) ON DELETE SET NULL,
     FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 echo "📋 Table 'appointments' created.<br>";
@@ -155,13 +155,13 @@ echo "📋 Table 'appointments' created.<br>";
 
 $conn->query("CREATE TABLE IF NOT EXISTS medical_records (
     record_id   INT AUTO_INCREMENT PRIMARY KEY,
-    created_by  INT,
+    doctor_id   INT,
     patient_id  INT NOT NULL,
     record_date DATETIME DEFAULT CURRENT_TIMESTAMP,
     record_type VARCHAR(100),
     summary     TEXT,
     source_type VARCHAR(50),
-    FOREIGN KEY (created_by) REFERENCES medical_staff(staff_id) ON DELETE SET NULL,
+    FOREIGN KEY (doctor_id) REFERENCES doctors(doctor_id) ON DELETE SET NULL,
     FOREIGN KEY (patient_id) REFERENCES patients(patient_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 echo "📋 Table 'medical_records' created.<br>";
@@ -303,6 +303,26 @@ $conn->query("CREATE TABLE IF NOT EXISTS feedback_reports (
 echo "📋 Table 'feedback_reports' created.<br>";
 
 
+/* ────────────────────────────────────────────────────
+   TABLE 14: tickets
+   Stores patient tickets for their appointments.
+   Linked to doctors via staff_id for easier filtering.
+   ──────────────────────────────────────────────────── */
+
+$conn->query("CREATE TABLE IF NOT EXISTS tickets (
+    ticket_id      INT AUTO_INCREMENT PRIMARY KEY,
+    patient_id     INT NOT NULL,
+    appointment_id INT NOT NULL,
+    doctor_id       INT,
+    ticket_code    VARCHAR(20) NOT NULL,
+    created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (patient_id)     REFERENCES patients(patient_id) ON DELETE CASCADE,
+    FOREIGN KEY (appointment_id) REFERENCES appointments(appointment_id) ON DELETE CASCADE,
+    FOREIGN KEY (doctor_id)       REFERENCES doctors(doctor_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+echo "📋 Table 'tickets' created.<br>";
+
+
 /* ═══════════════════════════════════════════════════
    SEEDING DEMO DATA
    ═══════════════════════════════════════════════════ */
@@ -355,7 +375,7 @@ echo "👤 Patient: patient@AM.com / pass1234<br>";
 /*
  * Each doctor has:
  *   - A login account in the 'users' table
- *   - A profile in the 'medical_staff' table
+ *   - A profile in the 'doctors' table
  *   - An image file in the /image/ folder
  *
  * The image files are named doc1(Female).jpg, doc2(Male).jpg, etc.
@@ -376,7 +396,7 @@ $doctorsList = [
         'specialization' => 'General Medicine',
         'department'     => 'General',
         'bio'            => 'Expert in general medicine with 15 years of experience in primary care.',
-        'capacity'       => 25
+        'capacity'       => 5
     ],
     // Doctor 2: Fatima Khalid (Female) → uses doc1(Female).jpg
     [
@@ -388,7 +408,7 @@ $doctorsList = [
         'specialization' => 'Pediatrics',
         'department'     => 'Pediatrics',
         'bio'            => 'Loves children and specializes in early development and child health.',
-        'capacity'       => 20
+        'capacity'       => 4
     ],
     // Doctor 3: Mohamed Yousif (Male) → uses doc3(Male).jpg
     [
@@ -400,7 +420,7 @@ $doctorsList = [
         'specialization' => 'Cardiology',
         'department'     => 'Cardiology',
         'bio'            => 'Cardiologist focused on heart health, prevention, and treatment.',
-        'capacity'       => 15
+        'capacity'       => 3
     ],
     // Doctor 4: Sara Hassan (Female) → uses doc4(Female).jpg
     [
@@ -412,7 +432,7 @@ $doctorsList = [
         'specialization' => 'Dermatology',
         'department'     => 'Dermatology',
         'bio'            => 'Specialist in skin care, cosmetic treatments, and dermatological disorders.',
-        'capacity'       => 12
+        'capacity'       => 3
     ],
     // Doctor 5: Omar Saleh (Male) → uses doc5(Male).jpg
     [
@@ -424,7 +444,7 @@ $doctorsList = [
         'specialization' => 'Orthopedics',
         'department'     => 'Orthopedics',
         'bio'            => 'Specialist in bones, joints, and sports injuries.',
-        'capacity'       => 18
+        'capacity'       => 4
     ],
     // Doctor 6: Huda Nasser (Female) → uses doc7(Female).jpg
     [
@@ -436,7 +456,7 @@ $doctorsList = [
         'specialization' => 'Gynecology',
         'department'     => 'Gynecology',
         'bio'            => 'Specialist in women\'s health and reproductive medicine.',
-        'capacity'       => 15
+        'capacity'       => 4
     ],
     // Doctor 7: Khalid Abbas (Male) → uses doc6(Male).jpg
     [
@@ -448,7 +468,7 @@ $doctorsList = [
         'specialization' => 'Neurology',
         'department'     => 'Neurology',
         'bio'            => 'Focused on brain and nervous system disorders with advanced diagnostic skills.',
-        'capacity'       => 10
+        'capacity'       => 2
     ],
     // Doctor 8: Lina Mahmood (Female) → uses doc8(Female).jpg
     [
@@ -460,7 +480,7 @@ $doctorsList = [
         'specialization' => 'Endocrinology',
         'department'     => 'Endocrinology',
         'bio'            => 'Expert in hormonal disorders, diabetes management, and thyroid conditions.',
-        'capacity'       => 14
+        'capacity'       => 3
     ],
     // Doctor 9: Yousef Ibrahim (Male) → uses doc9(Male).jpg
     [
@@ -472,7 +492,7 @@ $doctorsList = [
         'specialization' => 'ENT',
         'department'     => 'ENT',
         'bio'            => 'Ear, nose, and throat specialist with expertise in surgical and non-surgical treatments.',
-        'capacity'       => 20
+        'capacity'       => 5
     ],
     // Doctor 10: Nada Rashid (Female) → uses doc10(Female).jpg
     [
@@ -484,7 +504,7 @@ $doctorsList = [
         'specialization' => 'Ophthalmology',
         'department'     => 'Ophthalmology',
         'bio'            => 'Eye care specialist focused on vision correction and eye disease treatment.',
-        'capacity'       => 16
+        'capacity'       => 4
     ]
 ];
 
@@ -499,18 +519,18 @@ foreach ($doctorsList as $doctor) {
     $stmt->execute();
     $stmt->close();
 
-    // Get the user_id for this doctor
+    // Get the doctor_id for this doctor
     $doctorUserId = $conn->query("SELECT user_id FROM users WHERE email = '" . $conn->real_escape_string($doctor['email']) . "'")->fetch_assoc()['user_id'];
 
     /*
      * Step 2: Create or update the staff profile.
      * This links the doctor's profile to their login account.
      */
-    $existingStaff = $conn->query("SELECT staff_id FROM medical_staff WHERE user_id = $doctorUserId");
+    $existingStaff = $conn->query("SELECT doctor_id FROM doctors WHERE user_id = $doctorUserId");
 
     if ($existingStaff->num_rows === 0) {
         // New doctor — insert their profile
-        $stmt = $conn->prepare("INSERT INTO medical_staff (user_id, first_name, last_name, role, specialization, phone, email, department, profile_image, bio, capacity) VALUES (?, ?, ?, 'Doctor', ?, ?, ?, ?, ?, ?, ?)");
+        $stmt = $conn->prepare("INSERT INTO doctors (user_id, first_name, last_name, role, specialization, phone, email, department, profile_image, bio, capacity) VALUES (?, ?, ?, 'Doctor', ?, ?, ?, ?, ?, ?, ?)");
         $stmt->bind_param("issssssssi",
             $doctorUserId,
             $doctor['firstName'],
@@ -527,7 +547,7 @@ foreach ($doctorsList as $doctor) {
         $stmt->close();
     } else {
         // Existing doctor — update their profile
-        $stmt = $conn->prepare("UPDATE medical_staff SET first_name = ?, last_name = ?, specialization = ?, department = ?, profile_image = ?, bio = ?, capacity = ? WHERE user_id = ?");
+        $stmt = $conn->prepare("UPDATE doctors SET first_name = ?, last_name = ?, specialization = ?, department = ?, profile_image = ?, bio = ?, capacity = ? WHERE user_id = ?");
         $stmt->bind_param("ssssssii",
             $doctor['firstName'],
             $doctor['lastName'],
@@ -552,14 +572,14 @@ $patientIdResult = $conn->query("SELECT patient_id FROM patients WHERE user_id =
 
 if ($patientIdResult && $patientIdResult->num_rows > 0) {
     $patientId     = $patientIdResult->fetch_assoc()['patient_id'];
-    $firstDoctorId = $conn->query("SELECT staff_id FROM medical_staff LIMIT 1")->fetch_assoc()['staff_id'];
+    $firstDoctorId = $conn->query("SELECT doctor_id FROM doctors LIMIT 1")->fetch_assoc()['doctor_id'];
 
     // Only seed if no records exist yet (avoid duplicates on re-run)
     $existingRecords = $conn->query("SELECT record_id FROM medical_records WHERE patient_id = $patientId LIMIT 1");
 
     if ($existingRecords->num_rows === 0) {
         // Create a sample medical record
-        $conn->query("INSERT INTO medical_records (created_by, patient_id, record_date, record_type, summary, source_type)
+        $conn->query("INSERT INTO medical_records (doctor_id, patient_id, record_date, record_type, summary, source_type)
                       VALUES ($firstDoctorId, $patientId, NOW(), 'Consultation', 'Patient visited for severe migraine and dizziness. Referred for further tests.', 'In-Person')");
         $recordId = $conn->insert_id;
 

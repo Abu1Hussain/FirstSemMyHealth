@@ -46,15 +46,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $apptId = $_POST['appointment_id'];
         $status = $_POST['status'];
 
+        // Perform status update
         $stmt = $conn->prepare("UPDATE appointments SET status = ? WHERE appointment_id = ?");
         $stmt->bind_param("si", $status, $apptId);
         
         if ($stmt->execute()) {
-            echo json_encode(['status' => 'success', 'message' => 'Status updated']);
+            $stmt->close();
+
+            // Automatic Archival for 'completed' or 'terminated'
+            if ($status === 'completed' || $status === 'terminated') {
+                // Fetch info for archival
+                $infoStmt = $conn->prepare(
+                    "SELECT a.patient_id, a.doctor_id, a.reason, 
+                            CONCAT(ms.first_name, ' ', ms.last_name) as doctor_name
+                     FROM appointments a
+                     LEFT JOIN doctors ms ON a.doctor_id = ms.doctor_id
+                     WHERE a.appointment_id = ?"
+                );
+                $infoStmt->bind_param("i", $apptId);
+                $infoStmt->execute();
+                $appt = $infoStmt->get_result()->fetch_assoc();
+                $infoStmt->close();
+
+                if ($appt) {
+                    $pId = $appt['patient_id'];
+                    $dId = $appt['doctor_id'];
+                    $summary = ucfirst($status) . " (Appointment Tip: " . $appt['reason'] . ")";
+                    
+                    $archiveStmt = $conn->prepare(
+                        "INSERT INTO medical_records (patient_id, created_by, record_date, record_type, summary) 
+                         VALUES (?, ?, NOW(), ?, ?)"
+                    );
+                    $type = ($status === 'completed') ? 'Consultation' : 'Termination';
+                    $archiveStmt->bind_param("iiss", $pId, $dId, $type, $summary);
+                    $archiveStmt->execute();
+                    $archiveStmt->close();
+                }
+            }
+
+            echo json_encode(['status' => 'success', 'message' => 'Status updated and archived if terminal']);
         } else {
             echo json_encode(['status' => 'error', 'message' => 'Failed to update status']);
+            $stmt->close();
         }
-        $stmt->close();
         exit();
     }
 
@@ -66,22 +100,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $diagnosis  = $_POST['diagnosis'];
         $doctorUid  = $_SESSION['user_id'];
 
-        // Get staff_id from user_id
-        $staffId = null;
-        $st = $conn->prepare("SELECT staff_id FROM medical_staff WHERE user_id = ?");
+        // Get doctor_id from user_id
+        $doctorId = null;
+        $st = $conn->prepare("SELECT doctor_id FROM doctors WHERE user_id = ?");
         $st->bind_param("i", $doctorUid);
         $st->execute();
-        if ($row = $st->get_result()->fetch_assoc()) $staffId = $row['staff_id'];
+        if ($row = $st->get_result()->fetch_assoc()) $doctorId = $row['doctor_id'];
         $st->close();
 
-        if (!$staffId) {
+        if (!$doctorId) {
             echo json_encode(['status' => 'error', 'message' => 'Doctor profile not found']);
             exit();
         }
 
         // Insert Record
-        $stmt = $conn->prepare("INSERT INTO medical_records (created_by, patient_id, record_type, summary, source_type) VALUES (?, ?, ?, ?, 'In-Person')");
-        $stmt->bind_param("iiss", $staffId, $patientId, $recordType, $summary);
+        $stmt = $conn->prepare("INSERT INTO medical_records (doctor_id, patient_id, record_type, summary, source_type) VALUES (?, ?, ?, ?, 'In-Person')");
+        $stmt->bind_param("iiss", $doctorId, $patientId, $recordType, $summary);
         
         if ($stmt->execute()) {
             $recordId = $conn->insert_id;
@@ -132,7 +166,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_patient_history' && isset
     // Fetch Records
     $stmt = $conn->prepare("SELECT mr.*, CONCAT(ms.first_name, ' ', ms.last_name) as doctor_name 
                             FROM medical_records mr 
-                            LEFT JOIN medical_staff ms ON mr.created_by = ms.staff_id 
+                            LEFT JOIN doctors ms ON mr.doctor_id = ms.doctor_id 
                             WHERE mr.patient_id = ? ORDER BY mr.record_date DESC");
     $stmt->bind_param("i", $pId);
     $stmt->execute();
@@ -182,23 +216,20 @@ $stmt->close();
 /* ═══════════════════════════════
    FIND DOCTOR'S STAFF PROFILE
    (Specialization, department,
-   and staff_id for queries)
+   and doctor_id for queries)
    ═══════════════════════════════ */
 
-$staffId = null;
+$doctorId = null;
 $profileImage = 'default_user.png';
 
-$stmt = $conn->prepare(
-    "SELECT staff_id, specialization, department, profile_image
-     FROM medical_staff
-     WHERE user_id = ?"
-);
+// 4. Get the doctor's doctor_id
+$stmt = $conn->prepare("SELECT doctor_id, specialization, department, profile_image FROM doctors WHERE user_id = ?");
 $stmt->bind_param("i", $userId);
 $stmt->execute();
 $staffResult = $stmt->get_result();
 
 if ($staffRow = $staffResult->fetch_assoc()) {
-    $staffId = $staffRow['staff_id'];
+    $doctorId = $staffRow['doctor_id'];
     $response['specialization'] = $staffRow['specialization'];
     $response['department']     = $staffRow['department'];
     if (!empty($staffRow['profile_image'])) {
@@ -224,16 +255,16 @@ $totalPatients      = 0;
 $todayAppointments  = 0;
 $pendingReviews     = 0;
 
-if ($staffId) {
+if ($doctorId) {
     $today = date('Y-m-d');
 
     // How many unique patients has this doctor seen?
     $stmt = $conn->prepare(
         "SELECT COUNT(DISTINCT patient_id) as total
          FROM appointments
-         WHERE staff_id = ?"
+         WHERE doctor_id = ?"
     );
-    $stmt->bind_param("i", $staffId);
+    $stmt->bind_param("i", $doctorId);
     $stmt->execute();
     if ($row = $stmt->get_result()->fetch_assoc()) {
         $totalPatients = $row['total'];
@@ -244,9 +275,9 @@ if ($staffId) {
     $stmt = $conn->prepare(
         "SELECT COUNT(*) as total
          FROM appointments
-         WHERE staff_id = ? AND DATE(appointment_date) = ?"
+         WHERE doctor_id = ? AND DATE(appointment_date) = ?"
     );
-    $stmt->bind_param("is", $staffId, $today);
+    $stmt->bind_param("is", $doctorId, $today);
     $stmt->execute();
     if ($row = $stmt->get_result()->fetch_assoc()) {
         $todayAppointments = $row['total'];
@@ -257,9 +288,9 @@ if ($staffId) {
     $stmt = $conn->prepare(
         "SELECT COUNT(*) as total
          FROM appointments
-         WHERE staff_id = ? AND status = 'pending'"
+         WHERE doctor_id = ? AND status = 'pending'"
     );
-    $stmt->bind_param("i", $staffId);
+    $stmt->bind_param("i", $doctorId);
     $stmt->execute();
     if ($row = $stmt->get_result()->fetch_assoc()) {
         $pendingReviews = $row['total'];
@@ -279,14 +310,40 @@ $response['stats'] = [
    (Today's Patients + All History)
    ═══════════════════════════════ */
 
-$patientsToday = [];
-$allAppointments = [
-    'past'     => [],
-    'today'    => [],
-    'upcoming' => []
-];
+// Initialize response variables with defaults
+$patientsToday    = [];
+$allAppointments  = ['past' => [], 'today' => [], 'upcoming' => []];
+$allRecords       = [];
+$allPrescriptions = [];
+$allPatients      = [];
+$allStaff         = [];
 
-if ($staffId) {
+// 5. Fetch Patients associated with THIS doctor
+$allPatients = [];
+if ($doctorId) {
+    $stmt = $conn->prepare("
+        SELECT DISTINCT p.patient_id, p.first_name, p.last_name, p.cpr, p.email, p.phone, p.gender, p.date_of_birth, p.blood_type 
+        FROM patients p
+        JOIN appointments a ON p.patient_id = a.patient_id
+        WHERE a.doctor_id = ?
+        ORDER BY p.first_name ASC
+    ");
+    $stmt->bind_param("i", $doctorId);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) $allPatients[] = $row;
+    $stmt->close();
+}
+
+// 6. Fetch ALL Medical Staff (Always available)
+$res = $conn->query("SELECT d.doctor_id, d.first_name, d.last_name, d.specialization, d.department, d.email, d.phone, d.profile_image,
+                            (SELECT COUNT(*) FROM medical_records mr WHERE mr.doctor_id = d.doctor_id) as records_count
+                     FROM doctors d ORDER BY d.first_name ASC");
+if ($res) {
+    while ($row = $res->fetch_assoc()) $allStaff[] = $row;
+}
+
+if ($doctorId) {
     $today = date('Y-m-d');
 
     // 1. Fetch Today's List (for the main dashboard widget)
@@ -297,10 +354,12 @@ if ($staffId) {
                 p.patient_id, p.cpr, p.phone, p.email, p.date_of_birth, p.gender, p.blood_type
          FROM appointments a
          JOIN patients p ON a.patient_id = p.patient_id
-         WHERE a.staff_id = ? AND DATE(appointment_date) = ?
+         WHERE a.doctor_id = ? 
+           AND DATE(appointment_date) = ?
+           AND a.status NOT IN ('terminated', 'cancelled', 'completed')
          ORDER BY a.appointment_date ASC"
     );
-    $stmt->bind_param("is", $staffId, $today);
+    $stmt->bind_param("is", $doctorId, $today);
     $stmt->execute();
     $patientListResult = $stmt->get_result();
     while ($patient = $patientListResult->fetch_assoc()) {
@@ -309,6 +368,7 @@ if ($staffId) {
     $stmt->close();
 
     // 2. Fetch ALL History (categorized for the Appointments tab)
+    // Removed status filter to show COMPLETED and TERMINATED in history
     $stmt = $conn->prepare(
         "SELECT a.appointment_id, a.appointment_date, a.reason, a.status, a.ai_priority,
                 a.appointment_type, a.queue_number,
@@ -316,10 +376,10 @@ if ($staffId) {
                 p.patient_id, p.cpr, p.phone, p.email, p.date_of_birth, p.gender, p.blood_type
          FROM appointments a
          JOIN patients p ON a.patient_id = p.patient_id
-         WHERE a.staff_id = ?
+         WHERE a.doctor_id = ?
          ORDER BY a.appointment_date DESC"
     );
-    $stmt->bind_param("i", $staffId);
+    $stmt->bind_param("i", $doctorId);
     $stmt->execute();
     $allResult = $stmt->get_result();
     
@@ -337,47 +397,35 @@ if ($staffId) {
     $stmt->close();
 
     // 3. Fetch ALL Records created by this doctor
-    $allRecords = [];
     $stmt = $conn->prepare("SELECT mr.*, CONCAT(p.first_name, ' ', p.last_name) as patient_name 
                             FROM medical_records mr 
                             JOIN patients p ON mr.patient_id = p.patient_id 
-                            WHERE mr.created_by = ? ORDER BY mr.record_date DESC");
-    $stmt->bind_param("i", $staffId);
+                            WHERE mr.doctor_id = ? ORDER BY mr.record_date DESC");
+    $stmt->bind_param("i", $doctorId);
     $stmt->execute();
     $res = $stmt->get_result();
     while ($row = $res->fetch_assoc()) $allRecords[] = $row;
     $stmt->close();
 
     // 4. Fetch ALL Prescriptions created by this doctor
-    $allPrescriptions = [];
     $stmt = $conn->prepare("SELECT pr.*, mr.record_date, CONCAT(p.first_name, ' ', p.last_name) as patient_name 
                             FROM prescriptions pr 
                             JOIN medical_records mr ON pr.record_id = mr.record_id 
                             JOIN patients p ON mr.patient_id = p.patient_id 
-                            WHERE mr.created_by = ? ORDER BY mr.record_date DESC");
-    $stmt->bind_param("i", $staffId);
+                            WHERE mr.doctor_id = ? ORDER BY mr.record_date DESC");
+    $stmt->bind_param("i", $doctorId);
     $stmt->execute();
     $res = $stmt->get_result();
     while ($row = $res->fetch_assoc()) $allPrescriptions[] = $row;
     $stmt->close();
-
-    // 5. Fetch ALL Patients (for Management View)
-    $allPatients = [];
-    $res = $conn->query("SELECT patient_id, first_name, last_name, cpr, email, phone, gender, date_of_birth, blood_type FROM patients ORDER BY first_name ASC");
-    while ($row = $res->fetch_assoc()) $allPatients[] = $row;
-
-    // 6. Fetch ALL Medical Staff (for Management View)
-    $allStaff = [];
-    $res = $conn->query("SELECT staff_id, first_name, last_name, specialization, department, email, phone FROM medical_staff ORDER BY first_name ASC");
-    while ($row = $res->fetch_assoc()) $allStaff[] = $row;
 }
 
 $response['patients_today']  = $patientsToday;
 $response['all_appointments'] = $allAppointments;
-$response['all_records']      = $allRecords ?? [];
-$response['all_prescriptions'] = $allPrescriptions ?? [];
-$response['all_patients']     = $allPatients ?? [];
-$response['all_staff']        = $allStaff ?? [];
+$response['all_records']      = $allRecords;
+$response['all_prescriptions'] = $allPrescriptions;
+$response['all_patients']     = $allPatients;
+$response['all_staff']        = $allStaff;
 
 
 /* ═══════════════════════════════

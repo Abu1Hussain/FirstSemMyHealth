@@ -10,7 +10,12 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
       /* ══════════════════════════════════════════════════
@@ -36,7 +41,13 @@
       }
 
       body {
-        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-family:
+          "Inter",
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
         background: var(--admin-light);
         color: var(--admin-dark);
       }
@@ -197,10 +208,10 @@
 
       /* ── Content Sections (Views) ── */
       .content-section {
-        display: none;
+        display: none !important;
       }
       .content-section.active {
-        display: block;
+        display: block !important;
       }
 
       /* ── Chart Card ── */
@@ -398,6 +409,17 @@
             >
           </div>
 
+          <!-- Operations -->
+          <div class="nav-section">
+            <div class="nav-section-title">Operations</div>
+            <a href="#" class="nav-item" onclick="showSection('billing')"
+              ><i class="fas fa-file-invoice-dollar"></i> Billing</a
+            >
+            <a href="#" class="nav-item" onclick="showSection('staff')"
+              ><i class="fas fa-user-shield"></i> Staff & Admin</a
+            >
+          </div>
+
           <!-- AI System -->
           <div class="nav-section">
             <div class="nav-section-title">AI System</div>
@@ -456,7 +478,7 @@
         </div>
 
         <!-- ── VIEW: DASHBOARD (Overview Stats) ── -->
-        <div id="dashboard-section" class="content-section active">
+        <div id="dashboard-section" class="content-section">
           <div class="admin-stats-grid">
             <div class="admin-stat-card users">
               <div class="stat-icon users"><i class="fas fa-users"></i></div>
@@ -542,20 +564,22 @@
           </div>
         </div>
 
-        <!-- ── VIEW: DOCTORS ── -->
+        <!-- ── VIEW: DOCTORS DIRECTORY (Migrated from Doctor Dashboard) ── -->
         <div id="doctors-section" class="content-section">
           <div class="table-card">
-            <div class="table-card-header"><h3>All Doctors</h3></div>
-            <div style="overflow-x: auto">
-              <table class="admin-table">
-                <thead>
-                  <tr>
-                    <th>Doctor Name</th>
-                    <th>Doctor ID</th>
-                  </tr>
-                </thead>
-                <tbody id="doctorsTableBody"></tbody>
-              </table>
+            <div class="table-card-header">
+              <h3><i class="fas fa-user-md"></i> Doctors Directory</h3>
+              <div class="admin-actions">
+                <div class="relative" style="position: relative;">
+                <input type="text" id="doctor-search" placeholder="Search doctors..." 
+                    style="padding: 8px 12px 8px 35px; border-radius: 8px; border: 1px solid #ddd; outline: none; font-size: 0.9rem;"
+                    oninput="filterDoctorsTable()">
+                <i class="fas fa-search" style="position: absolute; left: 12px; top: 11px; color: #9ca3af; font-size: 0.9rem;"></i>
+                </div>
+              </div>
+            </div>
+            <div id="doctors-table-container" style="overflow-x: auto">
+              <p class="text-center py-8 text-gray-500">Loading doctors...</p>
             </div>
           </div>
         </div>
@@ -765,6 +789,77 @@
           </div>
         </div>
 
+        <!-- ── VIEW: BILLING ── -->
+        <div id="billing-section" class="content-section">
+          <div class="table-card">
+            <div class="table-card-header">
+              <h3><i class="fas fa-file-invoice-dollar"></i> Billing & Invoices</h3>
+            </div>
+            <div style="overflow-x: auto">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Invoice #</th>
+                    <th>Patient</th>
+                    <th>Amount</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="billingTableBody">
+                  <tr><td colspan="5" style="text-align:center; color:#999;">No billing records yet.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── VIEW: STAFF & ADMIN ── -->
+        <div id="staff-section" class="content-section">
+          <div class="table-card">
+            <div class="table-card-header">
+              <h3><i class="fas fa-user-shield"></i> Staff & Admin</h3>
+            </div>
+            <div style="overflow-x: auto">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Role</th>
+                    <th>Department</th>
+                    <th>Email</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="staffTableBody">
+                  <tr><td colspan="5" style="text-align:center; color:#999;">No staff records yet.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="table-card" style="margin-top: 20px;">
+            <div class="table-card-header">
+              <h3><i class="fas fa-shield-alt"></i> Roles & Permissions</h3>
+            </div>
+            <div style="padding: 20px;">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <div style="padding: 15px; background: #f8fafc; border-radius: 8px; border-left: 4px solid #3b82f6;">
+                  <strong style="color: #1e40af;">Administrator</strong>
+                  <p style="font-size: 0.85rem; color: #64748b; margin-top: 5px;">Full system access, user management, billing control</p>
+                </div>
+                <div style="padding: 15px; background: #f8fafc; border-radius: 8px; border-left: 4px solid #10b981;">
+                  <strong style="color: #065f46;">Doctor</strong>
+                  <p style="font-size: 0.85rem; color: #64748b; margin-top: 5px;">Patient management, clinical records, prescriptions</p>
+                </div>
+                <div style="padding: 15px; background: #f8fafc; border-radius: 8px; border-left: 4px solid #f59e0b;">
+                  <strong style="color: #92400e;">Nurse</strong>
+                  <p style="font-size: 0.85rem; color: #64748b; margin-top: 5px;">Vitals recording, charting, patient assistance</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- ── VIEW: SETTINGS ── -->
         <div id="settings-section" class="content-section">
           <div class="table-card">
@@ -820,32 +915,37 @@
          highlights the active sidebar link.
          ───────────────────────────────────────────── */
       function showSection(sectionName) {
-        var allSections = document.querySelectorAll(".content-section");
-        allSections.forEach(function (section) {
-          section.classList.remove("active");
-        });
+        // 1. Hide all sections
+        const sections = document.querySelectorAll(".content-section");
+        sections.forEach(s => s.classList.remove("active"));
 
-        var allNavItems = document.querySelectorAll(".nav-item");
-        allNavItems.forEach(function (item) {
-          item.classList.remove("active");
-        });
+        // 2. Deactivate all nav items
+        const navItems = document.querySelectorAll(".nav-item");
+        navItems.forEach(i => i.classList.remove("active"));
 
-        document
-          .getElementById(sectionName + "-section")
-          .classList.add("active");
+        // 3. Show target section
+        const target = document.getElementById(sectionName + "-section");
+        if (target) {
+          target.classList.add("active");
+          
+          // Update SideNav active link
+          const link = document.querySelector(`.nav-item[onclick*="'${sectionName}'"]`);
+          if (link) link.classList.add("active");
 
-        var matchingNavLink = document.querySelector(
-          ".nav-item[onclick=\"showSection('" + sectionName + "')\"" + "]",
-        );
-        if (matchingNavLink) matchingNavLink.classList.add("active");
+          // Update Breadcrumb
+          const title = sectionName.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
+          document.getElementById("breadcrumbTitle").textContent = title;
 
-        var breadcrumbText = sectionName
-          .split("-")
-          .map(function (word) {
-            return word.charAt(0).toUpperCase() + word.slice(1);
-          })
-          .join(" ");
-        document.getElementById("breadcrumbTitle").textContent = breadcrumbText;
+          // Update URL Hash
+          if (window.location.hash !== "#" + sectionName) {
+            history.replaceState(null, null, "#" + sectionName);
+          }
+        }
+        
+        // Ensure sidebar closes on mobile after selection
+        if (window.innerWidth <= 1024) {
+          document.getElementById("adminSidebar").classList.remove("active");
+        }
       }
 
       /* ─────────────────────────────────────────────
@@ -909,19 +1009,25 @@
           if (!data) return;
           document.getElementById("patientsTableBody").innerHTML = data
             .map(function (p) {
-              return '<tr><td>' + p.name + '</td><td>' + p.cpr + '</td><td><button class="status-badge status-active" style="border:none;cursor:pointer;" onclick="bookForPatient(' + p.id + ', \'' + p.name + '\')"><i class="fas fa-calendar-plus"></i> Book</button></td></tr>';
+              return (
+                "<tr><td>" +
+                p.name +
+                "</td><td>" +
+                p.cpr +
+                '</td><td><button class="status-badge status-active" style="border:none;cursor:pointer;" onclick="bookForPatient(' +
+                p.id +
+                ", '" +
+                p.name +
+                '\')"><i class="fas fa-calendar-plus"></i> Book</button></td></tr>'
+              );
             })
             .join("");
         });
 
-        /* ── Doctors ── */
+        /* ── Doctors (Premium Directory) ── */
         apiFetch("doctors").then(function (data) {
           if (!data) return;
-          document.getElementById("doctorsTableBody").innerHTML = data
-            .map(function (d) {
-              return "<tr><td>" + d.name + "</td><td>" + d.id + "</td></tr>";
-            })
-            .join("");
+          renderDoctorsTable(data);
         });
 
         /* ── Appointments ── */
@@ -935,7 +1041,7 @@
               status: a.status
                 ? a.status.charAt(0).toUpperCase() + a.status.slice(1)
                 : "Pending",
-              id: a.appointment_id
+              id: a.appointment_id,
             };
           });
           setupYearFilter();
@@ -1105,10 +1211,12 @@
                 a.doctor +
                 '</td><td><span class="status-badge status-active">' +
                 a.status +
-                "</span></td><td>" + 
-                ((a.status.toLowerCase() !== 'terminated' && a.status.toLowerCase() !== 'completed') ? 
-                  '<button class="status-badge status-danger" style="background:#f44336; color:white; border:none; cursor:pointer;" onclick="terminateAppointment(' + a.id + ')">Terminate</button>' : 
-                  '—') +
+                (a.status.toLowerCase() !== "terminated" &&
+                a.status.toLowerCase() !== "completed"
+                  ? '<button class="status-badge status-danger" style="background:#ef4444; color:white; border:none; cursor:pointer; padding: 6px 14px;" onclick="terminateAppointment(' +
+                    a.id +
+                    ')">Terminate</button>'
+                  : "—") +
                 "</td></tr>"
               );
             })
@@ -1166,28 +1274,41 @@
 
       /* ── Terminate Appointment ── */
       function terminateAppointment(apptId) {
-        if (!confirm("Are you sure you want to terminate this appointment?")) return;
+        Swal.fire({
+          title: "Terminate Appointment?",
+          text: "Are you sure you want to terminate/delete this appointment?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#ef4444",
+          cancelButtonColor: "#9ca3af",
+          confirmButtonText: "Yes, terminate it",
+          cancelButtonText: "No, keep it",
+        }).then((result) => {
+          if (result.isConfirmed) {
+            var formData = new FormData();
+            formData.append("terminate_appointment", "1");
+            formData.append("appointment_id", apptId);
 
-        var formData = new FormData();
-        formData.append("terminate_appointment", "1");
-        formData.append("appointment_id", apptId);
-
-        fetch("../php/appointment_handler.php", {
-          method: "POST",
-          body: formData
-        })
-        .then(function(res) { return res.json(); })
-        .then(function(data) {
-          if (data.status === "success") {
-            alert("Appointment terminated successfully.");
-            loadAllTables(); // Refresh
-          } else {
-            alert("Error: " + data.message);
+            fetch("../php/appointment_handler.php", {
+              method: "POST",
+              body: formData,
+            })
+              .then(function (res) {
+                return res.json();
+              })
+              .then(function (data) {
+                if (data.status === "success") {
+                  Swal.fire("Terminated!", data.message, "success");
+                  loadAllTables(); // Refresh
+                } else {
+                  Swal.fire("Error", data.message, "error");
+                }
+              })
+              .catch(function (err) {
+                console.error("Termination error:", err);
+                Swal.fire("Error", "Failed to terminate appointment.", "error");
+              });
           }
-        })
-        .catch(function(err) {
-          console.error("Termination error:", err);
-          alert("Failed to terminate appointment.");
         });
       }
 
@@ -1199,10 +1320,19 @@
 
       /* ── Logout ── */
       function handleLogout() {
-        if (confirm("Are you sure you want to logout?")) {
-          // Redirect to logout script which handles session destruction and redirects to index.html
-          window.location.href = "../php/logout.php";
-        }
+        Swal.fire({
+          title: "Logout?",
+          text: "Are you sure you want to logout?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#ef4444",
+          cancelButtonColor: "#9ca3af",
+          confirmButtonText: "Yes, logout",
+        }).then((result) => {
+          if (result.isConfirmed) {
+            window.location.href = "../php/logout.php";
+          }
+        });
       }
 
       /* ─────────────────────────────────────────────
@@ -1212,38 +1342,61 @@
          ───────────────────────────────────────────── */
       /* ── Book for Patient ── */
       function bookForPatient(patientId, patientName) {
-        var reason = prompt("Enter reason for appointment for " + patientName + ":");
-        if (!reason) return;
+        Swal.fire({
+          title: "Book Appointment for " + patientName,
+          html:
+            '<div class="swal2-input-group">' +
+            '<label class="swal2-input-label">Reason for Appointment</label>' +
+            '<input id="swal-reason" class="swal2-input" placeholder="e.g. Regular Checkup">' +
+            '<label class="swal2-input-label">Date and Time</label>' +
+            '<input id="swal-date" type="datetime-local" class="swal2-input" value="' +
+            new Date().toISOString().slice(0, 16) +
+            '">' +
+            '<label class="swal2-input-label">Staff/Doctor ID</label>' +
+            '<input id="swal-doctor" type="number" class="swal2-input" placeholder="Staff ID">' +
+            "</div>",
+          focusConfirm: false,
+          showCancelButton: true,
+          confirmButtonText: "Book Now",
+          preConfirm: () => {
+            const reason = document.getElementById("swal-reason").value;
+            const date = document.getElementById("swal-date").value;
+            const doctor = document.getElementById("swal-doctor").value;
+            if (!reason || !date || !doctor) {
+              Swal.showValidationMessage("Please fill in all fields");
+            }
+            return { reason: reason, date: date, doctor: doctor };
+          },
+        }).then((result) => {
+          if (result.isConfirmed) {
+            const val = result.value;
+            var formData = new FormData();
+            formData.append("book_appointment", "1");
+            formData.append("patient_id", patientId);
+            formData.append("reason", val.reason);
+            formData.append("date", val.date.replace("T", " ")); // MySQL format
+            formData.append("doctor_id", val.doctor);
 
-        var date = prompt("Enter date (YYYY-MM-DD HH:MM):", new Date().toISOString().slice(0, 16).replace('T', ' '));
-        if (!date) return;
-
-        var doctorId = prompt("Enter Doctor ID (Staff ID):");
-        if (!doctorId) return;
-
-        var formData = new FormData();
-        formData.append("book_appointment", "1");
-        formData.append("patient_id", patientId);
-        formData.append("reason", reason);
-        formData.append("date", date);
-        formData.append("doctor_id", doctorId);
-
-        fetch("../php/appointment_handler.php", {
-          method: "POST",
-          body: formData
-        })
-        .then(function(res) { return res.json(); })
-        .then(function(data) {
-          if (data.status === "success") {
-            alert("Appointment booked successfully for " + patientName);
-            loadAllTables();
-          } else {
-            alert("Error: " + data.message);
+            fetch("../php/appointment_handler.php", {
+              method: "POST",
+              body: formData,
+            })
+              .then(function (res) {
+                return res.json();
+              })
+              .then(function (data) {
+                if (data.status === "success") {
+                  Swal.fire("Booked!", "Appointment booked successfully for " + patientName, "success");
+                  loadAllTables();
+                } else {
+                  Swal.fire("Error", data.message, "error");
+                }
+              })
+              .catch(function (err) {
+                console.error("Booking error:", err);
+                Swal.fire("Error", "Failed to book appointment.", "error");
+              });
           }
-        })
-        .catch(function(err) {
-          console.error("Booking error:", err);
-          alert("Failed to book appointment.");
         });
       }
 
@@ -1317,7 +1470,18 @@
         loadDashboardStats();
         loadAllTables();
         loadCharts();
+
+        // Initialize Section from Hash or Default
+        syncViewWithHash();
       });
+
+      window.addEventListener("hashchange", syncViewWithHash);
+      window.addEventListener("load", syncViewWithHash);
+
+      function syncViewWithHash() {
+        const hash = window.location.hash.substring(1) || "dashboard";
+        showSection(hash);
+      }
     </script>
   </body>
 </html>

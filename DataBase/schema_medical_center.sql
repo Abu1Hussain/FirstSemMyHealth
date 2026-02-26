@@ -36,9 +36,9 @@ CREATE TABLE IF NOT EXISTS `patients` (
   CONSTRAINT `fk_patients_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- MEDICAL_STAFF (doctors, nurses, etc.)
-CREATE TABLE IF NOT EXISTS `medical_staff` (
-  `staff_id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+-- DOCTORS
+CREATE TABLE IF NOT EXISTS `doctors` (
+  `doctor_id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `first_name` VARCHAR(100) NOT NULL,
   `last_name` VARCHAR(100) NOT NULL,
   `role` VARCHAR(50) NULL,
@@ -49,25 +49,25 @@ CREATE TABLE IF NOT EXISTS `medical_staff` (
   `user_id` INT UNSIGNED NULL,
   `profile_image` VARCHAR(255) DEFAULT 'default_user.png',
   `bio` TEXT NULL,
-  `capacity` INT DEFAULT 30,
-  PRIMARY KEY (`staff_id`),
+  `capacity` INT DEFAULT 4,
+  PRIMARY KEY (`doctor_id`),
   INDEX (`user_id`),
-  CONSTRAINT `fk_medical_staff_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL ON UPDATE CASCADE
+  CONSTRAINT `fk_doctors_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- MEDICAL_RECORDS
 CREATE TABLE IF NOT EXISTS `medical_records` (
   `record_id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `created_by` INT UNSIGNED NOT NULL, -- staff_id that created the record
+  `doctor_id` INT UNSIGNED NOT NULL, -- doctor_id that created the record
   `patient_id` INT UNSIGNED NOT NULL,
   `record_date` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `record_type` VARCHAR(100) NULL,
   `summary` TEXT NULL,
   `source_type` VARCHAR(100) NULL,
   PRIMARY KEY (`record_id`),
-  INDEX (`created_by`),
+  INDEX (`doctor_id`),
   INDEX (`patient_id`),
-  CONSTRAINT `fk_records_staff` FOREIGN KEY (`created_by`) REFERENCES `medical_staff` (`staff_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `fk_records_doctor` FOREIGN KEY (`doctor_id`) REFERENCES `doctors` (`doctor_id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `fk_records_patient` FOREIGN KEY (`patient_id`) REFERENCES `patients` (`patient_id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -115,8 +115,8 @@ CREATE TABLE IF NOT EXISTS `lab_results` (
 CREATE TABLE IF NOT EXISTS `appointments` (
   `appointment_id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `patient_id` INT UNSIGNED NOT NULL,
-  `staff_id` INT UNSIGNED NULL,
-  `appointment_date` DATETIME NOT NULL,
+  `doctor_id` INT UNSIGNED NULL,
+  `appointment_date DATETIME NOT NULL,
   `appointment_type` VARCHAR(100) NULL,
   `status` VARCHAR(50) NULL DEFAULT 'pending',
   `reason` TEXT NULL,
@@ -126,10 +126,10 @@ CREATE TABLE IF NOT EXISTS `appointments` (
   `created_by` INT UNSIGNED NULL,
   PRIMARY KEY (`appointment_id`),
   INDEX (`patient_id`),
-  INDEX (`staff_id`),
+  INDEX (`doctor_id`),
   INDEX (`created_by`),
   CONSTRAINT `fk_appointments_patient` FOREIGN KEY (`patient_id`) REFERENCES `patients` (`patient_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_appointments_staff` FOREIGN KEY (`staff_id`) REFERENCES `medical_staff` (`staff_id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT `fk_appointments_doctor` FOREIGN KEY (`doctor_id`) REFERENCES `doctors` (`doctor_id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_appointments_creator` FOREIGN KEY (`created_by`) REFERENCES `users` (`user_id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -142,8 +142,8 @@ SELECT p.patient_id, p.first_name, p.last_name, p.date_of_birth, p.phone, p.emai
 FROM `patients` p;
 
 CREATE OR REPLACE VIEW `view_doctors_min` AS
-SELECT s.staff_id, s.first_name, s.last_name, s.specialization, s.department, s.user_id
-FROM `medical_staff` s;
+SELECT s.doctor_id, s.first_name, s.last_name, s.specialization, s.department, s.user_id
+FROM `doctors` s;
 
 CREATE OR REPLACE VIEW `view_admins_min` AS
 SELECT u.user_id, u.email FROM `users` u WHERE u.role = 'admin';
@@ -202,8 +202,8 @@ VALUES
 (4002,'admin2@example.test','$2b$10$examplehash','admin'),
 (4003,'admin3@example.test','$2b$10$examplehash','admin');
 
--- Insert medical_staff entries for the 10 doctors (explicit staff_id values)
-INSERT IGNORE INTO `medical_staff` (`staff_id`,`first_name`,`last_name`,`role`,`specialization`,`phone`,`email`,`department`,`user_id`)
+-- Insert doctors entries (explicit doctor_id values)
+INSERT IGNORE INTO `doctors` (`doctor_id`,`first_name`,`last_name`,`role`,`specialization`,`phone`,`email`,`department`,`user_id`)
 VALUES
 (5001,'Ahmed','Al-Din','doctor','General Medicine','+97310000001','doctor1@example.test','General',2001),
 (5002,'Fatima','Khalid','doctor','Pediatrics','+97310000002','doctor2@example.test','Pediatrics',2002),
@@ -304,5 +304,19 @@ CREATE TABLE IF NOT EXISTS feedback_reports (
     message    TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- TICKETS
+CREATE TABLE IF NOT EXISTS tickets (
+    ticket_id      INT AUTO_INCREMENT PRIMARY KEY,
+    patient_id     INT UNSIGNED NOT NULL,
+    appointment_id INT UNSIGNED NOT NULL,
+    doctor_id       INT UNSIGNED NULL,
+    ticket_code    VARCHAR(20) NOT NULL,
+    created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (patient_id) REFERENCES patients(patient_id) ON DELETE CASCADE,
+    FOREIGN KEY (appointment_id) REFERENCES appointments(appointment_id) ON DELETE CASCADE,
+    FOREIGN KEY (doctor_id) REFERENCES doctors(doctor_id) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

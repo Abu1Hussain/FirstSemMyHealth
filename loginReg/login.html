@@ -1,215 +1,142 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login – MyHealth Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+    <script>
+      // Apply dark mode BEFORE render to prevent flash
+      if (localStorage.getItem('darkMode') === 'enabled') {
+        document.documentElement.classList.add('dark');
+      }
+      tailwind.config = { darkMode: 'class' };
+    </script>
     <style>
-        /* ══════════════════════════════════════════
-           Login Page Styles (Premium/Unified)
-           ══════════════════════════════════════════ */
-
-        /* Reset */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: "Inter", -apple-system, sans-serif;
-            background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
-            min-height: 100vh;
-            color: #102a43;
-        }
-
-        /* ── Navigation Bar ── */
-        .navbar {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            padding: 20px 40px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-        }
-        .logo-nav   { font-size: 24px; font-weight: 800; color: #4f46e5; text-decoration: none; letter-spacing: -0.5px; }
-        .nav-links  { display: flex; gap: 15px; }
-        .nav-link   { text-decoration: none; color: #486581; font-size: 15px; padding: 8px 16px; border-radius: 8px; transition: all 0.2s; font-weight: 500; }
-        .nav-link:hover  { background: rgba(79, 70, 229, 0.05); color: #4f46e5; }
-        .nav-link.active { background: #4f46e5; color: white; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3); }
-
-        /* ── Form Container ── */
-        .container {
-            background: white;
-            padding: 40px;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 500px;
-            margin: 0 auto;
-            border: 1px solid #f0f4f8;
-        }
-        h1 { text-align: center; color: #102a43; margin-bottom: 30px; font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
-
-        /* ── Form Fields ── */
-        .form-group { margin-bottom: 20px; }
-        label       { display: block; margin-bottom: 8px; color: #334e68; font-size: 14px; font-weight: 600; }
-        input       { width: 100%; padding: 14px; border: 2px solid #f0f4f8; border-radius: 10px; font-size: 15px; background: #f8fafc; transition: all 0.3s ease; color: #102a43; }
-        input::placeholder { color: #9fb3c8; }
-        input:focus { outline: none; border-color: #4f46e5; background: #fff; box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1); }
-
-        /* ── Password Toggle ── */
-        .password-wrapper  { position: relative; }
-        .toggle-password   { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #627d98; cursor: pointer; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 4px 8px; border-radius: 4px; }
-        .toggle-password:hover { color: #4f46e5; background: rgba(79, 70, 229, 0.05); }
-
-        /* ── Buttons ── */
-        .btn-login       { width: 100%; padding: 16px; background: #4f46e5; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 10px; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2); }
-        .btn-login:hover { background: #4338ca; transform: translateY(-1px); box-shadow: 0 6px 12px rgba(79, 70, 229, 0.3); }
-        .btn-login:active { transform: translateY(0); }
-
-        /* ── Error Messages ── */
-        .error-message { color: #d64545; font-size: 12px; margin-top: 6px; display: none; font-weight: 500; }
-        .server-error  { background: #fff5f5; color: #c0392b; padding: 12px; border-radius: 10px; margin-bottom: 20px; font-size: 14px; text-align: center; border: 1px solid #feb2b2; }
-
-        /* ── Forgot Password Link ── */
-        .forgot-password-link       { text-align: center; margin-top: 25px; }
-        .forgot-password-link a     { color: #4f46e5; text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; }
-        .forgot-password-link a:hover { text-decoration: underline; color: #4338ca; }
+      body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
-<body>
+<body class="bg-gradient-to-br from-slate-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 min-height-screen flex flex-col" style="min-height:100vh;">
 
-    <!-- ═══════════════════════════════════════
-         Navigation Bar
-         ═══════════════════════════════════════ -->
-    <div class="navbar">
-        <a href="../index.html" class="logo-nav">Healthcare Portal</a>
-        <div class="nav-links">
-            <a href="register.html" class="nav-link">Registration</a>
-            <a href="login.html" class="nav-link active">Login</a>
+    <!-- ═══ Navbar ═══ -->
+    <nav class="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-700 px-6 py-4 flex items-center justify-between sticky top-0 z-50">
+        <a href="../index.html" class="text-xl font-extrabold text-indigo-600 tracking-tight">MyHealth Portal</a>
+        <div class="flex items-center gap-3">
+            <a href="register.html" class="text-sm font-medium text-gray-500 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 px-3 py-1.5 rounded-lg transition-colors">Register</a>
+            <a href="login.html" class="text-sm font-semibold bg-indigo-600 text-white px-4 py-1.5 rounded-lg shadow-sm hover:bg-indigo-700 transition-colors">Login</a>
+            <!-- Dark Mode Toggle -->
+            <button id="darkModeToggle" class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors">
+                <ion-icon id="darkModeIcon" name="moon-outline" style="font-size:1.1rem;"></ion-icon>
+            </button>
         </div>
-    </div>
+    </nav>
 
-    <!-- ═══════════════════════════════════════
-         Login Form
-         ═══════════════════════════════════════ -->
-    <div class="container">
-        <h1>Login</h1>
-        <form id="loginForm">
-            <!-- Server-side error banner (hidden by default) -->
-            <div id="apiError" class="server-error" style="display:none;"></div>
-
-            <!-- CPR or Email field -->
-            <div class="form-group">
-                <label for="identifier">CPR or Email</label>
-                <input type="text" id="identifier" name="identifier" required>
-                <span class="error-message" id="identifierError">Please enter your CPR or Email</span>
-            </div>
-
-            <!-- Password field -->
-            <div class="form-group">
-                <label for="password">Password</label>
-                <div class="password-wrapper">
-                    <input type="password" id="password" name="password" required>
-                    <button type="button" class="toggle-password" id="togglePassword">Show</button>
+    <!-- ═══ Form ═══ -->
+    <main class="flex-1 flex items-center justify-center p-6">
+        <div class="w-full max-w-md bg-white dark:bg-gray-800 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+            <!-- Card Header -->
+            <div class="bg-indigo-600 px-8 py-7 text-center">
+                <div class="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                    <ion-icon name="person-outline" style="font-size:1.8rem;color:white;"></ion-icon>
                 </div>
-                <span class="error-message" id="passwordError">Please enter your password</span>
+                <h1 class="text-2xl font-bold text-white">Welcome Back</h1>
+                <p class="text-indigo-100 text-sm mt-1">Sign in to your account</p>
             </div>
 
-            <!-- Submit -->
-            <button type="submit" class="btn-login">Login</button>
-        </form>
+            <!-- Card Body -->
+            <div class="p-8 space-y-5">
+                <div id="apiError" class="hidden bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-700 text-sm rounded-xl px-4 py-3"></div>
 
-        <!-- Forgot password link -->
-        <div class="forgot-password-link">
-            <a href="forgot_password.html">Forgot Password?</a>
+                <form id="loginForm" class="space-y-4">
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">CPR or Email</label>
+                        <div class="relative">
+                            <span class="absolute left-3.5 top-3.5 text-gray-400"><ion-icon name="card-outline"></ion-icon></span>
+                            <input type="text" id="identifier" name="identifier" required
+                                   class="w-full bg-gray-50 dark:bg-gray-700 border-2 border-gray-100 dark:border-gray-600 rounded-xl pl-10 pr-4 py-3.5 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 dark:focus:ring-indigo-900/30 transition-all"
+                                   placeholder="Your CPR or Email">
+                        </div>
+                        <span class="error-message hidden text-xs text-red-500 font-medium" id="identifierError">Please enter your CPR or Email</span>
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Password</label>
+                        <div class="relative">
+                            <span class="absolute left-3.5 top-3.5 text-gray-400"><ion-icon name="lock-closed-outline"></ion-icon></span>
+                            <input type="password" id="password" name="password" required
+                                   class="w-full bg-gray-50 dark:bg-gray-700 border-2 border-gray-100 dark:border-gray-600 rounded-xl pl-10 pr-12 py-3.5 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 dark:focus:ring-indigo-900/30 transition-all"
+                                   placeholder="••••••••">
+                            <button type="button" class="toggle-password absolute right-3.5 top-3 text-gray-400 hover:text-indigo-500 transition-colors" data-target="password">
+                                <ion-icon name="eye-outline" style="font-size:1.1rem;"></ion-icon>
+                            </button>
+                        </div>
+                        <span class="hidden text-xs text-red-500 font-medium" id="passwordError">Please enter your password</span>
+                    </div>
+
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl shadow-md shadow-indigo-200 dark:shadow-none transition-all transform active:scale-95 mt-2">
+                        Sign In
+                    </button>
+                </form>
+
+                <div class="text-center text-sm text-gray-400">
+                    <a href="forgot_password.html" class="text-indigo-600 hover:text-indigo-700 font-semibold dark:text-indigo-400 transition-colors">Forgot Password?</a>
+                </div>
+                <div class="text-center text-sm text-gray-400">
+                    Don't have an account? <a href="register.html" class="text-indigo-600 hover:text-indigo-700 font-semibold dark:text-indigo-400">Register here</a>
+                </div>
+            </div>
         </div>
-    </div>
+    </main>
 
-    <!-- ═══════════════════════════════════════
-         Login Script
-         ═══════════════════════════════════════ -->
+    <script src="../js/auth.js"></script>
     <script>
-        /* ── Toggle Password Visibility ── */
-        const togglePasswordButton = document.getElementById('togglePassword');
-        const passwordField        = document.getElementById('password');
-
-        togglePasswordButton.addEventListener('click', function () {
-            const isHidden = passwordField.getAttribute('type') === 'password';
-            passwordField.setAttribute('type', isHidden ? 'text' : 'password');
-            this.textContent = isHidden ? 'Hide' : 'Show';
-        });
-
-        /* ── Form Validation & Submission ── */
         const loginForm = document.getElementById('loginForm');
-
         loginForm.addEventListener('submit', function (event) {
             event.preventDefault();
-
             const identifierValue = document.getElementById('identifier').value.trim();
             const passwordValue   = document.getElementById('password').value.trim();
             const identifierError = document.getElementById('identifierError');
             const passwordError   = document.getElementById('passwordError');
+            const apiError        = document.getElementById('apiError');
 
-            let isFormValid = true;
+            let valid = true;
+            identifierError.classList.add('hidden');
+            passwordError.classList.add('hidden');
+            apiError.classList.add('hidden');
 
-            // Reset previous errors
-            identifierError.style.display = 'none';
-            passwordError.style.display   = 'none';
-            document.getElementById('apiError').style.display = 'none';
+            if (!identifierValue) { identifierError.classList.remove('hidden'); valid = false; }
+            if (!passwordValue)   { passwordError.classList.remove('hidden');   valid = false; }
 
-            // Validate identifier
-            if (identifierValue === '') {
-                identifierError.style.display = 'block';
-                isFormValid = false;
-            }
+            if (valid) {
+                const fd = new FormData();
+                fd.append('login_btn', '1');
+                fd.append('identifier', identifierValue);
+                fd.append('password', passwordValue);
 
-            // Validate password
-            if (passwordValue === '') {
-                passwordError.style.display = 'block';
-                isFormValid = false;
-            }
-
-            // If everything looks good, send to server
-            if (isFormValid) {
-                const formPayload = new FormData();
-                formPayload.append('login_btn', '1');
-                formPayload.append('identifier', identifierValue);
-                formPayload.append('password', passwordValue);
-
-                fetch('../php/auth.php', {
-                    method: 'POST',
-                    body: formPayload
-                })
-                .then(response => response.text())
-                .then(rawText => {
-                    try {
-                        const serverResponse = JSON.parse(rawText);
-
-                        if (serverResponse.status === 'success') {
-                            // Store the user role so MFA page knows where to redirect
-                            if (serverResponse.role) {
-                                localStorage.setItem('user_role', serverResponse.role);
+                fetch('../php/auth.php', { method: 'POST', body: fd })
+                    .then(r => r.text())
+                    .then(raw => {
+                        try {
+                            const data = JSON.parse(raw);
+                            if (data.status === 'success') {
+                                if (data.role) localStorage.setItem('user_role', data.role);
+                                window.location.href = 'MFA.html';
+                            } else {
+                                apiError.textContent = data.message;
+                                apiError.classList.remove('hidden');
                             }
-                            window.location.href = 'MFA.html';
-                        } else {
-                            // Show the error message from the server
-                            const errorBanner = document.getElementById('apiError');
-                            errorBanner.textContent  = serverResponse.message;
-                            errorBanner.style.display = 'block';
+                        } catch (e) {
+                            apiError.textContent = 'Server error. Please try again.';
+                            apiError.classList.remove('hidden');
                         }
-                    } catch (parseError) {
-                        // If the server returned non-JSON (e.g. a PHP error), show it
-                        console.error('Server returned non-JSON:', rawText);
-                        const errorBanner = document.getElementById('apiError');
-                        errorBanner.textContent  = "Server Error: " + rawText.substring(0, 100);
-                        errorBanner.style.display = 'block';
-                    }
-                })
-                .catch(networkError => {
-                    console.error('Network error:', networkError);
-                    const errorBanner = document.getElementById('apiError');
-                    errorBanner.textContent  = "Connection error. Please try again.";
-                    errorBanner.style.display = 'block';
-                });
+                    })
+                    .catch(() => {
+                        apiError.textContent = 'Connection error. Please try again.';
+                        apiError.classList.remove('hidden');
+                    });
             }
         });
     </script>

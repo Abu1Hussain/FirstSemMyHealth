@@ -1,267 +1,98 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MFA Verification – MyHealth Portal</title>
-    <style>
-        /* ══════════════════════════════════════════
-           MFA Page Styles (Premium/Unified)
-           ══════════════════════════════════════════ */
-
-        /* Reset */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: "Inter", -apple-system, sans-serif;
-            background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
-            min-height: 100vh;
-            color: #102a43;
-        }
-
-        /* ── Navigation Bar ── */
-        .navbar {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            padding: 20px 40px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-        }
-        .logo-nav   { font-size: 24px; font-weight: 800; color: #4f46e5; text-decoration: none; letter-spacing: -0.5px; }
-        .nav-links  { display: flex; gap: 15px; }
-        .nav-link   { text-decoration: none; color: #486581; font-size: 15px; padding: 8px 16px; border-radius: 8px; transition: all 0.2s; font-weight: 500; }
-        .nav-link:hover  { background: rgba(79, 70, 229, 0.05); color: #4f46e5; }
-        .nav-link.active { background: #4f46e5; color: white; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3); }
-
-        /* ── Container ── */
-        .container {
-            background: white;
-            padding: 40px;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 500px;
-            margin: 40px auto;
-            border: 1px solid #f0f4f8;
-            text-align: center;
-        }
-
-        h1 { color: #102a43; margin-bottom: 10px; font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
-        p  { color: #627d98; margin-bottom: 30px; font-size: 15px; line-height: 1.5; }
-
-        /* ── Code Input ── */
-        .code-input {
-            width: 100%;
-            padding: 16px;
-            border: 2px solid #f0f4f8;
-            border-radius: 10px;
-            font-size: 24px;
-            text-align: center;
-            letter-spacing: 8px;
-            margin-bottom: 20px;
-            background: #f8fafc;
-            color: #102a43;
-            transition: all 0.3s ease;
-            font-family: inherit;
-            font-weight: 600;
-        }
-        .code-input:focus {
-            outline: none;
-            border-color: #4f46e5;
-            background: #fff;
-            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
-        }
-        .code-input::placeholder { color: #cbd5e0; letter-spacing: 4px; }
-
-        /* ── Buttons ── */
-        .btn-check {
-            width: 100%;
-            padding: 16px;
-            background: #4f46e5;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            margin-bottom: 15px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2);
-        }
-        .btn-check:hover {
-            background: #4338ca;
-            transform: translateY(-1px);
-            box-shadow: 0 6px 12px rgba(79, 70, 229, 0.3);
-        }
-        .btn-check:active { transform: translateY(0); }
-
-        .btn-resend {
-            width: 100%;
-            padding: 16px;
-            background: white;
-            color: #4f46e5;
-            border: 2px solid #eef2f6;
-            border-radius: 10px;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-bottom: 20px;
-            transition: all 0.2s ease;
-        }
-        .btn-resend:hover {
-            background: #f8fafc;
-            border-color: #dbeafe;
-            color: #4338ca;
-        }
-
-        /* ── Links ── */
-        .back-link { margin-top: 20px; font-size: 14px; color: #829ab1; }
-        .back-link a { color: #4f46e5; text-decoration: none; font-weight: 500; transition: color 0.2s; }
-        .back-link a:hover { text-decoration: underline; color: #4338ca; }
-
-        /* ── Messages ── */
-        .error-message {
-            color: #d64545;
-            font-size: 13px;
-            margin-top: 10px;
-            display: none;
-            font-weight: 500;
-            background: #fff5f5;
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #feb2b2;
-        }
-        .success-message {
-            color: #047481;
-            font-size: 14px;
-            margin-top: 10px;
-            display: none;
-            font-weight: 500;
-            background: #e0f2f1;
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #b2dfdb;
-        }
-    </style>
-</head>
-<body>
-
-    <!-- ═══════════════════════════════════════
-         Navigation Bar
-         ═══════════════════════════════════════ -->
-    <div class="navbar">
-        <a href="../index.html" class="logo-nav">MyHealth Portal</a>
-        <div class="nav-links">
-            <a href="login.html" class="nav-link">Login</a>
-        </div>
-    </div>
-
-    <!-- ═══════════════════════════════════════
-         MFA Verification Form
-         ═══════════════════════════════════════ -->
-    <div class="container">
-        <h1>Verify Identity</h1>
-        <p>Enter the 6-digit code sent to your registered device to continue.</p>
-
-        <form id="mfaForm">
-            <input
-                type="text"
-                id="codeInput"
-                class="code-input"
-                maxlength="6"
-                placeholder="000000"
-                required
-            />
-            
-            <div class="error-message" id="codeError">Please enter a 6-digit code</div>
-            <div class="success-message" id="successMessage">Code sent successfully!</div>
-
-            <button type="submit" class="btn-check">Verify Code</button>
-            <button type="button" class="btn-resend" id="resendButton">Resend Code</button>
-        </form>
-
-        <div class="back-link">
-            <a href="login.html">Back to Login</a>
-        </div>
-    </div>
-
-    <!-- ═══════════════════════════════════════
-         MFA Script
-         ═══════════════════════════════════════ -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
     <script>
-        /* ── Auto-focus the code input on page load ── */
-        window.addEventListener("load", function () {
-            document.getElementById("codeInput").focus();
+      if (localStorage.getItem('darkMode') === 'enabled') document.documentElement.classList.add('dark');
+      tailwind.config = { darkMode: 'class' };
+    </script>
+    <style> body { font-family: 'Inter', sans-serif; } </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 flex flex-col" style="min-height:100vh;">
+
+    <!-- ═══ Navbar ═══ -->
+    <nav class="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-700 px-6 py-4 flex items-center justify-between sticky top-0 z-50">
+        <a href="../index.html" class="text-xl font-extrabold text-indigo-600 tracking-tight">MyHealth Portal</a>
+        <div class="flex items-center gap-3">
+            <a href="login.html" class="text-sm font-medium text-gray-500 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 px-3 py-1.5 rounded-lg transition-colors">Login</a>
+            <button id="darkModeToggle" class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors">
+                <ion-icon id="darkModeIcon" name="moon-outline" style="font-size:1.1rem;"></ion-icon>
+            </button>
+        </div>
+    </nav>
+
+    <!-- ═══ Form ═══ -->
+    <main class="flex-1 flex items-center justify-center p-6">
+        <div class="w-full max-w-md bg-white dark:bg-gray-800 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+            <!-- Card Header -->
+            <div class="bg-indigo-600 px-8 py-7 text-center">
+                <div class="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                    <ion-icon name="shield-checkmark-outline" style="font-size:1.8rem;color:white;"></ion-icon>
+                </div>
+                <h1 class="text-2xl font-bold text-white">Verify Identity</h1>
+                <p class="text-indigo-100 text-sm mt-1">Enter the 6-digit code sent to your device</p>
+            </div>
+
+            <!-- Card Body -->
+            <div class="p-8 space-y-5 text-center">
+                <form id="mfaForm" class="space-y-4">
+                    <input type="text" id="codeInput" maxlength="6" required placeholder="000 000"
+                           class="w-full bg-gray-50 dark:bg-gray-700 border-2 border-gray-100 dark:border-gray-600 rounded-xl px-4 py-4 text-3xl text-center font-bold tracking-[0.5em] text-gray-800 dark:text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 dark:focus:ring-indigo-900/30 transition-all">
+
+                    <div id="codeError" class="hidden bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-700 text-sm rounded-xl px-4 py-2.5">Please enter the 6-digit code</div>
+                    <div id="successMessage" class="hidden bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-700 text-sm rounded-xl px-4 py-2.5">Code sent successfully!</div>
+
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl shadow-md shadow-indigo-200 dark:shadow-none transition-all transform active:scale-95">
+                        Verify Code
+                    </button>
+                    <button type="button" id="resendButton" class="w-full bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-indigo-600 dark:text-indigo-400 border-2 border-gray-100 dark:border-gray-600 font-semibold py-3.5 rounded-xl transition-all">
+                        Resend Code
+                    </button>
+                </form>
+
+                <div class="text-sm text-gray-400">
+                    <a href="login.html" class="text-indigo-600 dark:text-indigo-400 hover:underline font-medium">← Back to Login</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../js/auth.js"></script>
+    <script>
+        window.addEventListener('load', function() { document.getElementById('codeInput').focus(); });
+
+        document.getElementById('codeInput').addEventListener('input', function() {
+            this.value = this.value.replace(/\D/g, '');
         });
 
-        /* ── Helper: strip everything except digits ── */
-        function removeNonDigits(text) {
-            var result = "";
-            for (var i = 0; i < text.length; i++) {
-                if (text[i] >= "0" && text[i] <= "9") {
-                    result += text[i];
-                }
-            }
-            return result;
-        }
+        document.getElementById('mfaForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const codeError = document.getElementById('codeError');
+            const enteredCode = document.getElementById('codeInput').value;
+            codeError.classList.add('hidden');
 
-        /* ── Allow only numeric input ── */
-        document.getElementById("codeInput").addEventListener("input", function () {
-            this.value = removeNonDigits(this.value);
-        });
-
-        /* ── Submit on Enter key ── */
-        document.getElementById("codeInput").addEventListener("keyup", function (event) {
-            if (event.key === "Enter") {
-                document.getElementById("mfaForm").dispatchEvent(new Event("submit"));
-            }
-        });
-
-        /* ── MFA Form Validation ── */
-        document.getElementById("mfaForm").addEventListener("submit", function (event) {
-            event.preventDefault();
-
-            // Hide previous messages
-            const codeError = document.getElementById("codeError");
-            const successMessage = document.getElementById("successMessage");
-            codeError.style.display = "none";
-            successMessage.style.display = "none";
-
-            const enteredCode = document.getElementById("codeInput").value;
-
-            // Check if the code is exactly '111111'
-            if (enteredCode !== "111111") {
-                codeError.textContent = "Invalid code. Please enter 111111";
-                codeError.style.display = "block";
+            if (enteredCode !== '111111') {
+                codeError.textContent = 'Invalid code. Please enter 111111';
+                codeError.classList.remove('hidden');
                 return;
             }
 
-            // MFA verification successful
-            alert("MFA verification successful!");
-
-            // Redirect based on user role stored during login
-            const userRole = localStorage.getItem("user_role");
-
-            if (userRole === "doctor") {
-                window.location.href = "../dashboards/doctor_dashboard.html";
-            } else if (userRole === "admin") {
-                window.location.href = "../dashboards/admin_dashboard.html";
-            } else {
-                window.location.href = "../dashboards/patient_dashboard.html";
-            }
+            const userRole = localStorage.getItem('user_role');
+            if (userRole === 'doctor')      window.location.href = '../dashboards/doctor_dashboard.html';
+            else if (userRole === 'admin')  window.location.href = '../dashboards/admin_dashboard.html';
+            else                            window.location.href = '../dashboards/patient_dashboard.html';
         });
 
-        /* ── Resend Code Button ── */
-        document.getElementById("resendButton").addEventListener("click", function () {
-            const successBanner = document.getElementById("successMessage");
-            successBanner.style.display = "block";
-
-            // Auto-hide after 10 seconds
-            setTimeout(function () {
-                successBanner.style.display = "none";
-            }, 10000);
+        document.getElementById('resendButton').addEventListener('click', function() {
+            const banner = document.getElementById('successMessage');
+            banner.classList.remove('hidden');
+            setTimeout(() => banner.classList.add('hidden'), 10000);
         });
     </script>
 </body>

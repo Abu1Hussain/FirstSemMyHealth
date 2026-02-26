@@ -194,14 +194,6 @@
                 <ion-icon name="people-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
                 <span class="sidebar-text ml-3 text-sm font-medium">Patient Management</span>
             </a>
-            <a href="#" data-section="doctors-list" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 group transition-all">
-                <ion-icon name="medkit-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
-                <span class="sidebar-text ml-3 text-sm font-medium">Doctor Management</span>
-            </a>
-            <a href="#" data-section="appointments" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 group transition-all">
-                <ion-icon name="calendar-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
-                <span class="sidebar-text ml-3 text-sm font-medium">Schedule</span>
-            </a>
             <a href="#" data-section="records" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 group transition-all">
                 <ion-icon name="document-text-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
                 <span class="sidebar-text ml-3 text-sm font-medium">Medical Records</span>
@@ -209,14 +201,6 @@
             <a href="#" data-section="prescriptions" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 group transition-all">
                 <ion-icon name="flask-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
                 <span class="sidebar-text ml-3 text-sm font-medium">Pharmacy & Rx</span>
-            </a>
-            <a href="#" data-section="billing" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 group transition-all">
-                <ion-icon name="card-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
-                <span class="sidebar-text ml-3 text-sm font-medium">Billing</span>
-            </a>
-            <a href="#" data-section="staff" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 group transition-all">
-                <ion-icon name="shield-checkmark-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
-                <span class="sidebar-text ml-3 text-sm font-medium">Staff & Admin</span>
             </a>
             <a href="#" data-section="profile" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 group transition-all">
                 <ion-icon name="person-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
@@ -295,7 +279,7 @@
             <!-- ═══════════════════════════════
                  VIEW: DASHBOARD
             ═══════════════════════════════ -->
-            <div id="view-dashboard" class="content-section active" data-aos="fade-up">
+            <div id="view-dashboard" class="content-section" data-aos="fade-up">
                 <h1 class="text-3xl font-semibold text-gray-800 dark:text-white mb-6">Dashboard</h1>
 
                 <!-- Stat Cards -->
@@ -358,61 +342,92 @@
                     <div class="space-y-6">
                         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
                             <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-4">Quick Actions</h2>
-                            <div class="grid grid-cols-2 gap-3">
-                                <button onclick="showSection('patients')" class="flex flex-col items-center gap-2 p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 hover:bg-blue-100 transition-all group">
-                                    <ion-icon name="person-add-outline" class="text-xl group-hover:scale-125 transition-transform"></ion-icon>
-                                    <span class="text-[10px] font-bold uppercase">Add Patient</span>
+                            <div class="grid grid-cols-3 gap-3">
+                                <button onclick="showSection('patients')" class="flex flex-col items-center gap-2 p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 hover:bg-blue-600 hover:text-white transition-all group">
+                                    <ion-icon name="people-outline" class="text-xl group-hover:scale-125 transition-transform"></ion-icon>
+                                    <span class="text-[10px] font-bold uppercase">Patients</span>
                                 </button>
-                                <button onclick="showSection('records')" class="flex flex-col items-center gap-2 p-4 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-600 hover:bg-green-100 transition-all group">
-                                    <ion-icon name="document-text-outline" class="text-xl group-hover:scale-125 transition-transform"></ion-icon>
-                                    <span class="text-[10px] font-bold uppercase">New Record</span>
-                                </button>
-                                <button onclick="showSection('prescriptions')" class="flex flex-col items-center gap-2 p-4 rounded-xl bg-purple-50 dark:bg-purple-900/20 text-purple-600 hover:bg-purple-100 transition-all group">
+                                <button onclick="showSection('prescriptions')" class="flex flex-col items-center gap-2 p-4 rounded-xl bg-purple-50 dark:bg-purple-900/20 text-purple-600 hover:bg-purple-600 hover:text-white transition-all group">
                                     <ion-icon name="flask-outline" class="text-xl group-hover:scale-125 transition-transform"></ion-icon>
                                     <span class="text-[10px] font-bold uppercase">Issue Meds</span>
                                 </button>
-                                <button onclick="showSection('billing')" class="flex flex-col items-center gap-2 p-4 rounded-xl bg-orange-50 dark:bg-orange-900/20 text-orange-600 hover:bg-orange-100 transition-all group">
-                                    <ion-icon name="receipt-outline" class="text-xl group-hover:scale-125 transition-transform"></ion-icon>
-                                    <span class="text-[10px] font-bold uppercase">Billing</span>
+                                <button onclick="showSection('records')" class="flex flex-col items-center gap-2 p-4 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all group">
+                                    <ion-icon name="document-text-outline" class="text-xl group-hover:scale-125 transition-transform"></ion-icon>
+                                    <span class="text-[10px] font-bold uppercase">Records</span>
                                 </button>
                             </div>
                         </div>
+                    </div> <!-- End space-y-6 -->
+                </div> <!-- End grid (line 329) -->
 
-                        <!-- Mini Chart or Activity -->
-                        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-                            <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-4">Recent Activity</h2>
-                            <div class="space-y-4" id="mini-activity-log">
-                                 <p class="text-xs text-gray-400">Syncing logs...</p>
-                            </div>
+                <!-- Charts & Activity Row (Redesigned for compact view) -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Patient Admissions (Small Box) -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 transition-all hover:shadow-md">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-sm font-bold text-gray-800 dark:text-white uppercase tracking-wider">Admissions</h2>
+                            <ion-icon name="trending-up-outline" class="text-blue-500"></ion-icon>
+                        </div>
+                        <div style="height: 160px; position: relative;">
+                            <canvas id="patientAdmissionsChart"></canvas>
                         </div>
                     </div>
-                </div>
 
-                <!-- Charts Row (Ported from test dashboard) -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-                        <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-4">Patient Admissions</h2>
-                        <canvas id="patientAdmissionsChart" height="200"></canvas>
+                    <!-- Department Popularity (Small Box) -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 transition-all hover:shadow-md">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-sm font-bold text-gray-800 dark:text-white uppercase tracking-wider">Departments</h2>
+                            <ion-icon name="pie-chart-outline" class="text-indigo-500"></ion-icon>
+                        </div>
+                        <div style="height: 160px; position: relative;">
+                            <canvas id="departmentPopularityChart"></canvas>
+                        </div>
                     </div>
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
-                        <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-4">Department Popularity</h2>
-                        <canvas id="departmentPopularityChart" height="200"></canvas>
+
+                    <!-- Recent Activity (Moved here to balance the row) -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 transition-all hover:shadow-md">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-sm font-bold text-gray-800 dark:text-white uppercase tracking-wider">Recent Activity</h2>
+                            <ion-icon name="list-outline" class="text-purple-500"></ion-icon>
+                        </div>
+                        <div class="space-y-3" id="mini-activity-log">
+                             <p class="text-[10px] text-gray-400">Syncing logs...</p>
+                        </div>
                     </div>
-                </div>
+                </div> <!-- End grid -->
+            </div> <!-- End view-dashboard -->
 
             <!-- ═══════════════════════════════
                  VIEW: PATIENT MANAGEMENT
             ═══════════════════════════════ -->
             <div id="view-patients" class="content-section hidden" data-aos="fade-up">
-                <div class="flex justify-between items-center mb-6">
-                    <h1 class="text-3xl font-semibold text-gray-800 dark:text-white m-0">👥 Patient Management</h1>
-                    <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl shadow-lg flex items-center gap-2 text-sm transition-all transform active:scale-95">
-                        <ion-icon name="person-add-outline"></ion-icon> Register New Patient
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Patient Management</h1>
+                    <button class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl shadow-lg shadow-blue-200 dark:shadow-none flex items-center gap-2 text-sm font-bold transition-all transform active:scale-95">
+                        <ion-icon name="person-add-outline" class="text-lg"></ion-icon> Register New Patient
                     </button>
                 </div>
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-100 dark:border-gray-700">
-                    <div class="p-6 border-b border-gray-50 dark:border-gray-700">
-                         <h2 class="text-lg font-bold text-gray-800 dark:text-white">Active Patient List</h2>
+
+                <!-- Today's Patient List (Fixed Missing Container) -->
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden mb-8">
+                    <div class="p-6 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
+                        <h2 class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                            <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                            Today's Scheduled Patients
+                        </h2>
+                    </div>
+                    <div class="p-6 overflow-x-auto" id="patients-list-container">
+                         <div class="py-12 text-center text-gray-500">
+                             <div class="spinner mx-auto mb-4"></div>
+                             <p>Loading today's patients...</p>
+                         </div>
+                    </div>
+                </div>
+
+                <!-- Full Directory -->
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                    <div class="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                         <h2 class="text-lg font-bold text-gray-800 dark:text-white">Patient Directory</h2>
                     </div>
                     <div class="p-6 overflow-x-auto" id="patients-full-list">
                          <p class="text-gray-500 text-center py-8">Loading patient directory...</p>
@@ -420,16 +435,7 @@
                 </div>
             </div>
 
-            <!-- ═══════════════════════════════
-                 VIEW: DOCTOR MANAGEMENT
-            ═══════════════════════════════ -->
-            <div id="view-doctors-list" class="content-section hidden" data-aos="fade-up">
-                <h1 class="text-3xl font-semibold text-gray-800 dark:text-white mb-6">👨‍⚕️ Doctor Management</h1>
-                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6" id="doctors-grid-container">
-                    <!-- Cards will be injected by JS -->
-                    <p class="col-span-full text-center py-10 text-gray-400">Loading staff profiles...</p>
-                </div>
-            </div>
+
 
             <!-- ═══════════════════════════════
                  VIEW: APPOINTMENTS (HISTORY)
@@ -493,6 +499,7 @@
                 </div>
             </div>
 
+
             <!-- ═══════════════════════════════
                  VIEW: MEDICAL RECORDS
             ═══════════════════════════════ -->
@@ -507,75 +514,50 @@
                 </div>
             </div>
 
-            <!-- ═══════════════════════════════
-                 VIEW: BILLING
-            ═══════════════════════════════ -->
-            <div id="view-billing" class="content-section hidden" data-aos="fade-up">
-                <h1 class="text-3xl font-semibold text-gray-800 dark:text-white mb-6">💳 Billing & Invoices</h1>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="billing-history">
-                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 border-green-500">
-                         <div class="flex justify-between mb-2">
-                             <span class="text-[10px] font-bold text-gray-400 uppercase">INV-2024-001</span>
-                             <span class="text-[10px] font-bold text-green-600">PAID</span>
-                         </div>
-                         <h3 class="text-lg font-bold text-gray-800 dark:text-white">John Doe</h3>
-                         <p class="text-2xl font-black text-gray-900 dark:text-white mt-1">$150.00</p>
-                    </div>
-                    <!-- More mock bills or real data -->
-                </div>
-            </div>
 
-            <!-- ═══════════════════════════════
-                 VIEW: STAFF & ADMIN
-            ═══════════════════════════════ -->
-            <div id="view-staff" class="content-section hidden" data-aos="fade-up">
-                <h1 class="text-3xl font-semibold text-gray-800 dark:text-white mb-6">🛡️ Staff & Admin</h1>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
-                         <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-4">Roles & Permissions</h2>
-                         <div class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                              <p>• Administrator: All Access</p>
-                              <p>• Doctor: Patient Mgt, Schedule, Clinical</p>
-                              <p>• Nurse: Vitals, Charting</p>
-                         </div>
-                    </div>
-                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
-                         <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-4">System Activity</h2>
-                         <div class="space-y-3" id="system-activity-log">
-                              <p class="text-xs text-gray-400">Loading activity logs...</p>
-                         </div>
-                    </div>
-                </div>
-            </div>
 
             <!-- ═══════════════════════════════
                  VIEW: MY PROFILE
             ═══════════════════════════════ -->
-            <div id="view-profile" class="content-section" data-aos="fade-up">
-                <h1 class="text-3xl font-semibold text-gray-800 dark:text-white mb-6">👤 My Profile</h1>
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden max-w-xl">
-                    <div class="p-6 border-b border-gray-200 dark:border-gray-700">
-                        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">Profile Information</h2>
-                    </div>
-                    <div class="p-6 space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Name</label>
-                            <input type="text" id="profile-name" readonly
-                                class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white text-sm focus:outline-none">
+            <div id="view-profile" class="content-section space-y-6" data-aos="fade-up">
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">My Profile</h1>
+                <div class="max-w-xl mx-auto">
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                        <div class="p-8 text-center bg-gray-50 dark:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700">
+                            <div class="relative inline-block">
+                                <div id="profile-initial-avatar" class="h-24 w-24 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-4xl shadow-lg border-4 border-white dark:border-gray-800">?</div>
+                                <button class="absolute bottom-0 right-0 p-2 bg-white dark:bg-gray-800 rounded-full shadow-md text-blue-600 focus:outline-none">
+                                    <ion-icon name="camera-outline"></ion-icon>
+                                </button>
+                            </div>
+                            <h2 id="profile-display-name" class="mt-4 text-2xl font-bold text-gray-900 dark:text-white">Doctor Name</h2>
+                            <p class="text-sm text-gray-500">Medical Professional</p>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Email</label>
-                            <input type="email" id="profile-email" readonly
-                                class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white text-sm focus:outline-none">
+                        <div class="p-8 space-y-6">
+                            <div class="space-y-4">
+                                <div class="space-y-1">
+                                    <label class="text-xs font-bold text-gray-500 uppercase">Full Name</label>
+                                    <input type="text" id="profile-name" readonly class="w-full bg-gray-50 dark:bg-gray-700 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-xs font-bold text-gray-500 uppercase">Email Address</label>
+                                    <input type="email" id="profile-email" readonly class="w-full bg-gray-50 dark:bg-gray-700 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-xs font-bold text-gray-500 uppercase">Specialization</label>
+                                    <input type="text" id="profile-specialization" readonly class="w-full bg-gray-50 dark:bg-gray-700 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                </div>
+                            </div>
+                            <button type="button" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all">
+                                Update Profile Settings
+                            </button>
+                            <div class="pt-4 text-center">
+                                <a href="../loginReg/change_password.html" class="text-sm font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 flex items-center justify-center gap-2">
+                                    <ion-icon name="lock-closed-outline"></ion-icon>
+                                    Change Account Password
+                                </a>
+                            </div>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Specialization</label>
-                            <input type="text" id="profile-specialization" readonly
-                                class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-white text-sm focus:outline-none">
-                        </div>
-                        <button type="button" class="mt-2 px-6 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition-colors">
-                            Update Profile
-                        </button>
                     </div>
                 </div>
             </div>
@@ -697,9 +679,12 @@
 
     <!-- ══ Scripts ══ -->
     <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 
     <!-- Doctor Dashboard Backend & UI Script -->
     <script src="../js/doctor_dashboard.js"></script>

@@ -27,10 +27,10 @@ header('Content-Type: application/json');
 /* ── Connect to the database ── */
 require_once '../DataBase/db_connect.php';
 
-/* ── Fetch all doctors from the medical_staff table ── */
+/* ── Fetch all doctors from the doctors table ── */
 $query = "SELECT first_name, last_name, specialization, department, profile_image, bio
-          FROM medical_staff
-          ORDER BY staff_id ASC";
+          FROM doctors
+          ORDER BY doctor_id ASC";
 
 $result = $conn->query($query);
 

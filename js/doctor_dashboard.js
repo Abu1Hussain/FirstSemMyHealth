@@ -5,6 +5,16 @@
    ═══════════════════════════════════════════════════════════ */
 
 document.addEventListener("DOMContentLoaded", function () {
+  // 1. Initialize AOS (Animate On Scroll) immediately
+  if (typeof AOS !== 'undefined') {
+    AOS.init({
+      duration: 800,
+      easing: 'ease-in-out',
+      once: true,
+      mirror: false
+    });
+  }
+
   const loadingOverlay = document.getElementById("loading-overlay");
 
   let patientAdmissionsChartInstance, departmentPopularityChartInstance;
@@ -33,12 +43,12 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
 
-    // Handle all sidebar links including new management ones
-    document.querySelectorAll('.sidebar-link[data-section]').forEach(link => {
+    // Handle all sidebar links including new section ones
+    document.querySelectorAll('.sidebar-link[data-section], .sidebar-link[data-view]').forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
-            const section = link.dataset.section;
-            showSection(section);
+            const section = link.dataset.section || link.dataset.view;
+            if (section) showSection(section);
         });
     });
   }
@@ -75,19 +85,34 @@ document.addEventListener("DOMContentLoaded", function () {
   window.showSection = function (viewId) {
     const sections = document.querySelectorAll(".content-section");
     const navLinks = document.querySelectorAll(
-      ".nav-link[data-section], .sidebar-link[data-section]"
+      ".nav-link[data-section], .sidebar-link[data-section], .nav-link[data-view], .sidebar-link[data-view]"
     );
 
-    sections.forEach((s) => s.classList.remove("active"));
+    // Fade out all sections
+    sections.forEach((s) => {
+      s.classList.remove("active");
+      s.classList.add("hidden");
+    });
+
     const el = document.getElementById("view-" + viewId);
     if (el) {
+      el.classList.remove("hidden");
       el.classList.add("active");
-      if (typeof AOS !== "undefined") AOS.refreshHard();
+
+      // Update URL hash without jumping
+      if (window.location.hash !== "#" + viewId) {
+        history.replaceState(null, null, "#" + viewId);
+      }
+
+      if (typeof AOS !== "undefined") {
+        AOS.refresh();
+      }
 
       // Update sidebar active state
       navLinks.forEach((link) => {
         const icon = link.querySelector("ion-icon");
-        if (link.dataset.section === viewId) {
+        const linkView = link.dataset.section || link.dataset.view;
+        if (linkView === viewId) {
           link.classList.add("active", "bg-blue-600", "text-white");
           if (icon) icon.classList.add("text-white");
         } else {
@@ -97,7 +122,7 @@ document.addEventListener("DOMContentLoaded", function () {
       });
       
       // Special per-view logic
-      if (viewId === "appointments" && !isCalendarRendered) {
+      if (viewId === "appointments" && !isCalendarRendered && typeof FullCalendar !== "undefined") {
         initFullCalendar();
       } else if (viewId === "appointments" && calendarInstance) {
         setTimeout(() => calendarInstance.updateSize(), 100);
@@ -125,90 +150,92 @@ document.addEventListener("DOMContentLoaded", function () {
         /* ── Populate Doctor Info ── */
         // Main Welcome Header
         const welcomeName = document.getElementById("user-name");
-        if (welcomeName) welcomeName.textContent = responseData.user.name;
+        if (welcomeName && responseData.user) welcomeName.textContent = responseData.user.name;
 
         // Sidebar Profile Info
         const sidebarDocName = document.querySelector(".profile-info p.font-medium");
-        if (sidebarDocName) sidebarDocName.textContent = "Dr. " + responseData.user.name;
+        if (sidebarDocName && responseData.user) sidebarDocName.textContent = "Dr. " + responseData.user.name;
 
         const headerAvatar = document.getElementById("header-avatar");
-        if (headerAvatar) headerAvatar.textContent = responseData.user.initial;
+        if (headerAvatar && responseData.user) headerAvatar.textContent = responseData.user.initial;
 
-        // Profile Form
+        // Profile Form (Redesigned)
         const profileNameInput = document.getElementById("profile-name");
-        if (profileNameInput) profileNameInput.value = responseData.user.name;
+        if (profileNameInput && responseData.user) profileNameInput.value = responseData.user.name;
+
+        const profileDisplayName = document.getElementById("profile-display-name");
+        if (profileDisplayName && responseData.user) profileDisplayName.textContent = responseData.user.name;
+
+        const profileAvatar = document.getElementById("profile-initial-avatar");
+        if (profileAvatar && responseData.user) profileAvatar.textContent = responseData.user.initial;
 
         // Show doctor images if available
-        if (responseData.user.image_url) {
-          const headerAvatar = document.getElementById("header-avatar");
-          if (headerAvatar) {
-            headerAvatar.innerHTML = `<img src="${responseData.user.image_url}" class="h-8 w-8 rounded-full object-cover">`;
-            headerAvatar.classList.remove("bg-blue-600", "flex", "items-center", "justify-center", "text-white");
+        if (responseData.user && responseData.user.image_url) {
+          const headerAv = document.getElementById("header-avatar");
+          if (headerAv) {
+            headerAv.innerHTML = `<img src="${responseData.user.image_url}" class="h-8 w-8 rounded-full object-cover">`;
+            headerAv.classList.remove("bg-blue-600", "flex", "items-center", "justify-center", "text-white");
           }
           
-          const sidebarProfile = document.querySelector(".sidebar aside img"); // Need to be careful with selector
-          const sidebarAvatarImg = sidebar.querySelector("img");
-          if (sidebarAvatarImg) sidebarAvatarImg.src = responseData.user.image_url;
+          if (sidebar) {
+            const sidebarAvatarImg = sidebar.querySelector("img");
+            if (sidebarAvatarImg) sidebarAvatarImg.src = responseData.user.image_url;
+          }
+
+          if (profileAvatar) {
+            profileAvatar.innerHTML = `<img src="${responseData.user.image_url}" class="h-24 w-24 rounded-full object-cover shadow-lg border-4 border-white dark:border-gray-800">`;
+            profileAvatar.classList.remove("bg-blue-600", "flex", "items-center", "justify-center", "text-white");
+          }
         }
 
         /* ── Populate Profile Email & Specialization ── */
-        if (responseData.user.email) {
-          const emailInput = document.getElementById("profile-email");
-          if (emailInput) emailInput.value = responseData.user.email;
-        }
-        if (responseData.specialization) {
-          const specInput = document.getElementById("profile-specialization");
-          if (specInput) specInput.value = responseData.specialization;
-        }
+        const emailInput = document.getElementById("profile-email");
+        if (emailInput) emailInput.value = (responseData.user && responseData.user.email) ? responseData.user.email : "—";
+        
+        const specInput = document.getElementById("profile-specialization");
+        if (specInput) specInput.value = responseData.specialization || "General Medicine";
+
 
         /* ── Populate Stat Cards ── */
-        if (responseData.stats) {
-          const pStat = document.getElementById("stat-patients");
-          if (pStat) pStat.textContent = responseData.stats.total_patients || 0;
-          
-          const aStat = document.getElementById("stat-appointments");
-          if (aStat) aStat.textContent = responseData.stats.today_appointments || 0;
-          
-          const rStat = document.getElementById("stat-pending");
-          if (rStat) rStat.textContent = responseData.stats.pending_reviews || 0;
-        }
+        const stats = responseData.stats || { total_patients: 0, today_appointments: 0, pending_reviews: 0 };
+        const pStat = document.getElementById("stat-patients");
+        if (pStat) pStat.textContent = stats.total_patients;
+        
+        const aStat = document.getElementById("stat-appointments");
+        if (aStat) aStat.textContent = stats.today_appointments;
+        
+        const rStat = document.getElementById("stat-pending");
+        if (rStat) rStat.textContent = stats.pending_reviews;
 
         /* ── Initialize Visuals ── */
         initCharts();
 
         /* ── Render Patients List (Today) ── */
-        if (responseData.patients_today) {
-          renderPatientsList(responseData.patients_today);
-        }
+        renderPatientsList(responseData.patients_today || []);
 
         /* ── Render Full Patient Directory ── */
-        if (responseData.all_patients) {
-          renderAllPatientsList(responseData.all_patients);
-        }
+        renderAllPatientsList(responseData.all_patients || []);
 
-        /* ── Render Doctor Staff Grid ── */
-        if (responseData.all_staff) {
-          renderDoctorsGrid(responseData.all_staff);
-        }
+        /* ── Render Doctors Directory Table ── */
+        renderDoctorsTable(responseData.all_staff || []);
 
-        /* ── Render All Appointments (History) ── */
+        /* ── Render Activity Logs ── */
+        renderActivityLogs(responseData.all_appointments || { today: [] });
+
+        /* ── Render Individual Appointment History ── */
         if (responseData.all_appointments) {
           renderAllAppointments(responseData.all_appointments);
+        } else {
+          renderAllAppointments({ past: [], today: [], upcoming: [] });
         }
 
         /* ── Render Global Records & Prescriptions ── */
-        if (responseData.all_records) {
-          renderAllRecords(responseData.all_records);
-        }
-        if (responseData.all_prescriptions) {
-          renderAllPrescriptions(responseData.all_prescriptions);
-        }
-
-        /* ── Render Activity Logs ── */
-        renderActivityLogs(responseData.all_appointments);
+        renderAllRecords(responseData.all_records || []);
+        renderAllPrescriptions(responseData.all_prescriptions || []);
 
         const overlay = document.getElementById("loading-overlay");
         if (overlay) overlay.style.display = "none";
+
       })
       .catch((error) => {
         console.error("Error fetching doctor data:", error);
@@ -217,16 +244,22 @@ document.addEventListener("DOMContentLoaded", function () {
       });
   }
 
-  function renderAllPatientsList(patients) {
+  window.renderAllPatientsList = function (patients) {
     const container = document.getElementById("patients-full-list");
     if (!container) return;
+
     if (!patients || patients.length === 0) {
-      container.innerHTML = '<p class="text-center py-8 text-gray-500">No patients registered in the system yet.</p>';
+      container.innerHTML = `
+        <div class="text-center py-10 bg-gray-50 dark:bg-gray-800/50 rounded-xl border-2 border-dashed border-gray-100 dark:border-gray-700">
+            <ion-icon name="people-outline" class="text-4xl text-gray-300 mb-2"></ion-icon>
+            <p class="text-gray-500">No patients found in the system yet.</p>
+        </div>
+      `;
       return;
     }
 
     let html = `
-      <table class="appt-table">
+      <table id="patients-table" class="appt-table">
         <thead>
           <tr>
             <th>ID</th>
@@ -242,21 +275,21 @@ document.addEventListener("DOMContentLoaded", function () {
     `;
 
     patients.forEach(p => {
-      const pName = `${p.first_name} ${p.last_name}`;
-      const safeData = encodeURIComponent(JSON.stringify({...p, patient_name: pName}));
+      const pName = `${p.first_name || ''} ${p.last_name || ''}`;
+      const safeData = encodeURIComponent(JSON.stringify({...p, patient_name:pName}));
       html += `
         <tr>
-          <td><span class="text-xs font-mono">#P${p.patient_id.toString().padStart(4, '0')}</span></td>
+          <td><span class="text-xs font-mono">#P${(p.patient_id || 0).toString().padStart(4, '0')}</span></td>
           <td><div class="font-bold">${pName}</div></td>
-          <td><div class="text-xs font-mono">${p.cpr}</div></td>
+          <td><div class="text-xs font-mono">${p.cpr || '—'}</div></td>
           <td>
-            <div class="text-xs">${p.email}</div>
-            <div class="text-[10px] text-gray-400 font-bold">${p.phone}</div>
+            <div class="text-xs">${p.email || '—'}</div>
+            <div class="text-[10px] text-gray-400 font-bold">${p.phone || '—'}</div>
           </td>
           <td>
             <div class="flex items-center gap-1">
-               <span class="badge ${p.gender === 'male' ? 'badge-blue' : 'badge-red'} capitalize">${p.gender}</span>
-               <span class="text-[10px] text-gray-400">${p.date_of_birth}</span>
+               <span class="badge ${p.gender === 'male' ? 'badge-blue' : 'badge-red'} capitalize">${p.gender || '—'}</span>
+               <span class="text-[10px] text-gray-400">${p.date_of_birth || '—'}</span>
             </div>
           </td>
           <td><span class="font-bold text-red-600">${p.blood_type || '—'}</span></td>
@@ -273,42 +306,7 @@ document.addEventListener("DOMContentLoaded", function () {
     container.innerHTML = html;
   }
 
-  function renderDoctorsGrid(staff) {
-    const container = document.getElementById("doctors-grid-container");
-    if (!container) return;
-    if (!staff || staff.length === 0) {
-      container.innerHTML = '<p class="text-center py-8 text-gray-500">No medical staff found.</p>';
-      return;
-    }
 
-    let html = '';
-    staff.forEach(s => {
-      const sName = `Dr. ${s.first_name} ${s.last_name}`;
-      const initial = s.first_name[0] + (s.last_name ? s.last_name[0] : '');
-      html += `
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 flex flex-col items-center text-center group hover:shadow-2xl transition-all duration-300" data-aos="zoom-in">
-            <div class="w-20 h-20 rounded-full bg-indigo-100 dark:bg-indigo-900 border-4 border-white dark:border-gray-700 flex items-center justify-center text-2xl font-black text-indigo-600 dark:text-indigo-400 mb-4 group-hover:scale-110 transition-transform">
-                ${initial}
-            </div>
-            <h3 class="font-bold text-gray-800 dark:text-white">${sName}</h3>
-            <p class="text-xs text-blue-600 font-bold uppercase tracking-wider">${s.specialization}</p>
-            <div class="mt-4 pt-4 border-t border-gray-50 dark:border-gray-700 w-full space-y-2">
-                 <div class="flex items-center justify-center gap-2 text-[10px] text-gray-500 font-medium">
-                      <ion-icon name="mail-outline"></ion-icon> ${s.email}
-                 </div>
-                 <div class="flex items-center justify-center gap-2 text-[10px] text-gray-400">
-                      <ion-icon name="business-outline"></ion-icon> ${s.department || 'General'}
-                 </div>
-            </div>
-            <div class="flex gap-2 mt-6">
-                 <button class="p-2 bg-gray-50 dark:bg-gray-700 text-gray-400 rounded-lg hover:text-blue-500 transition-colors"><ion-icon name="call-outline"></ion-icon></button>
-                 <button class="p-2 bg-gray-50 dark:bg-gray-700 text-gray-400 rounded-lg hover:text-indigo-500 transition-colors"><ion-icon name="chatbox-outline"></ion-icon></button>
-            </div>
-        </div>
-      `;
-    });
-    container.innerHTML = html;
-  }
 
   function renderActivityLogs(appointments) {
     const miniLog = document.getElementById("mini-activity-log");
@@ -358,12 +356,14 @@ document.addEventListener("DOMContentLoaded", function () {
       listContainer.innerHTML = '<p class="text-gray-500 py-6 text-center">No medical records created yet.</p>';
       return;
     }
-    let html = '<table class="appt-table"><thead><tr><th>Date</th><th>Patient</th><th>Type</th><th>Summary</th></tr></thead><tbody>';
+    let html = '<table class="appt-table"><thead><tr><th>Date</th><th>Patient</th><th>Doctor</th><th>Type</th><th>Summary</th></tr></thead><tbody>';
     records.forEach(r => {
         const d = new Date(r.record_date).toLocaleDateString();
+        const docName = r.doctor_name ? `Dr. ${r.doctor_name}` : '—';
         html += `<tr>
             <td>${d}</td>
             <td><strong>${r.patient_name}</strong></td>
+            <td><span class="text-indigo-600 dark:text-indigo-400 font-medium text-xs">${docName}</span></td>
             <td><span class="badge badge-blue">${r.record_type}</span></td>
             <td><div class="text-xs truncate max-w-[200px]">${r.summary}</div></td>
         </tr>`;
@@ -371,6 +371,12 @@ document.addEventListener("DOMContentLoaded", function () {
     html += '</tbody></table>';
     listContainer.innerHTML = html;
   }
+
+  /* ─────────────────────────────────────────────
+     renderDoctorsTable(staff)
+     Renders a premium searchable doctors directory table
+     with photo, contact, specialization and record count.
+     ───────────────────────────────────────────── */
 
   function renderAllPrescriptions(prescriptions) {
     const listContainer = document.getElementById("prescriptions-list-container");
@@ -443,11 +449,11 @@ document.addEventListener("DOMContentLoaded", function () {
         let priorityBadge = "";
         const p = appt.ai_priority || "Normal";
         if (p === "Highly Important")
-          priorityBadge = '<span class="badge badge-red">🔴 Highly Important</span>';
+          priorityBadge = '<span class="px-2 py-1 rounded-md text-[10px] font-bold bg-red-100 text-red-600 border border-red-200">🚩 Highly Important</span>';
         else if (p === "Important")
-          priorityBadge = '<span class="badge badge-orange">🟠 Important</span>';
+          priorityBadge = '<span class="px-2 py-1 rounded-md text-[10px] font-bold bg-orange-100 text-orange-600 border border-orange-200">🟠 Important</span>';
         else
-          priorityBadge = '<span class="badge badge-green">🟢 Normal</span>';
+          priorityBadge = '<span class="px-2 py-1 rounded-md text-[10px] font-bold bg-blue-100 text-blue-600 border border-blue-200">🟢 Normal</span>';
 
         const safeData = encodeURIComponent(JSON.stringify(appt));
 
@@ -645,13 +651,18 @@ document.addEventListener("DOMContentLoaded", function () {
       })
       .then(final => {
         if (final.status === 'success') {
-          alert("Clinical record saved successfully!");
+          Swal.fire("Saved!", "Clinical record saved successfully!", "success");
           closePatientModal();
           e.target.reset();
           document.getElementById('prescription-fields').classList.add('hidden');
-        } else alert("Error: " + final.message);
+        } else {
+          Swal.fire("Error", final.message, "error");
+        }
       })
-      .catch(err => alert("Error: " + err.message));
+      .catch(err => {
+        console.error("Clinical record error:", err);
+        Swal.fire("Error", err.message, "error");
+      });
   });
 
   /* ─────────────────────────────────────────────
@@ -672,11 +683,13 @@ document.addEventListener("DOMContentLoaded", function () {
     const scheduleContainer = document.getElementById("today-schedule");
 
     if (!patients || patients.length === 0) {
-      let emptyHtml = '<p class="text-gray-500 dark:text-gray-400">No patients scheduled for today.</p>';
-      listContainer.innerHTML = emptyHtml;
-      scheduleContainer.innerHTML = emptyHtml;
+      let emptyHtml = '<p class="text-gray-500 dark:text-gray-400 py-6 text-center">No patients scheduled for today.</p>';
+      if (listContainer) listContainer.innerHTML = emptyHtml;
+      if (scheduleContainer) scheduleContainer.innerHTML = emptyHtml;
       return;
     }
+
+    if (!listContainer) return; // Exit if the main container is missing to prevent crashes
 
     // ── Build List Table for the main Patients View ──
     let tableHtml =
@@ -732,24 +745,34 @@ document.addEventListener("DOMContentLoaded", function () {
             <td>${actionBtn}</td>
         </tr>`;
 
-      widgetHtml += `
-        <div class="schedule-item">
-          <div class="schedule-time">${time}</div>
-          <div class="flex-grow">
-            <div class="schedule-name">${patient.patient_name}</div>
-            <div class="schedule-reason">${patient.reason}</div>
-          </div>
-          <div>
-            ${patient.status === 'completed' ? '<ion-icon name="checkmark-circle" class="text-green-500 text-xl"></ion-icon>' : `<button onclick="window.startTimer(${patient.appointment_id}, '${patient.patient_name}')" class="text-blue-500 hover:text-blue-600"><ion-icon name="call-outline" class="text-xl"></ion-icon></button>`}
-          </div>
-        </div>`;
+      if (scheduleContainer) {
+        widgetHtml += `
+          <div class="p-4 bg-gray-50 dark:bg-gray-700/30 rounded-xl border border-gray-100 dark:border-gray-700 hover:border-blue-500 transition-all">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-[10px] font-bold text-blue-600 uppercase tracking-wider">${time}</span>
+                ${patient.status === 'completed' ? '<ion-icon name="checkmark-circle" class="text-green-500 text-lg"></ion-icon>' : ''}
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 font-bold">
+                    ${patient.patient_name[0]}
+                </div>
+                <div class="flex-grow">
+                    <div class="text-sm font-bold text-gray-800 dark:text-white">${patient.patient_name}</div>
+                    <div class="text-[10px] text-gray-500 truncate max-w-[150px]">${patient.reason}</div>
+                </div>
+                <button onclick="window.startTimer(${patient.appointment_id}, '${patient.patient_name}')" class="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors">
+                    <ion-icon name="call-outline" class="text-lg"></ion-icon>
+                </button>
+            </div>
+          </div>`;
+      }
     });
 
     tableHtml += "</tbody></table>";
     widgetHtml += "</div>";
 
-    listContainer.innerHTML = tableHtml;
-    scheduleContainer.innerHTML = widgetHtml;
+    if (listContainer) listContainer.innerHTML = tableHtml;
+    if (scheduleContainer) scheduleContainer.innerHTML = widgetHtml;
   }
 
   /* ─────────────────────────────────────────────
@@ -799,18 +822,26 @@ document.addEventListener("DOMContentLoaded", function () {
     }, 1000);
   };
 
-  /* ── Terminate Ticket Button ── */
   document
     .getElementById("btn-terminate-ticket")
     .addEventListener("click", function () {
       if (!currentAppointmentId) return;
 
-      if (confirm("Are you sure you want to terminate this ticket?")) {
-        clearInterval(timerInterval);
-        document.getElementById("timer-modal").style.display = "none";
-
-        terminateTicket(currentAppointmentId);
-      }
+      Swal.fire({
+        title: "Finish Consultation?",
+        text: "Are you sure you want to terminate this ticket and mark it as completed?",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonColor: "#10b981",
+        cancelButtonColor: "#9ca3af",
+        confirmButtonText: "Yes, finish it",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          clearInterval(timerInterval);
+          document.getElementById("timer-modal").style.display = "none";
+          terminateTicket(currentAppointmentId);
+        }
+      });
     });
 
   function terminateTicket(appointmentId) {
@@ -829,13 +860,22 @@ document.addEventListener("DOMContentLoaded", function () {
       .then((response) => response.json())
       .then((data) => {
         if (data.status === "success") {
-          alert(`Appointment status updated to ${status}.`);
+          Swal.fire({
+            title: "Updated!",
+            text: `Appointment marked as ${status}.`,
+            icon: "success",
+            timer: 2000,
+            showConfirmButton: false
+          });
           fetchDoctorData(); // Refresh list
         } else {
-          alert("Error: " + data.message);
+          Swal.fire("Error", data.message, "error");
         }
       })
-      .catch((error) => console.error("Error updating status:", error));
+      .catch((error) => {
+        console.error("Error updating status:", error);
+        Swal.fire("Error", "Failed to update appointment status.", "error");
+      });
   };
 
   /* ─────────────────────────────────────────────
@@ -859,7 +899,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function initPatientAdmissionsChart() {
     const canvas = document.getElementById('patientAdmissionsChart');
-    if (!canvas) return;
+    if (!canvas || typeof Chart === "undefined") return;
     if (patientAdmissionsChartInstance) patientAdmissionsChartInstance.destroy();
 
     const ctx = canvas.getContext('2d');
@@ -890,7 +930,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function initDepartmentPopularityChart() {
     const canvas = document.getElementById('departmentPopularityChart');
-    if (!canvas) return;
+    if (!canvas || typeof Chart === "undefined") return;
     if (departmentPopularityChartInstance) departmentPopularityChartInstance.destroy();
 
     const ctx = canvas.getContext('2d');
@@ -928,7 +968,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     const targetEl = document.getElementById('calendar');
-    if (targetEl && !isCalendarRendered) {
+    if (targetEl && !isCalendarRendered && typeof FullCalendar !== "undefined") {
       calendarInstance = new FullCalendar.Calendar(targetEl, {
         initialView: 'dayGridMonth',
         headerToolbar: {
@@ -972,5 +1012,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
   /* ── 1. Load Doctor Data on Page Ready ── */
   fetchDoctorData();
-  window.showSection("dashboard");
+
+  // Initialize Section from Hash or Default
+  window.addEventListener("hashchange", syncViewWithHash);
+
+  function syncViewWithHash() {
+    const hash = window.location.hash.substring(1) || "dashboard";
+    window.showSection(hash);
+  }
+
+  // Run immediately since we're already inside DOMContentLoaded
+  syncViewWithHash();
 });

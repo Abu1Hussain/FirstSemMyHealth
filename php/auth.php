@@ -219,8 +219,8 @@ if ($isLoggingIn) {
         }
 
     } elseif ($user['role'] === 'doctor') {
-        // Doctors have their name in the 'medical_staff' table
-        $stmt = $conn->prepare("SELECT first_name, last_name, staff_id FROM medical_staff WHERE user_id = ?");
+        // Doctors have their name in the 'doctors' table
+        $stmt = $conn->prepare("SELECT first_name, last_name, doctor_id FROM doctors WHERE user_id = ?");
         $stmt->bind_param("i", $user['user_id']);
         $stmt->execute();
         $profile = $stmt->get_result()->fetch_assoc();
@@ -228,7 +228,7 @@ if ($isLoggingIn) {
 
         if ($profile) {
             $displayName = $profile['first_name'] . ' ' . $profile['last_name'];
-            $_SESSION['staff_id'] = $profile['staff_id'];
+            $_SESSION['doctor_id'] = $profile['doctor_id'];
         }
 
     } else {

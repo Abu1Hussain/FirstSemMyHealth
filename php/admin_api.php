@@ -71,7 +71,7 @@ if ($action === 'dashboard') {
     $queries = [
         'total_users'         => "SELECT COUNT(*) as c FROM users",
         'total_patients'      => "SELECT COUNT(*) as c FROM patients",
-        'total_doctors'       => "SELECT COUNT(*) as c FROM medical_staff",
+        'total_doctors'       => "SELECT COUNT(*) as c FROM doctors",
         'total_appointments'  => "SELECT COUNT(*) as c FROM appointments",
         'total_records'       => "SELECT COUNT(*) as c FROM medical_records",
         'total_prescriptions' => "SELECT COUNT(*) as c FROM prescriptions",
@@ -119,7 +119,7 @@ if ($action === 'users') {
         } elseif ($row['role'] === 'doctor') {
             $stmt = $conn->prepare(
                 "SELECT CONCAT(first_name, ' ', last_name) as name
-                 FROM medical_staff WHERE user_id = ?"
+                 FROM doctors WHERE user_id = ?"
             );
             $stmt->bind_param("i", $row['user_id']);
             $stmt->execute();
@@ -179,12 +179,13 @@ if ($action === 'patients') {
 if ($action === 'doctors') {
     $doctors = [];
     $result = $conn->query(
-        "SELECT ms.staff_id as id, ms.staff_id, CONCAT(ms.first_name, ' ', ms.last_name) as name,
-                ms.first_name, ms.last_name, ms.specialization,
-                ms.department, ms.phone, ms.profile_image, ms.capacity, u.email
-         FROM medical_staff ms
-         JOIN users u ON ms.user_id = u.user_id
-         ORDER BY ms.staff_id"
+        "SELECT d.doctor_id as id, d.doctor_id, CONCAT(d.first_name, ' ', d.last_name) as name,
+                d.first_name, d.last_name, d.specialization,
+                d.department, d.phone, d.profile_image, d.capacity, u.email,
+                (SELECT COUNT(*) FROM medical_records WHERE doctor_id = d.doctor_id) as records_count
+         FROM doctors d
+         JOIN users u ON d.user_id = u.user_id
+         ORDER BY d.doctor_id"
     );
 
     while ($row = $result->fetch_assoc()) {
@@ -211,7 +212,7 @@ if ($action === 'appointments') {
                 CONCAT(ms.first_name, ' ', ms.last_name) as doctor_name
          FROM appointments a
          LEFT JOIN patients p ON a.patient_id = p.patient_id
-         LEFT JOIN medical_staff ms ON a.staff_id = ms.staff_id
+         LEFT JOIN doctors ms ON a.doctor_id = ms.doctor_id
          ORDER BY a.appointment_date DESC"
     );
 
@@ -238,7 +239,7 @@ if ($action === 'records') {
                 CONCAT(ms.first_name, ' ', ms.last_name) as doctor_name
          FROM medical_records mr
          LEFT JOIN patients p ON mr.patient_id = p.patient_id
-         LEFT JOIN medical_staff ms ON mr.created_by = ms.staff_id
+         LEFT JOIN doctors ms ON mr.doctor_id = ms.doctor_id
          ORDER BY mr.record_date DESC"
     );
 
@@ -266,7 +267,7 @@ if ($action === 'prescriptions') {
          FROM prescriptions pr
          JOIN medical_records mr ON pr.record_id = mr.record_id
          JOIN patients p ON mr.patient_id = p.patient_id
-         LEFT JOIN medical_staff ms ON mr.created_by = ms.staff_id
+         LEFT JOIN doctors ms ON mr.doctor_id = ms.doctor_id
          ORDER BY pr.prescription_id DESC"
     );
 

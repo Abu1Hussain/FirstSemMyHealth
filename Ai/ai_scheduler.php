@@ -5,7 +5,7 @@
  * Returns smart availability data for a given date and
  * (optionally) a specific doctor.
  *
- * Connected to: appointments table, medical_staff table
+ * Connected to: appointments table, doctors table
  * Called by:    dashboard.js  (for "Today's Availability")
  *
  * Query parameters:
@@ -41,10 +41,10 @@ $doctorId      = $_GET['doctor_id'] ?? null;
 $doctors = [];
 
 $doctorQuery = $conn->query(
-    "SELECT staff_id as id,
+    "SELECT doctor_id as id,
             CONCAT(first_name, ' ', last_name) as name,
             specialization, capacity, profile_image
-     FROM medical_staff
+     FROM doctors
      ORDER BY first_name"
 );
 
@@ -53,7 +53,7 @@ if ($doctorQuery) {
         // Count how many appointments this doctor has on the requested date
         $countQuery = $conn->query(
             "SELECT COUNT(*) as booked FROM appointments
-             WHERE staff_id = '{$doctor['id']}'
+             WHERE doctor_id = '{$doctor['id']}'
              AND DATE(appointment_date) = '$requestedDate'"
         );
         $bookedCount = $countQuery ? $countQuery->fetch_assoc()['booked'] : 0;
@@ -87,17 +87,17 @@ for ($hour = $startHour; $hour < $endHour; $hour++) {
                  WHERE appointment_date >= '$slotStart' AND appointment_date < '$slotEnd'";
 
     if ($doctorId) {
-        $countSql .= " AND staff_id = '$doctorId'";
+        $countSql .= " AND doctor_id = '$doctorId'";
     }
 
     $result      = $conn->query($countSql);
     $bookedCount = $result ? $result->fetch_assoc()['booked'] : 0;
 
     // Determine max chairs for this slot
-    $maxChairs = 30; // Default clinic-wide capacity
+    $maxChairs = 4; // Default clinic-wide capacity (logical max per hour)
     if ($doctorId) {
         // Use the specific doctor's capacity
-        $capQuery = $conn->query("SELECT capacity FROM medical_staff WHERE staff_id = '$doctorId'");
+        $capQuery = $conn->query("SELECT capacity FROM doctors WHERE doctor_id = '$doctorId'");
         if ($capQuery && $capRow = $capQuery->fetch_assoc()) {
             $maxChairs = $capRow['capacity'];
         }

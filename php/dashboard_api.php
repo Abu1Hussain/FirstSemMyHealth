@@ -101,7 +101,7 @@ if ($patientId) {
     // Count how many pending appointments this patient has
     $stmt = $conn->prepare(
         "SELECT COUNT(*) as total FROM appointments
-         WHERE patient_id = ? AND status = 'pending'"
+         WHERE patient_id = ? AND status NOT IN ('terminated', 'cancelled', 'completed')"
     );
     $stmt->bind_param("i", $patientId);
     $stmt->execute();
@@ -135,10 +135,10 @@ $response['stats'] = $stats;
 
 $doctors = [];
 $doctorsQuery = $conn->query(
-    "SELECT staff_id as id,
+    "SELECT doctor_id as id,
             CONCAT(first_name, ' ', last_name) as name,
             profile_image, specialization, bio, capacity
-     FROM medical_staff"
+     FROM doctors"
 );
 
 while ($doctor = $doctorsQuery->fetch_assoc()) {
@@ -192,28 +192,33 @@ $response['timeline'] = $timeline;
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
     $newName  = trim($_POST['name']);
     $newEmail = trim($_POST['email']);
-    $newPhone = trim($_POST['phone'] ?? '');
+
+    if (empty($newName) || empty($newEmail)) {
+        echo json_encode(['status' => 'error', 'message' => 'Name and Email are required.']);
+        exit();
+    }
 
     // Split name into First and Last
     $parts = explode(' ', $newName, 2);
     $firstName = $parts[0];
     $lastName  = $parts[1] ?? '';
 
-    // Update Users table (Email)
+    // 1. Update Users table (Email)
     $stmt = $conn->prepare("UPDATE users SET email = ? WHERE user_id = ?");
     $stmt->bind_param("si", $newEmail, $userId);
     $stmt->execute();
     $stmt->close();
 
-    // Update Patients table (Name, Phone)
-    $stmt = $conn->prepare("UPDATE patients SET first_name = ?, last_name = ?, phone = ? WHERE user_id = ?");
-    $stmt->bind_param("sssi", $firstName, $lastName, $newPhone, $userId);
+    // 2. Update Patients table (FirstName, LastName, Email)
+    // We update email in both places for consistency
+    $stmt = $conn->prepare("UPDATE patients SET first_name = ?, last_name = ?, email = ? WHERE user_id = ?");
+    $stmt->bind_param("sssi", $firstName, $lastName, $newEmail, $userId);
     
     if ($stmt->execute()) {
-        $_SESSION['user_name'] = $newName; // Update session
-        echo json_encode(['status' => 'success', 'message' => 'Profile updated successfully.']);
+        $_SESSION['user_name'] = $newName; // Sync Session
+        echo json_encode(['status' => 'success', 'message' => 'Profile updated successfully!']);
     } else {
-        echo json_encode(['status' => 'error', 'message' => 'Failed to update profile.']);
+        echo json_encode(['status' => 'error', 'message' => 'Failed to save changes to the database.']);
     }
     $stmt->close();
     exit();
@@ -234,9 +239,9 @@ if ($patientId) {
                 CONCAT(ms.first_name, ' ', ms.last_name) as doctor_name,
                 t.ticket_code
          FROM appointments a
-         LEFT JOIN medical_staff ms ON a.staff_id = ms.staff_id
+         LEFT JOIN doctors ms ON a.doctor_id = ms.doctor_id
          LEFT JOIN tickets t ON a.appointment_id = t.appointment_id
-         WHERE a.patient_id = ?
+         WHERE a.patient_id = ? AND a.status NOT IN ('terminated', 'cancelled', 'completed')
          ORDER BY a.appointment_date DESC"
     );
     $stmt->bind_param("i", $patientId);
@@ -249,7 +254,9 @@ if ($patientId) {
         $appointments[] = [
             'appointment_id' => $appt['appointment_id'],
             'date'           => date('M d, Y h:i A', strtotime($appt['appointment_date'])),
+            'raw_date'       => $appt['appointment_date'],
             'reason'       => $appt['reason'],
+
             'priority'     => $appt['ai_priority'],
             'status'       => ucfirst($appt['status']),
             'queue_number' => $appt['queue_number'],
@@ -271,7 +278,7 @@ if ($patientId) {
     $stmt = $conn->prepare(
         "SELECT mr.*, CONCAT(ms.first_name, ' ', ms.last_name) as doctor_name
          FROM medical_records mr
-         LEFT JOIN medical_staff ms ON mr.created_by = ms.staff_id
+         LEFT JOIN doctors ms ON mr.doctor_id = ms.doctor_id
          WHERE mr.patient_id = ?
          ORDER BY mr.record_date DESC"
     );
@@ -301,7 +308,7 @@ if ($patientId) {
                 CONCAT(ms.first_name, ' ', ms.last_name) as doctor_name
          FROM prescriptions pr
          JOIN medical_records mr ON pr.record_id = mr.record_id
-         LEFT JOIN medical_staff ms ON mr.created_by = ms.staff_id
+         LEFT JOIN doctors ms ON mr.doctor_id = ms.doctor_id
          WHERE mr.patient_id = ?
          ORDER BY pr.prescription_id DESC"
     );
