@@ -37,7 +37,7 @@ require_once '../DataBase/db_connect.php';
 
 /* ── Make sure the user is logged in AND is an admin ── */
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
-    echo json_encode(['status' => 'error', 'message' => 'Admin access required.']);
+    echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
     exit();
 }
 
@@ -98,7 +98,7 @@ if ($action === 'dashboard') {
 
 if ($action === 'users') {
     $users = [];
-    $result = $conn->query("SELECT user_id, email, role, created_at FROM users ORDER BY user_id");
+    $result = $conn->query("SELECT user_id, email, role, status, last_login, created_at FROM users ORDER BY user_id");
 
     while ($row = $result->fetch_assoc()) {
         // Try to find the user's display name from their profile table
@@ -137,6 +137,8 @@ if ($action === 'users') {
             'name'       => $displayName,
             'email'      => $row['email'],
             'role'       => ucfirst($row['role']),
+            'status'     => ucfirst($row['status']),
+            'last_login' => $row['last_login'] ? $row['last_login'] : 'Never',
             'created_at' => $row['created_at']
         ];
     }
@@ -181,10 +183,11 @@ if ($action === 'doctors') {
     $result = $conn->query(
         "SELECT d.doctor_id as id, d.doctor_id, CONCAT(d.first_name, ' ', d.last_name) as name,
                 d.first_name, d.last_name, d.specialization,
-                d.department, d.phone, d.profile_image, d.capacity, u.email,
+                COALESCE(dept.name, d.department) as department, d.phone, d.profile_image, d.capacity, u.email, d.is_active,
                 (SELECT COUNT(*) FROM medical_records WHERE doctor_id = d.doctor_id) as records_count
          FROM doctors d
          JOIN users u ON d.user_id = u.user_id
+         LEFT JOIN departments dept ON d.department_id = dept.dept_id
          ORDER BY d.doctor_id"
     );
 
@@ -288,43 +291,50 @@ if ($action === 'prescriptions') {
 if ($action === 'chart_data') {
     $chartData = [];
 
-    // Appointments by status (for a pie chart)
-    $statusCounts = [];
-    $result = $conn->query(
-        "SELECT status, COUNT(*) as count
-         FROM appointments
-         GROUP BY status"
-    );
-    while ($row = $result->fetch_assoc()) {
-        $statusCounts[$row['status']] = $row['count'];
-    }
-    $chartData['appointment_statuses'] = $statusCounts;
-
-    // Patients by blood type (for a bar chart)
-    $bloodTypes = [];
-    $result = $conn->query(
-        "SELECT blood_type, COUNT(*) as count
-         FROM patients
-         WHERE blood_type IS NOT NULL
-         GROUP BY blood_type"
-    );
-    while ($row = $result->fetch_assoc()) {
-        $bloodTypes[$row['blood_type']] = $row['count'];
-    }
-    $chartData['blood_types'] = $bloodTypes;
-
-    // Appointments per day this week (for a line chart)
-    $weeklyAppointments = [];
+    // 1. SIGNUPS (Last 7 days)
+    $signups = ['labels' => [], 'data' => []];
     for ($i = 6; $i >= 0; $i--) {
         $day = date('Y-m-d', strtotime("-$i days"));
-        $result = $conn->query(
-            "SELECT COUNT(*) as count FROM appointments
-             WHERE DATE(appointment_date) = '$day'"
-        );
-        $count = ($result && $row = $result->fetch_assoc()) ? $row['count'] : 0;
-        $weeklyAppointments[date('D', strtotime($day))] = $count;
+        $label = date('D', strtotime($day));
+        $res = $conn->query("SELECT COUNT(*) as c FROM users WHERE DATE(created_at) = '$day'");
+        $count = ($res && $row = $res->fetch_assoc()) ? (int)$row['c'] : 0;
+        
+        $signups['labels'][] = $label;
+        $signups['data'][] = $count;
     }
-    $chartData['weekly_appointments'] = $weeklyAppointments;
+    $chartData['signups'] = $signups;
+
+    // 2. DOCTOR_CHART (Top 5 doctors by appointment count)
+    $doctorChart = ['labels' => [], 'data' => []];
+    $res = $conn->query(
+        "SELECT CONCAT(d.first_name, ' ', d.last_name) as name, COUNT(a.appointment_id) as count
+         FROM doctors d
+         LEFT JOIN appointments a ON d.doctor_id = a.doctor_id
+         GROUP BY d.doctor_id
+         ORDER BY count DESC
+         LIMIT 5"
+    );
+    while ($row = $res->fetch_assoc()) {
+        $doctorChart['labels'][] = $row['name'];
+        $doctorChart['data'][] = (int)$row['count'];
+    }
+    $chartData['doctor_chart'] = $doctorChart;
+
+    // 3. TIME_CHART (Visits per hour today)
+    $timeChart = ['labels' => [], 'data' => []];
+    $today = date('Y-m-d');
+    for ($h = 9; $h < 18; $h++) {
+        $label = date('h A', strtotime("$h:00"));
+        $slotStart = "$today " . str_pad($h, 2, '0', STR_PAD_LEFT) . ":00:00";
+        $slotEnd   = "$today " . str_pad($h + 1, 2, '0', STR_PAD_LEFT) . ":00:00";
+        
+        $res = $conn->query("SELECT COUNT(*) as c FROM appointments WHERE appointment_date >= '$slotStart' AND appointment_date < '$slotEnd'");
+        $count = ($res && $row = $res->fetch_assoc()) ? (int)$row['c'] : 0;
+        
+        $timeChart['labels'][] = $label;
+        $timeChart['data'][] = $count;
+    }
+    $chartData['time_chart'] = $timeChart;
 
     echo json_encode(['status' => 'success', 'data' => $chartData]);
     exit();
@@ -348,7 +358,13 @@ if ($action === 'system_logs') {
 
     if ($result) {
         while ($row = $result->fetch_assoc()) {
-            $logs[] = $row;
+            $logs[] = [
+                'user'   => $row['email'] ?: 'System',
+                'date'   => date('Y-m-d', strtotime($row['created_at'])),
+                'time'   => date('h:i A', strtotime($row['created_at'])),
+                'event'  => $row['event'],
+                'status' => $row['status']
+            ];
         }
     }
 
@@ -374,7 +390,12 @@ if ($action === 'audit_trail') {
 
     if ($result) {
         while ($row = $result->fetch_assoc()) {
-            $trail[] = $row;
+            $trail[] = [
+                'user'           => $row['email'] ?: 'Anonymous',
+                'action'         => $row['action'],
+                'table_affected' => $row['table_affected'],
+                'time'           => date('M d, h:i A', strtotime($row['created_at']))
+            ];
         }
     }
 
@@ -400,7 +421,12 @@ if ($action === 'ai_logs') {
 
     if ($result) {
         while ($row = $result->fetch_assoc()) {
-            $logs[] = $row;
+            $logs[] = [
+                'user'        => $row['email'] ?: 'System',
+                'action'      => $row['action_type'],
+                'details'     => $row['details'],
+                'time'        => date('M d, h:i A', strtotime($row['created_at']))
+            ];
         }
     }
 
@@ -427,7 +453,11 @@ if ($action === 'document_queue') {
 
     if ($result) {
         while ($row = $result->fetch_assoc()) {
-            $docs[] = $row;
+            $docs[] = [
+                'patient' => $row['patient_name'],
+                'file'    => $row['file_name'],
+                'date'    => date('M d, Y', strtotime($row['uploaded_at']))
+            ];
         }
     }
 
@@ -453,7 +483,12 @@ if ($action === 'feedback') {
 
     if ($result) {
         while ($row = $result->fetch_assoc()) {
-            $reports[] = $row;
+            $reports[] = [
+                'user'    => $row['email'] ?: 'Guest',
+                'type'    => $row['type'],
+                'message' => $row['message'],
+                'date'    => date('M d, Y', strtotime($row['created_at']))
+            ];
         }
     }
 

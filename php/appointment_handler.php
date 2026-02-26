@@ -118,6 +118,8 @@ if (isset($_POST['take_ticket'])) {
 
 
     if ($stmt->execute()) {
+        $apptId = $conn->insert_id; // Capture ID IMMEDIATELY
+
         // Log the event
         $logMsg = "Ticket Generated: $ticketCode at $slotStart";
         $stmtLog = $conn->prepare("INSERT INTO system_logs (user_id, event, status) VALUES (?, ?, 'info')");
@@ -126,7 +128,6 @@ if (isset($_POST['take_ticket'])) {
         $stmtLog->close();
 
         // --- NEW: Insert into TICKETS table ---
-        $apptId = $conn->insert_id;
         $stmtTick = $conn->prepare("INSERT INTO tickets (patient_id, appointment_id, doctor_id, ticket_code) VALUES (?, ?, ?, ?)");
         $stmtTick->bind_param("iiis", $patientId, $apptId, $dIdVal, $ticketCode);
         $stmtTick->execute();
@@ -447,34 +448,15 @@ if (isset($_POST['terminate_appointment'])) {
         exit();
     }
 
-    // --- Create Medical Record Entry (Archive) ---
-    $pId = $apptInfo['patient_id'];
-    $dId = $apptInfo['doctor_id'];
-    if (!$dId) {
-        // Fallback: Get the first available staff member if none assigned
-        $fallbackRes = $conn->query("SELECT doctor_id FROM doctors LIMIT 1");
-        $dId = ($fallbackRes && $row = $fallbackRes->fetch_assoc()) ? $row['doctor_id'] : null;
-    }
-    $docName = $apptInfo['doctor_name'] ?? 'General Doctor';
-    $summary = "Terminated (Dr. " . $docName . ")";
-
-    
-    $recordSql = "INSERT INTO medical_records (patient_id, doctor_id, record_date, record_type, summary) 
-                  VALUES (?, ?, NOW(), '', ?)";
-    $stmtRec = $conn->prepare($recordSql);
-    $stmtRec->bind_param("iis", $pId, $dId, $summary);
-    $stmtRec->execute();
-    $stmtRec->close();
-
-    // --- Perform Final Termination (Update to 'terminated' status) ---
-    $stmt = $conn->prepare("UPDATE appointments SET status = 'terminated' WHERE appointment_id = ?");
+    // --- Delete the Appointment (Direct Deletion) ---
+    $stmt = $conn->prepare("DELETE FROM appointments WHERE appointment_id = ?");
     $stmt->bind_param("i", $apptId);
 
     if ($stmt->execute()) {
-        $msg = ($userRole === 'admin') ? 'Appointment deleted successfully.' : 'Appointment terminated successfully.';
+        $msg = 'Appointment deleted successfully.';
         
-        // Log the cancellation
-        $logMsg = "Appointment $apptId Cancelled by User $userId";
+        // Log the event in system logs for administrative audit
+        $logMsg = "Appointment $apptId Deleted by User $userId (Cancellation)";
         $stmtLog = $conn->prepare("INSERT INTO system_logs (user_id, event, status) VALUES (?, ?, 'warning')");
         $stmtLog->bind_param("is", $userId, $logMsg);
         $stmtLog->execute();
@@ -482,7 +464,7 @@ if (isset($_POST['terminate_appointment'])) {
 
         echo json_encode(['status' => 'success', 'message' => $msg]);
     } else {
-        echo json_encode(['status' => 'error', 'message' => 'Failed to process termination request.']);
+        echo json_encode(['status' => 'error', 'message' => 'Failed to delete appointment.']);
     }
     $stmt->close();
     exit();

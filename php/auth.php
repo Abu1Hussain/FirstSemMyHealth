@@ -156,7 +156,7 @@ if ($isLoggingIn) {
 
     // --- Step 1: Try to find the user by email ---
 
-    $stmt = $conn->prepare("SELECT user_id, email, hash_password, role FROM users WHERE email = ?");
+    $stmt = $conn->prepare("SELECT user_id, email, hash_password, role, status FROM users WHERE email = ?");
     $stmt->bind_param("s", $identifier);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -168,7 +168,7 @@ if ($isLoggingIn) {
 
     if (!$user) {
         $stmt = $conn->prepare(
-            "SELECT u.user_id, u.email, u.hash_password, u.role
+            "SELECT u.user_id, u.email, u.hash_password, u.role, u.status
              FROM users u
              JOIN patients p ON u.user_id = p.user_id
              WHERE p.cpr = ?"
@@ -195,6 +195,16 @@ if ($isLoggingIn) {
     if (!password_verify($password, $user['hash_password'])) {
         sendResponse('error', 'Incorrect email/CPR or password. Please try again.');
     }
+
+    if ($user['status'] !== 'active') {
+        sendResponse('error', 'Your account is currently ' . $user['status'] . '. Please contact support.');
+    }
+
+    // --- Update last login timestamp ---
+    $stmtLogin = $conn->prepare("UPDATE users SET last_login = NOW() WHERE user_id = ?");
+    $stmtLogin->bind_param("i", $user['user_id']);
+    $stmtLogin->execute();
+    $stmtLogin->close();
 
 
     // --- Step 4: Login successful — save user info to session ---

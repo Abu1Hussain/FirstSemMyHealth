@@ -22,7 +22,7 @@ require_once '../DataBase/db_connect.php';
 
 /* ── Make sure the user is logged in ── */
 if (!isset($_SESSION['user_id'])) {
-    echo json_encode(['status' => 'error', 'message' => 'Please log in first.']);
+    echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
     exit();
 }
 
@@ -74,14 +74,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $summary = ucfirst($status) . " (Appointment Tip: " . $appt['reason'] . ")";
                     
                     $archiveStmt = $conn->prepare(
-                        "INSERT INTO medical_records (patient_id, created_by, record_date, record_type, summary) 
-                         VALUES (?, ?, NOW(), ?, ?)"
+                        "INSERT INTO medical_records (patient_id, doctor_id, record_date, record_type, summary, source_type) 
+                         VALUES (?, ?, NOW(), ?, ?, 'In-Person')"
                     );
                     $type = ($status === 'completed') ? 'Consultation' : 'Termination';
                     $archiveStmt->bind_param("iiss", $pId, $dId, $type, $summary);
                     $archiveStmt->execute();
                     $archiveStmt->close();
                 }
+
+                // Delete the ticket since the appointment is finished/terminated
+                $ticketStmt = $conn->prepare("DELETE FROM tickets WHERE appointment_id = ?");
+                $ticketStmt->bind_param("i", $apptId);
+                $ticketStmt->execute();
+                $ticketStmt->close();
             }
 
             echo json_encode(['status' => 'success', 'message' => 'Status updated and archived if terminal']);
@@ -149,6 +155,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo json_encode(['status' => 'success', 'message' => 'Prescription saved']);
         } else {
             echo json_encode(['status' => 'error', 'message' => 'Failed to save prescription']);
+        }
+        $stmt->close();
+        exit();
+    }
+    // 4. Transfer Appointment
+    if (isset($_POST['action']) && $_POST['action'] === 'transfer_appointment') {
+        $apptId = $_POST['appointment_id'];
+        $targetDoctorId = $_POST['target_doctor_id'];
+        $doctorId = null;
+
+        // Verify the appointment exists
+        $stmtCheck = $conn->prepare("SELECT patient_id FROM appointments WHERE appointment_id = ?");
+        $stmtCheck->bind_param("i", $apptId);
+        $stmtCheck->execute();
+        $result = $stmtCheck->get_result();
+        
+        if ($result->num_rows === 0) {
+            echo json_encode(['status' => 'error', 'message' => 'Appointment not found.']);
+            $stmtCheck->close();
+            exit();
+        }
+        $stmtCheck->close();
+
+        // Update the appointment's doctor_id and set status back to pending
+        $stmt = $conn->prepare("UPDATE appointments SET doctor_id = ?, status = 'pending' WHERE appointment_id = ?");
+        $stmt->bind_param("ii", $targetDoctorId, $apptId);
+        
+        if ($stmt->execute()) {
+            // Log the transfer
+            $userId = $_SESSION['user_id'];
+            $logMsg = "Appointment $apptId Transferred to Doctor ID $targetDoctorId by User $userId";
+            $stmtLog = $conn->prepare("INSERT INTO system_logs (user_id, event, status) VALUES (?, ?, 'info')");
+            $stmtLog->bind_param("is", $userId, $logMsg);
+            $stmtLog->execute();
+            $stmtLog->close();
+
+            echo json_encode(['status' => 'success', 'message' => 'Appointment transferred successfully.']);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Failed to transfer appointment.']);
         }
         $stmt->close();
         exit();
@@ -325,7 +370,7 @@ if ($doctorId) {
         SELECT DISTINCT p.patient_id, p.first_name, p.last_name, p.cpr, p.email, p.phone, p.gender, p.date_of_birth, p.blood_type 
         FROM patients p
         JOIN appointments a ON p.patient_id = a.patient_id
-        WHERE a.doctor_id = ?
+        WHERE a.doctor_id = ? OR a.doctor_id IS NULL
         ORDER BY p.first_name ASC
     ");
     $stmt->bind_param("i", $doctorId);
@@ -354,7 +399,7 @@ if ($doctorId) {
                 p.patient_id, p.cpr, p.phone, p.email, p.date_of_birth, p.gender, p.blood_type
          FROM appointments a
          JOIN patients p ON a.patient_id = p.patient_id
-         WHERE a.doctor_id = ? 
+         WHERE (a.doctor_id = ? OR a.doctor_id IS NULL)
            AND DATE(appointment_date) = ?
            AND a.status NOT IN ('terminated', 'cancelled', 'completed')
          ORDER BY a.appointment_date ASC"
@@ -376,7 +421,7 @@ if ($doctorId) {
                 p.patient_id, p.cpr, p.phone, p.email, p.date_of_birth, p.gender, p.blood_type
          FROM appointments a
          JOIN patients p ON a.patient_id = p.patient_id
-         WHERE a.doctor_id = ?
+         WHERE a.doctor_id = ? OR a.doctor_id IS NULL
          ORDER BY a.appointment_date DESC"
     );
     $stmt->bind_param("i", $doctorId);

@@ -256,23 +256,23 @@
 
         <!-- Nav Links -->
         <nav class="flex-grow px-2 space-y-1 pt-2">
-            <a href="#" data-view="dashboard" class="sidebar-link active flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-colors">
+            <a href="javascript:void(0)" data-view="dashboard" class="sidebar-link active flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-colors">
                 <ion-icon name="grid-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
                 <span class="sidebar-text ml-3 text-sm font-medium">Dashboard</span>
             </a>
-            <a href="#" data-view="appointments" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-colors">
+            <a href="javascript:void(0)" data-view="appointments" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-colors">
                 <ion-icon name="calendar-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
                 <span class="sidebar-text ml-3 text-sm font-medium">Appointments</span>
             </a>
-            <a href="#" data-view="records" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-colors">
+            <a href="javascript:void(0)" data-view="records" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-colors">
                 <ion-icon name="document-text-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
                 <span class="sidebar-text ml-3 text-sm font-medium">Health Records</span>
             </a>
-            <a href="#" data-view="prescriptions" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-colors">
+            <a href="javascript:void(0)" data-view="prescriptions" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-colors">
                 <ion-icon name="flask-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
                 <span class="sidebar-text ml-3 text-sm font-medium">Prescriptions</span>
             </a>
-            <a href="#" data-view="profile" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-colors">
+            <a href="javascript:void(0)" data-view="profile" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-colors">
                 <ion-icon name="person-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
                 <span class="sidebar-text ml-3 text-sm font-medium">My Profile</span>
             </a>
@@ -287,7 +287,7 @@
                     <p class="text-xs text-gray-500 dark:text-gray-400">Patient Account</p>
                 </div>
             </div>
-            <a href="../php/logout.php" class="w-full mt-3 flex items-center justify-center py-2 px-4 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            <a href="javascript:void(0)" onclick="handleLogout()" class="w-full mt-3 flex items-center justify-center py-2 px-4 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                 <ion-icon name="log-out-outline" class="text-lg mr-2"></ion-icon>
                 <span class="sidebar-text">Logout</span>
             </a>
@@ -327,8 +327,8 @@
                         <ion-icon name="chevron-down-outline" class="hidden md:inline text-xs text-gray-500 dark:text-gray-400"></ion-icon>
                     </button>
                     <div id="userMenu" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-lg py-1 hidden ring-1 ring-black ring-opacity-5 z-30">
-                        <a href="#" data-view="profile" class="sidebar-link block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">My Profile</a>
-                        <a href="../php/logout.php" class="block px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700">Logout</a>
+                        <a href="javascript:void(0)" data-view="profile" class="sidebar-link block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700">My Profile</a>
+                        <a href="javascript:void(0)" onclick="handleLogout()" class="block px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-50 dark:hover:bg-gray-700">Logout</a>
                     </div>
                 </div>
             </div>
@@ -381,7 +381,7 @@
                 <div class="space-y-4">
                     <div class="flex items-center justify-between">
                         <h3 class="text-xl font-bold text-gray-900 dark:text-white">👨‍⚕️ Available Doctors</h3>
-                        <a href="#" data-view="appointments" class="sidebar-link text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors">Book Now &rarr;</a>
+                        <a href="javascript:void(0)" data-view="appointments" class="sidebar-link text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors">Book Now &rarr;</a>
                     </div>
                     <div id="doctors-list" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                         <p class="col-span-full py-12 text-center text-gray-500 dark:text-gray-400">Loading doctors...</p>

@@ -186,23 +186,23 @@
 
         <!-- Nav Links -->
         <nav class="flex-grow px-2 space-y-1 pt-2">
-            <a href="#" data-section="dashboard" class="sidebar-link active flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 group transition-all">
+            <a href="javascript:void(0)" data-section="dashboard" class="sidebar-link active flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 group transition-all">
                 <ion-icon name="grid-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
                 <span class="sidebar-text ml-3 text-sm font-medium">Dashboard</span>
             </a>
-            <a href="#" data-section="patients" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 group transition-all">
+            <a href="javascript:void(0)" data-section="patients" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 group transition-all">
                 <ion-icon name="people-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
                 <span class="sidebar-text ml-3 text-sm font-medium">Patient Management</span>
             </a>
-            <a href="#" data-section="records" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 group transition-all">
+            <a href="javascript:void(0)" data-section="records" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 group transition-all">
                 <ion-icon name="document-text-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
                 <span class="sidebar-text ml-3 text-sm font-medium">Medical Records</span>
             </a>
-            <a href="#" data-section="prescriptions" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 group transition-all">
+            <a href="javascript:void(0)" data-section="prescriptions" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 group transition-all">
                 <ion-icon name="flask-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
                 <span class="sidebar-text ml-3 text-sm font-medium">Pharmacy & Rx</span>
             </a>
-            <a href="#" data-section="profile" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 group transition-all">
+            <a href="javascript:void(0)" data-section="profile" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 group transition-all">
                 <ion-icon name="person-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
                 <span class="sidebar-text ml-3 text-sm font-medium">My Profile</span>
             </a>
@@ -218,7 +218,7 @@
                     <p class="text-xs text-gray-500 dark:text-gray-400">Doctor</p>
                 </div>
             </div>
-            <a href="../php/logout.php" class="w-full mt-3 flex items-center justify-center py-2 px-4 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+            <a href="javascript:void(0)" onclick="handleLogout()" class="w-full mt-3 flex items-center justify-center py-2 px-4 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                 <ion-icon name="log-out-outline" class="text-lg mr-2"></ion-icon>
                 <span class="sidebar-text">Logout</span>
             </a>
@@ -259,13 +259,10 @@
                     </button>
                     <!-- User Dropdown Menu -->
                     <div id="userMenu" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl py-1 hidden ring-1 ring-black ring-opacity-5 z-20 border border-gray-100 dark:border-gray-700 animate-fade-in">
-                        <a href="#" data-section="profile" class="sidebar-link block px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors">
+                        <a href="javascript:void(0)" data-section="profile" class="sidebar-link block px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors">
                             <ion-icon name="person-outline" class="mr-2 align-middle"></ion-icon> My Profile
                         </a>
-                        <a href="#" class="block px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors border-t border-gray-100 dark:border-gray-700">
-                            <ion-icon name="settings-outline" class="mr-2 align-middle"></ion-icon> Settings
-                        </a>
-                        <a href="../logout.php" class="block px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-gray-700 transition-colors border-t border-gray-100 dark:border-gray-700">
+                        <a href="javascript:void(0)" onclick="handleLogout()" class="block px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-gray-700 transition-colors border-t border-gray-100 dark:border-gray-700">
                             <ion-icon name="log-out-outline" class="mr-2 align-middle"></ion-icon> Logout
                         </a>
                     </div>
@@ -670,10 +667,31 @@
                 </div>
             </div>
             <p style="color:#6b7280; margin-bottom:20px;">Standard consultation time is 10 minutes.</p>
-            <button id="btn-terminate-ticket"
-                class="w-full py-4 px-6 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-lg transition-colors">
-                🛑 Terminate Ticket (Finish)
-            </button>
+            <div id="timer-actions-container" class="space-y-3 mt-4">
+                <button id="btn-complete-ticket"
+                    class="w-full py-3 px-4 rounded-xl bg-green-600 hover:bg-green-700 text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2 shadow-sm">
+                    <ion-icon name="checkmark-done-outline" class="text-xl"></ion-icon> Complete Appointment
+                </button>
+                <button id="btn-show-transfer"
+                    class="w-full py-3 px-4 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2 shadow-sm">
+                    <ion-icon name="arrow-redo-outline" class="text-xl"></ion-icon> Transfer Patient
+                </button>
+                <button id="btn-terminate-ticket"
+                    class="w-full py-2 px-4 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-red-50 dark:hover:bg-red-900/30 text-gray-500 dark:text-gray-400 hover:text-red-500 font-medium text-xs transition-colors flex items-center justify-center gap-2 mt-2">
+                    <ion-icon name="close-circle-outline" class="text-lg"></ion-icon> Cancel / Close Timer
+                </button>
+            </div>
+            
+            <div id="transfer-section" class="hidden mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 text-left">
+                <h4 class="text-sm font-bold text-gray-800 dark:text-gray-200 mb-2">Transfer To:</h4>
+                <select id="transfer-doctor-select" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none mb-3 text-gray-800 dark:text-white">
+                    <option value="">Loading doctors...</option>
+                </select>
+                <div class="flex gap-2">
+                    <button id="btn-cancel-transfer" class="flex-1 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors">Cancel</button>
+                    <button id="btn-confirm-transfer" class="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm">Confirm Transfer</button>
+                </div>
+            </div>
         </div>
     </div>
 

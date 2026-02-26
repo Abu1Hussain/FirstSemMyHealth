@@ -24,7 +24,7 @@ require_once '../DataBase/db_connect.php';
 
 /* ── Make sure the user is logged in ── */
 if (!isset($_SESSION['user_id'])) {
-    echo json_encode(['status' => 'error', 'message' => 'Please log in first.']);
+    echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
     exit();
 }
 

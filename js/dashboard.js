@@ -1324,3 +1324,20 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 });
+
+/* ── 9. Secure Logout ── */
+window.handleLogout = function () {
+  Swal.fire({
+    title: "Confirm Logout",
+    text: "Are you sure you want to end your session?",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#3b82f6",
+    cancelButtonColor: "#9ca3af",
+    confirmButtonText: "Yes, logout",
+  }).then((result) => {
+    if (result.isConfirmed) {
+      window.location.href = "../php/logout.php";
+    }
+  });
+};
