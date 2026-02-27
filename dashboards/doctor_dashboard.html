@@ -202,6 +202,14 @@
                 <ion-icon name="flask-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
                 <span class="sidebar-text ml-3 text-sm font-medium">Pharmacy & Rx</span>
             </a>
+            <a href="javascript:void(0)" data-section="notifications" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 group transition-all">
+                <ion-icon name="notifications-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
+                <span class="sidebar-text ml-3 text-sm font-medium">Notifications <span id="notif-badge" class="hidden ml-2 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full"></span></span>
+            </a>
+            <a href="javascript:void(0)" onclick="if(window.openAIWidget) window.openAIWidget()" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 group transition-all">
+                <ion-icon name="chatbubble-ellipses-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
+                <span class="sidebar-text ml-3 text-sm font-medium">AI Helper</span>
+            </a>
             <a href="javascript:void(0)" data-section="profile" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 group transition-all">
                 <ion-icon name="person-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
                 <span class="sidebar-text ml-3 text-sm font-medium">My Profile</span>
@@ -236,20 +244,14 @@
                 <button id="sidebarToggle" class="flex p-2 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500">
                     <ion-icon name="menu-outline" class="text-2xl"></ion-icon>
                 </button>
-                <div class="relative ml-4 hidden sm:block">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <ion-icon name="search-outline" class="text-gray-400"></ion-icon>
-                    </span>
-                    <input type="text" placeholder="Search patients or records..." class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all shadow-sm">
-                </div>
             </div>
             <div class="flex items-center space-x-4">
                 <button id="darkModeToggle" class="flex p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none transition-all">
                     <ion-icon name="moon-outline" id="darkModeIcon" class="text-xl"></ion-icon>
                 </button>
-                <button class="flex relative p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none transition-all">
+                <button onclick="showSection('notifications')" class="flex relative p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none transition-all">
                     <ion-icon name="notifications-outline" class="text-xl"></ion-icon>
-                    <span class="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
+                    <span id="header-notif-badge" class="hidden absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
                 </button>
                 <div class="relative">
                     <button id="userMenuButton" class="flex items-center space-x-2 focus:outline-none p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all">
@@ -395,6 +397,34 @@
             </div> <!-- End view-dashboard -->
 
             <!-- ═══════════════════════════════
+                 VIEW: NOTIFICATIONS
+            ═══════════════════════════════ -->
+            <div id="view-notifications" class="content-section hidden space-y-8 animate-fade-in-up" data-aos="fade-up">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Your Notifications</h2>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                    <div class="px-6 py-5 border-b border-gray-100 dark:border-gray-700">
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-white">🔔 Your Notifications</h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="appt-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Topic</th>
+                                    <th class="text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="notifications-table-body">
+                                <tr><td colspan="3" class="py-12 text-center text-gray-500">No notifications yet.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══════════════════════════════
                  VIEW: PATIENT MANAGEMENT
             ═══════════════════════════════ -->
             <div id="view-patients" class="content-section hidden" data-aos="fade-up">
@@ -434,37 +464,7 @@
 
 
 
-            <!-- ═══════════════════════════════
-                 VIEW: APPOINTMENTS (HISTORY)
-            ═══════════════════════════════ -->
-            <div id="view-appointments" class="content-section" data-aos="fade-up">
-                <h1 class="text-3xl font-semibold text-gray-800 dark:text-white mb-6">📅 My Appointment History</h1>
-                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
-                    <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100">All Appointments</h2>
-                        <!-- Filter Tabs -->
-                        <div id="appt-filters" class="flex space-x-2">
-                            <button onclick="showApptCategory('past')"
-                                class="appt-filter-btn px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-500 hover:text-white" data-cat="past">
-                                📜 Past
-                            </button>
-                            <button onclick="showApptCategory('today')"
-                                class="appt-filter-btn px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-blue-600 text-white" data-cat="today">
-                                ⭐ Today
-                            </button>
-                            <button onclick="showApptCategory('upcoming')"
-                                class="appt-filter-btn px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-blue-500 hover:text-white" data-cat="upcoming">
-                                🚀 Upcoming
-                            </button>
-                        </div>
-                    </div>
-                    <div class="p-6">
-                        <div id="appt-list-past"     class="appt-category" style="display:none;"><div class="list-content overflow-x-auto"><p class="text-gray-500 dark:text-gray-400">Loading…</p></div></div>
-                        <div id="appt-list-today"    class="appt-category">                     <div class="list-content overflow-x-auto"><p class="text-gray-500 dark:text-gray-400">Loading…</p></div></div>
-                        <div id="appt-list-upcoming" class="appt-category" style="display:none;"><div class="list-content overflow-x-auto"><p class="text-gray-500 dark:text-gray-400">Loading…</p></div></div>
-                    </div>
-                </div>
-            </div>
+
 
             <!-- ═══════════════════════════════
                  VIEW: PRESCRIPTIONS / PHARMACY
@@ -501,7 +501,15 @@
                  VIEW: MEDICAL RECORDS
             ═══════════════════════════════ -->
             <div id="view-records" class="content-section hidden" data-aos="fade-up">
-                <h1 class="text-3xl font-semibold text-gray-800 dark:text-white mb-6">📋 Medical Records</h1>
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                    <h1 class="text-3xl font-semibold text-gray-800 dark:text-white">📋 Medical Records</h1>
+                    <div class="relative w-full md:w-1/3">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <ion-icon name="search-outline" class="text-gray-400"></ion-icon>
+                        </span>
+                        <input type="text" placeholder="Search patient records..." class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all shadow-sm text-gray-800 dark:text-white">
+                    </div>
+                </div>
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-100 dark:border-gray-700">
                     <div class="p-6">
                         <div id="records-list-container" class="overflow-x-auto">
@@ -712,6 +720,56 @@
         </div>
     </div>
 
+    <!-- ── NOTIFICATION MODAL ── -->
+    <div id="notif-modal" class="fixed inset-0 z-[2000] overflow-hidden hidden">
+        <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" onclick="closeNotifModal()"></div>
+        <div class="absolute inset-0 flex items-center justify-center p-4 py-12">
+            <!-- Modal Container -->
+            <div class="bg-white dark:bg-gray-800 rounded-[20px] shadow-2xl w-full max-w-[360px] mx-auto overflow-hidden transform transition-all border border-gray-200 dark:border-gray-700" data-aos="zoom-in" style="max-height: 85vh; display: flex; flex-direction: column;">
+                
+                <!-- Header -->
+                <div class="bg-blue-600 text-white p-4 flex justify-between items-center shadow-md relative z-10 rounded-t-[20px]">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm shadow-inner">
+                            <ion-icon name="notifications" class="text-2xl text-white drop-shadow-sm"></ion-icon>
+                        </div>
+                        <div>
+                            <h3 id="modal-notif-topic" class="font-bold text-lg tracking-tight leading-tight">Notification</h3>
+                            <p id="modal-notif-sender" class="text-xs text-blue-100 font-medium">From Admin</p>
+                        </div>
+                    </div>
+                    <!-- Close Button -->
+                    <button class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors" onclick="closeNotifModal()">
+                        <ion-icon name="close" class="text-xl"></ion-icon>
+                    </button>
+                </div>
+                
+                <!-- Scrollable Content -->
+                <div class="p-6 overflow-y-auto" style="flex: 1;">
+                    <div class="space-y-4">
+                        <div class="text-center mb-6 pt-2">
+                            <span id="modal-notif-date" class="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 text-xs font-bold uppercase tracking-wider">
+                                Date Here
+                            </span>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-900/50 p-5 rounded-2xl border border-gray-100 dark:border-gray-700/50 relative">
+                            <!-- Quotation marks decoration -->
+                            <ion-icon name="quote" class="absolute top-3 left-3 text-3xl text-gray-200 dark:text-gray-700/30 -z-10"></ion-icon>
+                            <p id="modal-notif-message" class="text-gray-700 dark:text-gray-300 leading-relaxed text-[15px] whitespace-pre-wrap font-medium relative z-10"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="p-4 border-t border-gray-100 dark:border-gray-700/50 bg-gray-50 dark:bg-gray-900/30 flex justify-end rounded-b-[20px]">
+                    <button onclick="closeNotifModal()" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-md cursor-pointer transition-all transform hover:scale-105 active:scale-95">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- ══ Scripts ══ -->
     <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -723,5 +781,8 @@
 
     <!-- Doctor Dashboard Backend & UI Script -->
     <script src="../js/doctor_dashboard.js"></script>
+
+    <!-- AI Care Navigator Widget -->
+    <script src="../js/ai-widget.js"></script>
 </body>
 </html>

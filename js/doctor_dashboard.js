@@ -29,6 +29,11 @@ document.addEventListener("DOMContentLoaded", function () {
   const userMenuButton = document.getElementById("userMenuButton");
   const userMenu = document.getElementById("userMenu");
 
+  // Live Notifications: Refresh every 30 seconds
+  setInterval(() => {
+    fetchDoctorData();
+  }, 30000);
+
   /* ── UI Logic: Sidebar & Dark Mode ── */
   if (sidebarToggle) {
     sidebarToggle.addEventListener("click", () => {
@@ -249,6 +254,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
         /* ── Render Patients List (Today) ── */
         renderPatientsList(responseData.patients_today || []);
+
+        /* ── Render Notifications ── */
+        if (responseData.notifications) {
+            renderNotifications(responseData.notifications);
+        }
 
         /* ── Render Full Patient Directory ── */
         renderAllPatientsList(responseData.all_patients || []);
@@ -546,119 +556,7 @@ document.addEventListener("DOMContentLoaded", function () {
     listContainer.innerHTML = html;
   }
 
-  /* ─────────────────────────────────────────────
-     renderAllAppointments(groups)
-     Renders the categorized appointment history
-     with patient details and "View" button.
-     ───────────────────────────────────────────── */
-  function renderAllAppointments(groups) {
-    const categories = ["past", "today", "upcoming"];
 
-    categories.forEach((cat) => {
-      const container = document.querySelector(
-        `#appt-list-${cat} .list-content`,
-      );
-      const appointments = groups[cat];
-
-      if (!container) return;
-
-      if (!appointments || appointments.length === 0) {
-        container.innerHTML = `<p class="text-gray-500 dark:text-gray-400 py-6 text-center">No ${cat} appointments found.</p>`;
-        return;
-      }
-
-      let html =
-        '<table class="appt-table">' +
-        "<thead><tr>" +
-        "<th>Date/Time</th>" +
-        "<th>Patient</th>" +
-        "<th>Reason</th>" +
-        "<th>Priority</th>" +
-        "<th>Status</th>" +
-        "<th>Details</th>" +
-        "</tr></thead><tbody>";
-
-      appointments.forEach((appt) => {
-        const date = new Date(appt.appointment_date);
-        const formattedDate =
-          date.toLocaleDateString() +
-          " " +
-          date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-
-        let statusBadge = "";
-        if (appt.status === "completed")
-          statusBadge = '<span class="badge badge-green">Completed</span>';
-        else if (appt.status === "cancelled" || appt.status === "terminated")
-          statusBadge = '<span class="badge badge-red">Terminated</span>';
-        else if (appt.status === "pending")
-          statusBadge = '<span class="badge badge-orange">Pending</span>';
-        else if (appt.status === "accepted")
-          statusBadge = '<span class="badge badge-blue">Accepted</span>';
-        else
-          statusBadge = `<span class="badge badge-gray">${appt.status.toUpperCase()}</span>`;
-
-        let priorityBadge = "";
-        const p = appt.ai_priority || "Normal";
-        if (p === "Highly Important")
-          priorityBadge =
-            '<span class="px-2 py-1 rounded-md text-[10px] font-bold bg-red-100 text-red-600 border border-red-200">🚩 Highly Important</span>';
-        else if (p === "Important")
-          priorityBadge =
-            '<span class="px-2 py-1 rounded-md text-[10px] font-bold bg-orange-100 text-orange-600 border border-orange-200">🟠 Important</span>';
-        else
-          priorityBadge =
-            '<span class="px-2 py-1 rounded-md text-[10px] font-bold bg-blue-100 text-blue-600 border border-blue-200">🟢 Normal</span>';
-
-        const safeData = encodeURIComponent(JSON.stringify(appt));
-
-        html += `<tr>
-                <td><div class="font-medium">${formattedDate}</div></td>
-                <td>
-                  <div class="font-bold">${appt.patient_name}</div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400">CPR: ${appt.cpr || "—"}</div>
-                </td>
-                <td><div class="text-sm">${appt.reason}</div></td>
-                <td>${priorityBadge}</td>
-                <td>${statusBadge}</td>
-                <td>
-                  <button onclick="showPatientDetail('${safeData}')" 
-                    class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1">
-                    <ion-icon name="eye-outline"></ion-icon> View
-                  </button>
-                </td>
-            </tr>`;
-      });
-
-      html += "</tbody></table>";
-      container.innerHTML = html;
-    });
-  }
-
-  /* ─────────────────────────────────────────────
-     showApptCategory(category)
-     Toggles visibility between Past, Today, and Upcoming.
-     ───────────────────────────────────────────── */
-  window.showApptCategory = function (category) {
-    // Hide all categories
-    document
-      .querySelectorAll(".appt-category")
-      .forEach((el) => (el.style.display = "none"));
-
-    // Show selected
-    document.getElementById(`appt-list-${category}`).style.display = "block";
-
-    // Update button styles
-    const buttons = document.querySelectorAll("#appt-filters button");
-    buttons.forEach((btn) => {
-      if (btn.innerText.toLowerCase() === category) {
-        btn.style.background = "#1976d2";
-        btn.style.color = "white";
-      } else {
-        btn.style.background = "#e0e0e0";
-        btn.style.color = "#333";
-      }
-    });
-  };
 
   /* ─────────────────────────────────────────────
      switchModalTab(tabName)
@@ -820,6 +718,125 @@ document.addEventListener("DOMContentLoaded", function () {
       else fields.classList.add("hidden");
     });
 
+  /* ─────────────────────────────────────────────
+     renderNotifications(notifications)
+     Renders notifications in a table format and updates badges.
+     ───────────────────────────────────────────── */
+  window.renderNotifications = function (notifications) {
+    const tableBody = document.getElementById("notifications-table-body");
+    if (!tableBody) return;
+
+    let html = "";
+    let unreadCount = 0;
+
+    if (!notifications || notifications.length === 0) {
+      html = '<tr><td colspan="3" class="py-12 text-center text-gray-500">No notifications yet.</td></tr>';
+    } else {
+      notifications.forEach((notif) => {
+        if (notif.is_read == 0) unreadCount++;
+        
+        const formattedDate = notif.date ? new Date(notif.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A';
+        const boldClass = notif.is_read == 0 ? 'font-bold' : '';
+        const bgClass = notif.is_read == 0 ? 'bg-blue-50/50 dark:bg-blue-900/10' : '';
+
+        let tagClass = 'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
+        if (notif.topic && notif.topic.toLowerCase().includes('appointment')) {
+            tagClass = 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
+        } else if (notif.topic && notif.topic.toLowerCase().includes('alert')) {
+            tagClass = 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
+        } else if (notif.topic && notif.topic.toLowerCase().includes('message')) {
+            tagClass = 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
+        }
+
+        const rowHtml = `
+          <tr id="notif-row-${notif.id}" class="transition-all duration-300 ${bgClass} ${boldClass}" data-notif-id="${notif.id}">
+            <td class="py-4 px-4 text-xs text-gray-500 whitespace-nowrap">${formattedDate}</td>
+            <td class="py-4 px-4">
+                <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${tagClass}">
+                        ${notif.topic || "Alert"}
+                    </span>
+                    ${notif.is_read == 0 ? `<span class="notif-new-badge px-1.5 py-0.5 bg-blue-500 text-white text-[9px] font-black rounded uppercase tracking-tighter">New</span>` : ""}
+                </div>
+            </td>
+            <td class="py-4 px-4 text-center">
+                <button onclick='handleViewNotification(${JSON.stringify(notif).replace(/'/g, "&apos;")})' class="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all" title="View Details">
+                    <ion-icon name="eye-outline" class="text-lg"></ion-icon>
+                </button>
+            </td>
+          </tr>
+        `;
+        html += rowHtml;
+      });
+    }
+    tableBody.innerHTML = html;
+    updateNotifBadges(unreadCount);
+  };
+
+  function updateNotifBadges(unreadCount) {
+    const sidebarBadge = document.getElementById("notif-badge");
+    if (sidebarBadge) {
+      if (unreadCount > 0) {
+        sidebarBadge.textContent = unreadCount;
+        sidebarBadge.classList.remove("hidden");
+      } else {
+        sidebarBadge.classList.add("hidden");
+      }
+    }
+    const headerBadge = document.getElementById("header-notif-badge");
+    if (headerBadge) {
+      headerBadge.classList.toggle("hidden", unreadCount === 0);
+    }
+  }
+
+  window.handleViewNotification = function(notif) {
+    const modal = document.getElementById("notif-modal");
+    if (!modal) return;
+
+    document.getElementById("modal-notif-topic").textContent = notif.topic || "Notification";
+    document.getElementById("modal-notif-date").textContent = notif.date || "N/A";
+    document.getElementById("modal-notif-message").textContent = notif.message;
+    
+    let sender = notif.sender || "Admin";
+    if (sender.toLowerCase().includes('admin')) sender = "Admin";
+    document.getElementById("modal-notif-sender").textContent = "From: " + sender;
+
+    modal.classList.remove("hidden");
+
+    if (notif.is_read == 0) {
+        const row = document.getElementById(`notif-row-${notif.id}`);
+        if (row) {
+            row.classList.remove("font-bold", "bg-blue-50/50", "dark:bg-blue-900/10");
+            const badge = row.querySelector(".notif-new-badge");
+            if (badge) badge.remove();
+        }
+        markNotificationAsRead(notif.id);
+    }
+  };
+
+  window.closeNotifModal = function() {
+    const modal = document.getElementById("notif-modal");
+    if (modal) modal.classList.add("hidden");
+  };
+
+  window.markNotificationAsRead = function(notifId) {
+    const formData = new FormData();
+    formData.append("action", "mark_notification_read");
+    formData.append("notification_id", notifId);
+
+    fetch("../php/dashboard_api.php", {
+        method: "POST",
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === "success") {
+            // Silently refresh count to sync badges
+            fetchDoctorData();
+        }
+    })
+    .catch(err => console.error("Error marking as read:", err));
+  };
   /* ── Submit Clinical Form ── */
   document
     .getElementById("clinical-action-form")
@@ -1123,6 +1140,26 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   /* ─────────────────────────────────────────────
+     Search Medical Records Filter
+     ───────────────────────────────────────────── */
+  const recordSearchInput = document.querySelector("#view-records input[type='text']");
+  if (recordSearchInput) {
+      recordSearchInput.addEventListener("keyup", function (e) {
+          const term = e.target.value.toLowerCase();
+          const rows = document.querySelectorAll("#records-list-container tbody tr");
+          rows.forEach((row) => {
+              // We check if any cell text includes the search term
+              const text = row.innerText.toLowerCase();
+              if (text.includes(term)) {
+                  row.style.display = "";
+              } else {
+                  row.style.display = "none";
+              }
+          });
+      });
+  }
+
+  /* ─────────────────────────────────────────────
      Timer Logic
      ───────────────────────────────────────────── */
   let timerInterval;
@@ -1228,7 +1265,7 @@ document.addEventListener("DOMContentLoaded", function () {
       if (allDoctorsData && allDoctorsData.length > 0) {
         let options = '<option value="">Select a doctor or department...</option>';
         allDoctorsData.forEach(d => {
-          options += `<option value="${d.doctor_id}">${d.name || d.first_name + ' ' + d.last_name} (${d.department || d.specialization || 'General'})</option>`;
+          options += `<option value="${d.doctor_id}">${d.first_name + ' ' + d.last_name} (${d.department || d.specialization || 'General'})</option>`;
         });
         select.innerHTML = options;
       } else {

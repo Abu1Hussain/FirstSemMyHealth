@@ -323,6 +323,25 @@ $conn->query("CREATE TABLE IF NOT EXISTS tickets (
 echo "📋 Table 'tickets' created.<br>";
 
 
+/* ────────────────────────────────────────────────────
+   TABLE 15: notifications
+   Stores notifications sent from admin to users.
+   ──────────────────────────────────────────────────── */
+
+$conn->query("CREATE TABLE IF NOT EXISTS notifications (
+    notif_id     INT AUTO_INCREMENT PRIMARY KEY,
+    sender       VARCHAR(255) NOT NULL,
+    target       VARCHAR(255) NOT NULL,
+    target_user_id INT NULL,
+    topic        VARCHAR(255) NOT NULL,
+    message      TEXT NOT NULL,
+    is_read      BOOLEAN DEFAULT FALSE,
+    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (target_user_id) REFERENCES users(user_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+echo "📋 Table 'notifications' created.<br>";
+
+
 /* ═══════════════════════════════════════════════════
    SEEDING DEMO DATA
    ═══════════════════════════════════════════════════ */

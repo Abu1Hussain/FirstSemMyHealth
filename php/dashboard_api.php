@@ -224,6 +224,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
     exit();
 }
 
+/* ═══════════════════════════════
+   MARK NOTIFICATION AS READ (POST)
+   ═══════════════════════════════ */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'mark_notification_read') {
+    $notifId = intval($_POST['notification_id'] ?? 0);
+    if ($notifId > 0) {
+        $stmt = $conn->prepare("UPDATE notifications SET is_read = 1 WHERE notif_id = ?");
+        $stmt->bind_param("i", $notifId);
+        $stmt->execute();
+        $stmt->close();
+        echo json_encode(['status' => 'success']);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Invalid notification ID']);
+    }
+    exit();
+}
 
 /* ═══════════════════════════════
    PATIENT'S APPOINTMENTS LIST
@@ -327,6 +343,35 @@ if ($patientId) {
     $stmt->close();
 }
 $response['prescriptions'] = $prescriptions;
+
+
+/* ═══════════════════════════════
+   NOTIFICATIONS
+   ═══════════════════════════════ */
+$notifications = [];
+$stmt = $conn->prepare(
+    "SELECT notif_id, sender, topic, message, is_read, created_at 
+     FROM notifications 
+     WHERE target = 'all_users' 
+        OR target = 'all_patients' 
+        OR target_user_id = ?
+     ORDER BY created_at DESC"
+);
+$stmt->bind_param("i", $userId);
+$stmt->execute();
+$res = $stmt->get_result();
+while ($row = $res->fetch_assoc()) {
+    $notifications[] = [
+        'id'      => $row['notif_id'],
+        'sender'  => $row['sender'],
+        'topic'   => $row['topic'],
+        'message' => $row['message'],
+        'is_read' => $row['is_read'],
+        'date'    => date('M d, Y h:i A', strtotime($row['created_at']))
+    ];
+}
+$stmt->close();
+$response['notifications'] = $notifications;
 
 
 /* ═══════════════════════════════

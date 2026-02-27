@@ -272,6 +272,14 @@
                 <ion-icon name="flask-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
                 <span class="sidebar-text ml-3 text-sm font-medium">Prescriptions</span>
             </a>
+            <a href="javascript:void(0)" data-view="notifications" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-colors">
+                <ion-icon name="notifications-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
+                <span class="sidebar-text ml-3 text-sm font-medium">Notifications <span id="notif-badge" class="hidden ml-2 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full"></span></span>
+            </a>
+            <a href="javascript:void(0)" onclick="if(window.openAIWidget) window.openAIWidget()" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-colors">
+                <ion-icon name="chatbubble-ellipses-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
+                <span class="sidebar-text ml-3 text-sm font-medium">AI Helper</span>
+            </a>
             <a href="javascript:void(0)" data-view="profile" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-colors">
                 <ion-icon name="person-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
                 <span class="sidebar-text ml-3 text-sm font-medium">My Profile</span>
@@ -315,9 +323,9 @@
                     <ion-icon name="moon-outline" id="darkModeIcon" class="text-xl"></ion-icon>
                 </button>
                 <!-- Notifications -->
-                <button class="flex relative p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none">
+                <button onclick="showSection('notifications')" class="flex relative p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none">
                     <ion-icon name="notifications-outline" class="text-xl"></ion-icon>
-                    <span class="absolute top-1.5 right-1.5 h-2 w-2 bg-red-500 rounded-full border border-white dark:border-gray-800"></span>
+                    <span id="header-notif-badge" class="hidden absolute top-1.5 right-1.5 h-2 w-2 bg-red-500 rounded-full border border-white dark:border-gray-800"></span>
                 </button>
                 <!-- User avatar top-right -->
                 <div class="relative">
@@ -709,6 +717,32 @@
                 </div>
             </div>
 
+            <!-- ═══════════════════════════════
+                 VIEW: NOTIFICATIONS
+            ═══════════════════════════════ -->
+            <div id="view-notifications" class="content-section space-y-6" data-aos="fade-up">
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Notifications</h1>
+                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                    <div class="px-6 py-5 border-b border-gray-100 dark:border-gray-700">
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-white">🔔 Your Notifications</h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="appt-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Topic</th>
+                                    <th class="text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="notifications-table-body">
+                                <tr><td colspan="3" class="py-12 text-center text-gray-500">No notifications yet.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
         </main>
     </div><!-- /mainContent -->
 
@@ -727,9 +761,9 @@
                     </div>
                     <div>
                         <h2 id="modal-doc-name" class="text-2xl font-bold text-gray-900 dark:text-white">Doctor Name</h2>
-                    <p id="modal-doc-spec" class="text-blue-600 dark:text-blue-400 font-bold uppercase tracking-widest text-xs mt-1">Specialization</p>
+                        <p id="modal-doc-spec" class="text-blue-600 dark:text-blue-400 font-bold uppercase tracking-widest text-xs mt-1">Specialization</p>
                     </div>
-                    
+
                     <div class="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-2xl">
                         <p id="modal-doc-bio" class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed italic"></p>
                     </div>
@@ -753,6 +787,53 @@
         </div>
     </div>
 
+    <!-- ── NOTIFICATION MODAL ── -->
+    <div id="notif-modal" class="fixed inset-0 z-[2000] overflow-hidden hidden">
+        <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" onclick="closeNotifModal()"></div>
+        <div class="absolute inset-0 flex items-center justify-center p-4 py-12">
+            <div class="bg-white dark:bg-gray-800 rounded-[20px] shadow-2xl w-full max-w-[360px] mx-auto overflow-hidden transform transition-all border border-gray-200 dark:border-gray-700" data-aos="zoom-in" style="max-height: 85vh; display: flex; flex-direction: column;">
+
+                <!-- Header -->
+                <div class="bg-blue-600 text-white p-4 flex justify-between items-center shadow-md relative z-10 rounded-t-[20px]">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm shadow-inner">
+                            <ion-icon name="notifications" class="text-2xl text-white drop-shadow-sm"></ion-icon>
+                        </div>
+                        <div>
+                            <h3 id="modal-notif-topic" class="font-bold text-lg tracking-tight leading-tight">Notification</h3>
+                            <p id="modal-notif-sender" class="text-xs text-blue-100 font-medium">From Admin</p>
+                        </div>
+                    </div>
+                    <button class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors" onclick="closeNotifModal()">
+                        <ion-icon name="close" class="text-xl"></ion-icon>
+                    </button>
+                </div>
+
+                <!-- Scrollable Content -->
+                <div class="p-6 overflow-y-auto" style="flex: 1;">
+                    <div class="space-y-4">
+                        <div class="text-center mb-6 pt-2">
+                            <span id="modal-notif-date" class="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 text-xs font-bold uppercase tracking-wider">
+                                Date Here
+                            </span>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-900/50 p-5 rounded-2xl border border-gray-100 dark:border-gray-700/50 relative">
+                            <ion-icon name="quote" class="absolute top-3 left-3 text-3xl text-gray-200 dark:text-gray-700/30 -z-10"></ion-icon>
+                            <p id="modal-notif-message" class="text-gray-700 dark:text-gray-300 leading-relaxed text-[15px] whitespace-pre-wrap font-medium relative z-10"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="p-4 border-t border-gray-100 dark:border-gray-700/50 bg-gray-50 dark:bg-gray-900/30 flex justify-end rounded-b-[20px]">
+                    <button onclick="closeNotifModal()" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-md cursor-pointer transition-all transform hover:scale-105 active:scale-95">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ══ Scripts ══ -->
     <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
@@ -760,6 +841,9 @@
     
     <!-- Unified Patient JS -->
     <script src="../js/dashboard.js?v=2"></script>
+
+    <!-- AI Care Navigator Widget -->
+    <script src="../js/ai-widget.js"></script>
 </body>
 </html>
 

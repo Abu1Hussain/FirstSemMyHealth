@@ -466,6 +466,10 @@ function fetchDashboardData() {
         actContainer.innerHTML = activityHtml;
       }
 
+      /* ── Populate Notifications ── */
+      if (responseData.notifications) {
+          renderNotifications(responseData.notifications);
+      }
 
       /* ── Populate Doctors Grid ── */
       const doctorsContainer = document.getElementById("doctors-list");
@@ -895,8 +899,9 @@ function analyzeAndShowTimes() {
 
       if (aiData.status === "success" && aiData.triage) {
         displayAiResults(aiData);
-        // Step 2: Load available slots
-        loadBookingSlots(appointmentDate, doctorIdInput);
+        // Step 2: Load available slots with the newly assigned doctor from AI
+        var updatedDoctorId = document.getElementById("selected-doctor-id").value;
+        loadBookingSlots(appointmentDate, updatedDoctorId);
       } else {
         loadBookingSlots(appointmentDate, doctorIdInput);
       }
@@ -1002,6 +1007,14 @@ function loadBookingSlots(date, doctorId) {
           };
         }
         container.appendChild(btn);
+
+        // Auto-select if this is the AI recommended slot
+        if (window.aiRecommendedSlot && window.aiRecommendedSlot === slot.hour && !btn.disabled) {
+            // Use setTimeout to ensure the DOM is ready and the button can be styled correctly
+            setTimeout(() => {
+                btn.click();
+            }, 100);
+        }
       });
 
       // Scroll to times
@@ -1052,9 +1065,9 @@ function displayAiResults(aiData) {
   // Color the priority text based on level
   var priorityElement = document.getElementById("ai-priority");
   priorityElement.className = "text-lg font-bold"; // Reset classes
-  if (triageInfo.priority === "Highly Important") {
+  if (triageInfo.priority === "Fast/Hard" || triageInfo.priority === "Highly Important") {
     priorityElement.classList.add("text-red-600", "dark:text-red-400");
-  } else if (triageInfo.priority === "Important") {
+  } else if (triageInfo.priority === "Medium" || triageInfo.priority === "Important") {
     priorityElement.classList.add("text-orange-500", "dark:text-orange-400");
   } else {
     priorityElement.classList.add("text-green-600", "dark:text-green-400");
@@ -1068,7 +1081,7 @@ function displayAiResults(aiData) {
     matchingDoctorsSection.style.display = "block";
     doctorsListContainer.innerHTML = "";
 
-    aiData.matching_doctors.forEach(function (doctor) {
+    aiData.matching_doctors.forEach(function (doctor, index) {
       var doctorBtn = document.createElement("button");
       doctorBtn.type = "button";
       doctorBtn.className = "recommend-doc-btn flex items-center gap-2 px-4 py-2.5 rounded-full border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:border-blue-500 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 text-sm font-medium";
@@ -1100,27 +1113,34 @@ function displayAiResults(aiData) {
         }
 
         // Store the selected doctor profile object
-        const docObj = allDoctors.find(d => parseInt(d.id) === parseInt(doctor.id));
-        if (docObj) {
-            selectedDoctor = docObj;
-            // Also enable the booking confirm button if we have a time selected (if we're in the booking flow)
-            // But this is just for doctor selection, the confirm button usually shows after slot selection.
+        if (typeof allDoctors !== 'undefined') {
+            const docObj = allDoctors.find(d => parseInt(d.id) === parseInt(doctor.id));
+            if (docObj) {
+                selectedDoctor = docObj;
+            }
         }
       };
 
-      // Also make the doctor name inside the button clickable to open the modal via right-click or long-press if needed
-      // But for better UX, let's just make the whole button select the doctor, 
-      // and maybe add a small info icon eventually. For now, following instructions to make them buttons only and clickable.
-      
       doctorsListContainer.appendChild(doctorBtn);
+
+      // Auto-select the first doctor in the list
+      if (index === 0) {
+          doctorBtn.click();
+      }
     });
   } else {
     matchingDoctorsSection.style.display = "none";
   }
 
+  // Store recommended slot globally so loadBookingSlots can auto-click it
+  window.aiRecommendedSlot = aiData.triage.recommended_slot;
+
   // Show the panel
   resultPanel.classList.remove("hidden");
   resultPanel.style.display = "block"; // Keep for compatibility if needed
+
+  // Ensure the time slot section is also visible
+  document.getElementById("time-slot-section").classList.remove("hidden");
 
   // Add success animation/scroll
   resultPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -1180,7 +1200,12 @@ function bookAppointment(
               title: 'Booked!',
               text: result.message,
               icon: 'success',
-              confirmButtonColor: '#3b82f6'
+              customClass: {
+                popup: "bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700",
+                title: "dark:text-white",
+                confirmButton: "bg-blue-600 hover:bg-blue-700 text-white font-bold flex items-center gap-2 px-6 py-2.5 rounded-xl border border-blue-500 hover:border-blue-600 shadow-blue-500/30"
+              },
+              buttonsStyling: false
           });
 
           // Reset the form and refresh data
@@ -1195,7 +1220,17 @@ function bookAppointment(
           fetchDashboardData();
           loadAvailabilityTimeline();
         } else {
-          Swal.fire('Error', result.message, 'error');
+          Swal.fire({
+             title: 'Error',
+             text: result.message,
+             icon: 'error',
+             customClass: {
+                popup: "bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700",
+                title: "dark:text-white",
+                confirmButton: "bg-red-600 hover:bg-red-700 text-white font-bold flex items-center gap-2 px-6 py-2.5 rounded-xl border border-red-500"
+              },
+              buttonsStyling: false
+          });
         }
     })
     .catch(function (error) {
@@ -1204,7 +1239,17 @@ function bookAppointment(
       btnAnalyze.disabled = false;
       btnAnalyze.textContent = "🔍 Analyze Symptoms & Find Time";
       btnAnalyze.classList.remove("opacity-50", "cursor-not-allowed");
-      Swal.fire("Error", "Submission failed. Please try again.", "error");
+      Swal.fire({
+        title: 'Error',
+        text: 'Submission failed. Please try again.',
+        icon: 'error',
+        customClass: {
+          popup: "bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700",
+          title: "dark:text-white",
+          confirmButton: "bg-red-600 hover:bg-red-700 text-white font-bold flex items-center gap-2 px-6 py-2.5 rounded-xl border border-red-500"
+        },
+        buttonsStyling: false
+      });
     });
 }
 
@@ -1215,9 +1260,15 @@ function bookAppointment(
         title: 'Cancel Appointment?',
         text: "Are you sure you want to cancel this appointment/ticket?",
         icon: 'warning',
+        customClass: {
+          popup: "bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700",
+          title: "dark:text-white",
+          confirmButton: "bg-red-600 hover:bg-red-700 text-white font-bold flex items-center gap-2 px-6 py-2.5 rounded-xl border border-red-500 w-full mb-2",
+          cancelButton: "bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white text-gray-800 font-bold px-6 py-2.5 rounded-xl transition-colors w-full",
+          actions: "flex flex-col w-full px-4"
+        },
+        buttonsStyling: false,
         showCancelButton: true,
-        confirmButtonColor: '#ef4444',
-        cancelButtonColor: '#9ca3af',
         confirmButtonText: 'Yes, cancel it'
     }).then((result) => {
         if (result.isConfirmed) {
@@ -1325,7 +1376,167 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 
-/* ── 9. Secure Logout ── */
+/* ── 9. Render Notifications ── */
+window.renderNotifications = function (notifications) {
+    const tableBody = document.getElementById("notifications-table-body");
+    if (!tableBody) return;
+
+    let html = "";
+    let unreadCount = 0;
+
+    if (!notifications || notifications.length === 0) {
+      html = '<tr><td colspan="4" class="py-12 text-center text-gray-500">No notifications yet.</td></tr>';
+    } else {
+      notifications.forEach((notif) => {
+        if (notif.is_read == 0) unreadCount++;
+        const date = notif.date || 'N/A';
+        const topic = notif.topic || 'General';
+        const msgPreview = notif.message.length > 60 ? notif.message.substring(0, 60) + '…' : notif.message;
+        const readBold = notif.is_read == 0 ? 'font-bold' : '';
+        const unreadBg = notif.is_read == 0 ? 'bg-blue-50/50 dark:bg-blue-900/10' : '';
+        const unreadBadge = notif.is_read == 0 ? '<span class="notif-new-badge ml-2 px-1.5 py-0.5 bg-blue-600 text-white text-[10px] rounded-full uppercase tracking-tighter">New</span>' : '';
+        
+        // Display 'Admin' instead of full email if the sender is admin
+        let sender = notif.sender_name || notif.sender || 'Admin';
+        if (sender.toLowerCase().includes('admin')) sender = 'Admin';
+        
+        const fullDate = notif.date || 'N/A';
+        
+        const formattedDate = notif.date ? new Date(notif.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A';
+        const boldClass = notif.is_read == 0 ? 'font-bold' : '';
+        const bgClass = notif.is_read == 0 ? 'bg-blue-50/50 dark:bg-blue-900/10' : '';
+
+        let tagClass = 'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200'; // Default
+        if (notif.topic && notif.topic.toLowerCase().includes('appointment')) {
+            tagClass = 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
+        } else if (notif.topic && notif.topic.toLowerCase().includes('system')) {
+            tagClass = 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300';
+        } else if (notif.topic && notif.topic.toLowerCase().includes('alert')) {
+            tagClass = 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
+        } else if (notif.topic && notif.topic.toLowerCase().includes('message')) {
+            tagClass = 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
+        }
+
+        const rowHtml = `
+            <tr id="notif-row-${notif.id}" class="transition-all duration-300 ${bgClass} ${boldClass}" data-notif-id="${notif.id}">
+                <td class="py-4 px-4 text-xs text-gray-500 whitespace-nowrap">${formattedDate}</td>
+                <td class="py-4 px-4">
+                    <div class="flex items-center gap-2">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${tagClass}">
+                            ${notif.topic || "Alert"}
+                        </span>
+                        ${notif.is_read == 0 ? `<span class="notif-new-badge px-1.5 py-0.5 bg-blue-500 text-white text-[9px] font-black rounded uppercase tracking-tighter">New</span>` : ""}
+                    </div>
+                </td>
+                <td class="py-4 px-4 text-center">
+                    <button onclick='handleViewNotification(${JSON.stringify(notif).replace(/'/g, "&apos;")})' class="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all" title="View Details">
+                        <ion-icon name="eye-outline" class="text-lg"></ion-icon>
+                    </button>
+                </td>
+            </tr>
+        `;
+        html += rowHtml;
+      });
+    }
+    tableBody.innerHTML = html;
+
+    // Update badges
+    updateNotifBadges(unreadCount);
+}
+
+// Centralized badge updater
+function updateNotifBadges(unreadCount) {
+    const sidebarBadge = document.getElementById("notif-badge");
+    if (sidebarBadge) {
+        if (unreadCount > 0) {
+            sidebarBadge.textContent = unreadCount;
+            sidebarBadge.classList.remove("hidden");
+        } else {
+            sidebarBadge.classList.add("hidden");
+        }
+    }
+
+    const headerBadge = document.getElementById("header-notif-badge");
+    if (headerBadge) {
+        if (unreadCount > 0) {
+            headerBadge.classList.remove("hidden");
+        } else {
+            headerBadge.classList.add("hidden");
+        }
+    }
+}
+
+// Handle View button click — opens modal, marks as read, and instantly updates the UI row
+window.handleViewNotification = function(notif) {
+    const modal = document.getElementById("notif-modal");
+    if (!modal) return;
+
+    // Open the notification modal
+    document.getElementById("modal-notif-topic").textContent = notif.topic || 'Notification';
+    document.getElementById("modal-notif-message").textContent = notif.message;
+    document.getElementById("modal-notif-date").textContent = notif.date;
+    
+    // Ensure display says 'Admin' if sender contains admin
+    const displaySender = (notif.sender && notif.sender.toLowerCase().includes('admin')) ? 'Admin' : (notif.sender_name || notif.sender || 'Admin');
+    document.getElementById("modal-notif-sender").textContent = 'From: ' + displaySender;
+    
+    modal.classList.remove("hidden");
+
+    // If unread, mark as read and instantly update the row + badge
+    if (notif.is_read == 0) {
+        // Instant UI update: remove bold, background, and "New" badge from this row
+        const row = document.getElementById("notif-row-" + notif.id);
+        if (row) {
+            row.classList.remove("font-bold", "bg-blue-50/50", "dark:bg-blue-900/10");
+            const badge = row.querySelector(".notif-new-badge");
+            if (badge) badge.remove();
+        }
+
+        // Decrease badge count instantly
+        const sidebarBadge = document.getElementById("notif-badge");
+        if (sidebarBadge && !sidebarBadge.classList.contains("hidden")) {
+            let count = parseInt(sidebarBadge.textContent) || 0;
+            count = Math.max(0, count - 1);
+            if (count > 0) {
+                sidebarBadge.textContent = count;
+            } else {
+                sidebarBadge.classList.add("hidden");
+                const headerBadge = document.getElementById("header-notif-badge");
+                if (headerBadge) headerBadge.classList.add("hidden");
+            }
+        }
+
+        // Send mark-as-read to backend
+        markNotificationAsRead(notif.id);
+    }
+}
+
+/* ── 10. Notification Modal Helpers ── */
+window.closeNotifModal = function() {
+    const modal = document.getElementById("notif-modal");
+    if (modal) modal.classList.add("hidden");
+}
+
+window.markNotificationAsRead = function(notifId) {
+    const formData = new FormData();
+    formData.append("action", "mark_notification_read");
+    formData.append("notification_id", notifId);
+    
+    fetch("../php/dashboard_api.php", {
+        method: "POST",
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Background refresh to keep data in sync
+        if (data.status === "success") {
+            fetchDashboardData();
+        }
+    })
+    .catch(error => console.error("Error marking notification read:", error));
+}
+
+/* ── 11. Secure Logout ── */
 window.handleLogout = function () {
   Swal.fire({
     title: "Confirm Logout",

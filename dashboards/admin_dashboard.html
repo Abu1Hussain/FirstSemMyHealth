@@ -1,715 +1,1566 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" class="">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MyHealth – Admin Dashboard</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-    
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"
+    />
+
     <!-- FontAwesome for fallback, Chart.js, SweetAlert -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
+
     <!-- Ionicons for premium sidebar icons -->
-    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
-    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    <script
+      type="module"
+      src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"
+    ></script>
+    <script
+      nomodule
+      src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"
+    ></script>
 
     <script>
-        tailwind.config = { darkMode: 'class' }
+      tailwind.config = { darkMode: "class" };
     </script>
     <style>
-        body { font-family: 'Inter', sans-serif; }
+      body {
+        font-family: "Inter", sans-serif;
+      }
 
-        /* ── Scrollbar ── */
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #555; }
-        .dark ::-webkit-scrollbar-track { background: #2d3748; }
-        .dark ::-webkit-scrollbar-thumb { background: #4a5568; }
-        .dark ::-webkit-scrollbar-thumb:hover { background: #718096; }
+      /* ── Scrollbar ── */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 10px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #555;
+      }
+      .dark ::-webkit-scrollbar-track {
+        background: #2d3748;
+      }
+      .dark ::-webkit-scrollbar-thumb {
+        background: #4a5568;
+      }
+      .dark ::-webkit-scrollbar-thumb:hover {
+        background: #718096;
+      }
 
-        /* ── Sidebar ── */
-        .sidebar { transition: width 0.3s ease-in-out; }
-        .sidebar-collapsed { width: 4.5rem; }
-        .sidebar-expanded  { width: 16rem; }
-        .sidebar-collapsed .sidebar-text,
-        .sidebar-collapsed .sidebar-logo-text,
-        .sidebar-collapsed .profile-info,
-        .sidebar-collapsed .nav-section-title { 
-            visibility: hidden; width: 0; opacity: 0; position: absolute; pointer-events: none; 
-        }
-        .sidebar-collapsed .sidebar-link { justify-content: center; padding-left: 0; padding-right: 0; width: 3.5rem; margin: 0 auto; height: 3.5rem; }
-        .sidebar-collapsed .sidebar-link ion-icon { margin: 0; font-size: 1.8rem; flex-shrink: 0; }
-        .sidebar-expanded .sidebar-text,
-        .sidebar-expanded .sidebar-logo-text,
-        .sidebar-expanded .profile-info,
-        .sidebar-expanded .nav-section-title { display: block; opacity: 1; transition: opacity 0.3s 0.1s; }
-        
-        .nav-section-title {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            font-weight: 700;
-            color: #9ca3af;
-            margin-top: 1rem;
-            margin-bottom: 0.5rem;
-            padding-left: 1rem;
-            letter-spacing: 0.05em;
-        }
+      /* ── Sidebar ── */
+      .sidebar {
+        transition: width 0.3s ease-in-out;
+      }
+      .sidebar-collapsed {
+        width: 4.5rem;
+      }
+      .sidebar-expanded {
+        width: 16rem;
+      }
+      .sidebar-collapsed .sidebar-text,
+      .sidebar-collapsed .sidebar-logo-text,
+      .sidebar-collapsed .profile-info,
+      .sidebar-collapsed .nav-section-title {
+        visibility: hidden;
+        width: 0;
+        opacity: 0;
+        position: absolute;
+        pointer-events: none;
+      }
+      .sidebar-collapsed .sidebar-link {
+        justify-content: center;
+        padding-left: 0;
+        padding-right: 0;
+        width: 3.5rem;
+        margin: 0 auto;
+        height: 3.5rem;
+      }
+      .sidebar-collapsed .sidebar-link ion-icon {
+        margin: 0;
+        font-size: 1.8rem;
+        flex-shrink: 0;
+      }
+      .sidebar-expanded .sidebar-text,
+      .sidebar-expanded .sidebar-logo-text,
+      .sidebar-expanded .profile-info,
+      .sidebar-expanded .nav-section-title {
+        display: block;
+        opacity: 1;
+        transition: opacity 0.3s 0.1s;
+      }
 
-        /* ── Section Visibility ── */
-        .content-section { display: none; }
-        .content-section.active { display: block; }
+      .nav-section-title {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: #9ca3af;
+        margin-top: 1rem;
+        margin-bottom: 0.5rem;
+        padding-left: 1rem;
+        letter-spacing: 0.05em;
+      }
 
-        /* ── Loading Overlay ── */
-        #loading-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(255,255,255,0.85); z-index: 9999;
-            display: flex; justify-content: center; align-items: center;
-        }
-        .dark #loading-overlay { background: rgba(17,24,39,0.85); }
-        .spinner {
-            border: 4px solid #e5e7eb;
-            border-top: 4px solid #4f46e5;
-            border-radius: 50%; width: 44px; height: 44px;
-            animation: spin 0.8s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
+      /* ── Section Visibility ── */
+      .content-section {
+        display: none;
+      }
+      .content-section.active {
+        display: block;
+      }
 
-        /* ── Table Styling ── */
-        .appt-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        .appt-table thead tr { background: transparent !important; }
-        .appt-table thead th { padding: 12px 14px; text-align: left; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #374151 !important; border-bottom: 1px solid #e5e7eb !important; background: transparent !important; }
-        .dark .appt-table thead th { color: #d1d5db !important; border-bottom-color: #374151 !important; background: transparent !important; }
-        .appt-table tbody td { padding: 12px 14px; border-bottom: 1px solid #f3f4f6; vertical-align: middle; color: #374151; }
-        .dark .appt-table tbody td { border-bottom-color: #374151; color: #d1d5db; }
-        .appt-table tbody tr:hover { background: #f9fafb; }
-        .dark .appt-table tbody tr:hover { background: #1f2937; }
-        .dark .appt-table tbody tr:hover td { background: #1f2937 !important; color: #fff; }
+      /* ── Loading Overlay ── */
+      #loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.85);
+        z-index: 9999;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .dark #loading-overlay {
+        background: rgba(17, 24, 39, 0.85);
+      }
+      .spinner {
+        border: 4px solid #e5e7eb;
+        border-top: 4px solid #4f46e5;
+        border-radius: 50%;
+        width: 44px;
+        height: 44px;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
 
-        /* ── Badges for legacy support ── */
-        .status-badge { padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
-        .status-active  { background: #dcfce7; color: #166534; }
-        .status-danger  { background: #fee2e2; color: #991b1b; }
-        .status-pending { background: #fefcbf; color: #744210; }
-        .dark .status-active  { background: #166534; color: #bbf7d0; }
-        .dark .status-danger  { background: #991b1b; color: #fecaca; }
-        .dark .status-pending { background: #744210; color: #fefcbf; }
+      /* ── Table Styling ── */
+      .appt-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+      }
+      .appt-table thead tr {
+        background: transparent !important;
+      }
+      .appt-table thead th {
+        padding: 12px 14px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #374151 !important;
+        border-bottom: 1px solid #e5e7eb !important;
+        background: transparent !important;
+      }
+      .dark .appt-table thead th {
+        color: #d1d5db !important;
+        border-bottom-color: #374151 !important;
+        background: transparent !important;
+      }
+      .appt-table tbody td {
+        padding: 12px 14px;
+        border-bottom: 1px solid #f3f4f6;
+        vertical-align: middle;
+        color: #374151;
+      }
+      .dark .appt-table tbody td {
+        border-bottom-color: #374151;
+        color: #d1d5db;
+      }
+      .appt-table tbody tr:hover {
+        background: #f9fafb;
+      }
+      .dark .appt-table tbody tr:hover {
+        background: #1f2937;
+      }
+      .dark .appt-table tbody tr:hover td {
+        background: #1f2937 !important;
+        color: #fff;
+      }
 
-        /* ── Global Interactive Refinements ── */
-        .sidebar-link {
-            transition: all 0.2s ease-in-out !important;
-        }
-        .sidebar-link:hover {
-            transform: translateX(6px);
-            background: #4f46e5 !important;
-            color: white !important;
-        }
-        .sidebar-link:hover ion-icon {
-            color: white !important;
-        }
-        .sidebar-link.active {
-            background: #4f46e5 !important;
-            color: white !important;
-            box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
-        }
-        .sidebar-link.active ion-icon {
-            color: white !important;
-        }
+      /* ── Badges for legacy support ── */
+      .status-badge {
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .status-active {
+        background: #dcfce7;
+        color: #166534;
+      }
+      .status-danger {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+      .status-pending {
+        background: #fefcbf;
+        color: #744210;
+      }
+      .dark .status-active {
+        background: #166534;
+        color: #bbf7d0;
+      }
+      .dark .status-danger {
+        background: #991b1b;
+        color: #fecaca;
+      }
+      .dark .status-pending {
+        background: #744210;
+        color: #fefcbf;
+      }
 
-        .stat-card-premium {
-            transition: all 0.3s ease;
-        }
-        .stat-card-premium:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
-        .dark .stat-card-premium:hover {
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
-        }
-        .stat-card-premium:hover .stat-icon {
-            transform: scale(1.1) rotate(5deg);
-        }
-        .stat-icon {
-            transition: all 0.3s ease;
-        }
-        
+      /* ── Global Interactive Refinements ── */
+      .sidebar-link {
+        transition: all 0.2s ease-in-out !important;
+      }
+      .sidebar-link:hover {
+        transform: translateX(6px);
+        background: #4f46e5 !important;
+        color: white !important;
+      }
+      .sidebar-link:hover ion-icon {
+        color: white !important;
+      }
+      .sidebar-link.active {
+        background: #4f46e5 !important;
+        color: white !important;
+        box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
+      }
+      .sidebar-link.active ion-icon {
+        color: white !important;
+      }
+
+      .stat-card-premium {
+        transition: all 0.3s ease;
+      }
+      .stat-card-premium:hover {
+        transform: translateY(-5px);
+        box-shadow:
+          0 20px 25px -5px rgba(0, 0, 0, 0.1),
+          0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      }
+      .dark .stat-card-premium:hover {
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+      }
+      .stat-card-premium:hover .stat-icon {
+        transform: scale(1.1) rotate(5deg);
+      }
+      .stat-icon {
+        transition: all 0.3s ease;
+      }
     </style>
-</head>
-<body class="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
-
+  </head>
+  <body
+    class="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300"
+  >
     <!-- Loading Overlay -->
     <div id="loading-overlay">
-        <div class="spinner"></div>
+      <div class="spinner"></div>
     </div>
 
     <!-- ══════════════════════════════════════
          SIDEBAR
     ══════════════════════════════════════ -->
-    <aside id="sidebar" class="sidebar sidebar-expanded bg-white dark:bg-gray-800 shadow-xl flex flex-col space-y-2 border-r border-gray-200 dark:border-gray-700 fixed inset-y-0 left-0 z-30 overflow-y-auto w-64">
-        <!-- Logo -->
-        <div class="h-16 flex items-center justify-center px-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-            <div class="flex items-center">
-                <svg class="h-10 w-10 text-indigo-600 dark:text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-                </svg>
-                <span class="sidebar-logo-text ml-3 text-2xl font-bold tracking-tight text-gray-800 dark:text-white">AdminCenter</span>
-            </div>
+    <aside
+      id="sidebar"
+      class="sidebar sidebar-expanded bg-white dark:bg-gray-800 shadow-xl flex flex-col space-y-2 border-r border-gray-200 dark:border-gray-700 fixed inset-y-0 left-0 z-30 overflow-y-auto w-64"
+    >
+      <!-- Logo -->
+      <div
+        class="h-16 flex items-center justify-center px-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0"
+      >
+        <div class="flex items-center">
+          <svg
+            class="h-10 w-10 text-indigo-600 dark:text-indigo-400"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
+            />
+          </svg>
+          <span
+            class="sidebar-logo-text ml-3 text-2xl font-bold tracking-tight text-gray-800 dark:text-white"
+            >AdminCenter</span
+          >
         </div>
+      </div>
 
-        <!-- Nav Links -->
-        <nav class="flex-grow px-3 space-y-1 pt-2 pb-6">
-            
-            <div class="nav-section-title">Main View</div>
-            <a href="javascript:void(0)" onclick="showSection('dashboard')" data-view="dashboard" class="sidebar-link active flex items-center py-2.5 px-4 rounded-lg text-gray-700 dark:text-gray-300 group">
-                <ion-icon name="grid-outline" class="text-lg text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
-                <span class="sidebar-text ml-3 text-sm font-medium">Dashboard</span>
-            </a>
+      <!-- Nav Links -->
+      <nav class="flex-grow px-3 space-y-1 pt-2 pb-6">
+        <div class="nav-section-title">Main View</div>
+        <a
+          href="javascript:void(0)"
+          onclick="showSection('dashboard')"
+          data-view="dashboard"
+          class="sidebar-link active flex items-center py-2.5 px-4 rounded-lg text-gray-700 dark:text-gray-300 group"
+        >
+          <ion-icon
+            name="grid-outline"
+            class="text-lg text-gray-500 dark:text-gray-400 group-hover:text-white"
+          ></ion-icon>
+          <span class="sidebar-text ml-3 text-sm font-medium">Dashboard</span>
+        </a>
 
-            <div class="nav-section-title">User Management</div>
-            <a href="javascript:void(0)" onclick="showSection('users')" data-view="users" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg text-gray-700 dark:text-gray-300 group">
-                <ion-icon name="people-outline" class="text-lg text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
-                <span class="sidebar-text ml-3 text-sm font-medium">All Users</span>
-            </a>
-            <a href="javascript:void(0)" onclick="showSection('patients')" data-view="patients" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg text-gray-700 dark:text-gray-300 group">
-                <ion-icon name="bed-outline" class="text-lg text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
-                <span class="sidebar-text ml-3 text-sm font-medium">Patients</span>
-            </a>
-            <a href="javascript:void(0)" onclick="showSection('doctors')" data-view="doctors" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg text-gray-700 dark:text-gray-300 group">
-                <ion-icon name="medkit-outline" class="text-lg text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
-                <span class="sidebar-text ml-3 text-sm font-medium">Doctors</span>
-            </a>
+        <div class="nav-section-title">User Management</div>
+        <a
+          href="javascript:void(0)"
+          onclick="showSection('users')"
+          data-view="users"
+          class="sidebar-link flex items-center py-2.5 px-4 rounded-lg text-gray-700 dark:text-gray-300 group"
+        >
+          <ion-icon
+            name="people-outline"
+            class="text-lg text-gray-500 dark:text-gray-400 group-hover:text-white"
+          ></ion-icon>
+          <span class="sidebar-text ml-3 text-sm font-medium">All Users</span>
+        </a>
+        <a
+          href="javascript:void(0)"
+          onclick="showSection('patients')"
+          data-view="patients"
+          class="sidebar-link flex items-center py-2.5 px-4 rounded-lg text-gray-700 dark:text-gray-300 group"
+        >
+          <ion-icon
+            name="bed-outline"
+            class="text-lg text-gray-500 dark:text-gray-400 group-hover:text-white"
+          ></ion-icon>
+          <span class="sidebar-text ml-3 text-sm font-medium">Patients</span>
+        </a>
+        <a
+          href="javascript:void(0)"
+          onclick="showSection('doctors')"
+          data-view="doctors"
+          class="sidebar-link flex items-center py-2.5 px-4 rounded-lg text-gray-700 dark:text-gray-300 group"
+        >
+          <ion-icon
+            name="medkit-outline"
+            class="text-lg text-gray-500 dark:text-gray-400 group-hover:text-white"
+          ></ion-icon>
+          <span class="sidebar-text ml-3 text-sm font-medium">Staff</span>
+        </a>
 
-            <div class="nav-section-title">Clinical Operations</div>
-            <a href="javascript:void(0)" onclick="showSection('appointments')" data-view="appointments" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg text-gray-700 dark:text-gray-300 group">
-                <ion-icon name="calendar-number-outline" class="text-lg text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
-                <span class="sidebar-text ml-3 text-sm font-medium">Appointments</span>
-            </a>
-            <a href="javascript:void(0)" onclick="showSection('records')" data-view="records" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg text-gray-700 dark:text-gray-300 group">
-                <ion-icon name="document-text-outline" class="text-lg text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
-                <span class="sidebar-text ml-3 text-sm font-medium">Health Records</span>
-            </a>
-            <a href="javascript:void(0)" onclick="showSection('prescriptions')" data-view="prescriptions" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg text-gray-700 dark:text-gray-300 group">
-                <ion-icon name="flask-outline" class="text-lg text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
-                <span class="sidebar-text ml-3 text-sm font-medium">Prescriptions</span>
-            </a>
+        <div class="nav-section-title">Clinical Operations</div>
+        <a
+          href="javascript:void(0)"
+          onclick="showSection('appointments')"
+          data-view="appointments"
+          class="sidebar-link flex items-center py-2.5 px-4 rounded-lg text-gray-700 dark:text-gray-300 group"
+        >
+          <ion-icon
+            name="calendar-number-outline"
+            class="text-lg text-gray-500 dark:text-gray-400 group-hover:text-white"
+          ></ion-icon>
+          <span class="sidebar-text ml-3 text-sm font-medium"
+            >Appointments</span
+          >
+        </a>
+        <a
+          href="javascript:void(0)"
+          onclick="showSection('records')"
+          data-view="records"
+          class="sidebar-link flex items-center py-2.5 px-4 rounded-lg text-gray-700 dark:text-gray-300 group"
+        >
+          <ion-icon
+            name="document-text-outline"
+            class="text-lg text-gray-500 dark:text-gray-400 group-hover:text-white"
+          ></ion-icon>
+          <span class="sidebar-text ml-3 text-sm font-medium"
+            >Health Records</span
+          >
+        </a>
+        <a
+          href="javascript:void(0)"
+          onclick="showSection('prescriptions')"
+          data-view="prescriptions"
+          class="sidebar-link flex items-center py-2.5 px-4 rounded-lg text-gray-700 dark:text-gray-300 group"
+        >
+          <ion-icon
+            name="flask-outline"
+            class="text-lg text-gray-500 dark:text-gray-400 group-hover:text-white"
+          ></ion-icon>
+          <span class="sidebar-text ml-3 text-sm font-medium"
+            >Prescriptions</span
+          >
+        </a>
 
-            <div class="nav-section-title">Facility & Staff</div>
-            <a href="javascript:void(0)" onclick="showSection('billing')" data-view="billing" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg text-gray-700 dark:text-gray-300 group">
-                <ion-icon name="cash-outline" class="text-lg text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
-                <span class="sidebar-text ml-3 text-sm font-medium">Billing</span>
-            </a>
-            <a href="javascript:void(0)" onclick="showSection('staff')" data-view="staff" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg text-gray-700 dark:text-gray-300 group">
-                <ion-icon name="shield-checkmark-outline" class="text-lg text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
-                <span class="sidebar-text ml-3 text-sm font-medium">Staff Control</span>
-            </a>
+        <div class="nav-section-title">Administration</div>
+        <a
+          href="javascript:void(0)"
+          onclick="showSection('billing')"
+          data-view="billing"
+          class="sidebar-link flex items-center py-2.5 px-4 rounded-lg text-gray-700 dark:text-gray-300 group"
+        >
+          <ion-icon
+            name="cash-outline"
+            class="text-lg text-gray-500 dark:text-gray-400 group-hover:text-white"
+          ></ion-icon>
+          <span class="sidebar-text ml-3 text-sm font-medium">Billing</span>
+        </a>
+        <a
+          href="javascript:void(0)"
+          onclick="showSection('notifications')"
+          data-view="notifications"
+          class="sidebar-link flex items-center py-2.5 px-4 rounded-lg text-gray-700 dark:text-gray-300 group"
+        >
+          <ion-icon
+            name="notifications-outline"
+            class="text-lg text-gray-500 dark:text-gray-400 group-hover:text-white"
+          ></ion-icon>
+          <span class="sidebar-text ml-3 text-sm font-medium"
+            >Notifications</span
+          >
+        </a>
+        <div class="nav-section-title">AI Engine</div>
+        <a
+          href="javascript:void(0)"
+          onclick="showSection('ai-analysis')"
+          data-view="ai-analysis"
+          class="sidebar-link flex items-center py-2.5 px-4 rounded-lg text-gray-700 dark:text-gray-300 group"
+        >
+          <ion-icon
+            name="analytics-outline"
+            class="text-lg text-gray-500 dark:text-gray-400 group-hover:text-white"
+          ></ion-icon>
+          <span class="sidebar-text ml-3 text-sm font-medium">AI Analysis</span>
+        </a>
+        <a
+          href="javascript:void(0)"
+          onclick="showSection('ai-logs')"
+          data-view="ai-logs"
+          class="sidebar-link flex items-center py-2.5 px-4 rounded-lg text-gray-700 dark:text-gray-300 group"
+        >
+          <ion-icon
+            name="hardware-chip-outline"
+            class="text-lg text-gray-500 dark:text-gray-400 group-hover:text-white"
+          ></ion-icon>
+          <span class="sidebar-text ml-3 text-sm font-medium"
+            >AI Activity Logs</span
+          >
+        </a>
+        <a
+          href="javascript:void(0)"
+          onclick="showSection('doc-queue')"
+          data-view="doc-queue"
+          class="sidebar-link flex items-center py-2.5 px-4 rounded-lg text-gray-700 dark:text-gray-300 group"
+        >
+          <ion-icon
+            name="cloud-upload-outline"
+            class="text-lg text-gray-500 dark:text-gray-400 group-hover:text-white"
+          ></ion-icon>
+          <span class="sidebar-text ml-3 text-sm font-medium"
+            >Document Queue</span
+          >
+        </a>
 
-            <div class="nav-section-title">AI Engine</div>
-            <a href="javascript:void(0)" onclick="showSection('ai-analysis')" data-view="ai-analysis" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg text-gray-700 dark:text-gray-300 group">
-                <ion-icon name="analytics-outline" class="text-lg text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
-                <span class="sidebar-text ml-3 text-sm font-medium">AI Analysis</span>
-            </a>
-            <a href="javascript:void(0)" onclick="showSection('ai-logs')" data-view="ai-logs" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg text-gray-700 dark:text-gray-300 group">
-                <ion-icon name="hardware-chip-outline" class="text-lg text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
-                <span class="sidebar-text ml-3 text-sm font-medium">AI Activity Logs</span>
-            </a>
-            <a href="javascript:void(0)" onclick="showSection('doc-queue')" data-view="doc-queue" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg text-gray-700 dark:text-gray-300 group">
-                <ion-icon name="cloud-upload-outline" class="text-lg text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
-                <span class="sidebar-text ml-3 text-sm font-medium">Document Queue</span>
-            </a>
+        <div class="nav-section-title">System Wide</div>
+        <a
+          href="javascript:void(0)"
+          onclick="showSection('system-logs')"
+          data-view="system-logs"
+          class="sidebar-link flex items-center py-2.5 px-4 rounded-lg text-gray-700 dark:text-gray-300 group"
+        >
+          <ion-icon
+            name="server-outline"
+            class="text-lg text-gray-500 dark:text-gray-400 group-hover:text-white"
+          ></ion-icon>
+          <span class="sidebar-text ml-3 text-sm font-medium">System Logs</span>
+        </a>
 
-            <div class="nav-section-title">System Wide</div>
-            <a href="javascript:void(0)" onclick="showSection('system-logs')" data-view="system-logs" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg text-gray-700 dark:text-gray-300 group">
-                <ion-icon name="server-outline" class="text-lg text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
-                <span class="sidebar-text ml-3 text-sm font-medium">System Logs</span>
-            </a>
-            <a href="javascript:void(0)" onclick="showSection('audit-trail')" data-view="audit-trail" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg text-gray-700 dark:text-gray-300 group">
-                <ion-icon name="footsteps-outline" class="text-lg text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
-                <span class="sidebar-text ml-3 text-sm font-medium">Audit Trail</span>
-            </a>
-            <a href="javascript:void(0)" onclick="showSection('reports')" data-view="reports" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg text-gray-700 dark:text-gray-300 group">
-                <ion-icon name="newspaper-outline" class="text-lg text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
-                <span class="sidebar-text ml-3 text-sm font-medium">Issue Reports</span>
-            </a>
-            
-        </nav>
+        <a
+          href="javascript:void(0)"
+          onclick="showSection('reports')"
+          data-view="reports"
+          class="sidebar-link flex items-center py-2.5 px-4 rounded-lg text-gray-700 dark:text-gray-300 group"
+        >
+          <ion-icon
+            name="newspaper-outline"
+            class="text-lg text-gray-500 dark:text-gray-400 group-hover:text-white"
+          ></ion-icon>
+          <span class="sidebar-text ml-3 text-sm font-medium"
+            >Issue Reports</span
+          >
+        </a>
 
-        <!-- Bottom: User Info + Logout -->
-        <div class="mt-auto p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-            <div class="flex items-center">
-                <div class="h-10 w-10 border-2 border-indigo-500 rounded-full flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-lg flex-shrink-0 bg-indigo-50 dark:bg-indigo-900/30">
-                    <ion-icon name="shield-half-outline"></ion-icon>
-                </div>
-                <div class="profile-info ml-3">
-                    <p class="text-sm font-bold text-gray-800 dark:text-white">System Admin</p>
-                    <p class="text-xs text-indigo-600 dark:text-indigo-400 font-medium">Superuser Access</p>
-                </div>
-            </div>
-            <a href="javascript:void(0)" onclick="handleLogout()" class="w-full mt-3 flex items-center justify-center py-2 px-4 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 border border-transparent hover:border-red-100 dark:hover:border-red-800 transition-colors">
-                <ion-icon name="log-out-outline" class="text-lg mr-2"></ion-icon>
-                <span class="sidebar-text">Secure Logout</span>
-            </a>
+      </nav>
+
+      <!-- Bottom: User Info + Logout -->
+      <div
+        class="mt-auto p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"
+      >
+        <div class="flex items-center">
+          <div
+            class="h-10 w-10 border-2 border-indigo-500 rounded-full flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-lg flex-shrink-0 bg-indigo-50 dark:bg-indigo-900/30"
+          >
+            <ion-icon name="shield-half-outline"></ion-icon>
+          </div>
+          <div class="profile-info ml-3">
+            <p class="text-sm font-bold text-gray-800 dark:text-white">
+              System Admin
+            </p>
+            <p class="text-xs text-indigo-600 dark:text-indigo-400 font-medium">
+              Superuser Access
+            </p>
+          </div>
         </div>
+        <a
+          href="javascript:void(0)"
+          onclick="handleLogout()"
+          class="w-full mt-3 flex items-center justify-center py-2 px-4 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 border border-transparent hover:border-red-100 dark:hover:border-red-800 transition-colors"
+        >
+          <ion-icon name="log-out-outline" class="text-lg mr-2"></ion-icon>
+          <span class="sidebar-text">Secure Logout</span>
+        </a>
+      </div>
     </aside>
 
     <!-- ══════════════════════════════════════
          MAIN CONTENT
     ══════════════════════════════════════ -->
-    <div id="mainContent" class="flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ml-64">
-        
-        <!-- Header -->
-        <header class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 z-20">
-            <div class="flex items-center justify-between px-6 py-4">
-                <div class="flex items-center">
-                    <button id="toggleSidebar" class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 focus:outline-none transition-colors mr-3">
-                        <ion-icon name="menu-outline" class="text-2xl"></ion-icon>
-                    </button>
-                    <div class="flex flex-col">
-                        <h1 id="breadcrumbTitle" class="text-2xl font-bold text-gray-800 dark:text-white tracking-tight">Dashboard Overview</h1>
-                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Admin Control Panel</p>
-                    </div>
+    <div
+      id="mainContent"
+      class="flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ml-64"
+    >
+      <!-- Header -->
+      <header
+        class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 z-20"
+      >
+        <div class="flex items-center justify-between px-6 py-4">
+          <div class="flex items-center">
+            <button
+              id="toggleSidebar"
+              class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 focus:outline-none transition-colors mr-3"
+            >
+              <ion-icon name="menu-outline" class="text-2xl"></ion-icon>
+            </button>
+            <div class="flex flex-col">
+              <h1
+                id="breadcrumbTitle"
+                class="text-2xl font-bold text-gray-800 dark:text-white tracking-tight"
+              >
+                Dashboard Overview
+              </h1>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Admin Control Panel
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-4">
+            <button
+              id="themeToggle"
+              class="p-2.5 rounded-full text-gray-500 bg-gray-100 hover:bg-gray-200 dark:text-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors shadow-inner"
+            >
+              <ion-icon
+                name="moon-outline"
+                class="text-xl block dark:hidden"
+              ></ion-icon>
+              <ion-icon
+                name="sunny-outline"
+                class="text-xl hidden dark:block"
+              ></ion-icon>
+            </button>
+            <div
+              class="hidden md:flex items-center gap-2 pl-4 border-l border-gray-200 dark:border-gray-700"
+            >
+              <span class="relative flex h-3 w-3">
+                <span
+                  class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"
+                ></span>
+                <span
+                  class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"
+                ></span>
+              </span>
+              <span class="text-sm font-medium text-gray-600 dark:text-gray-300"
+                >System Online</span
+              >
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Scrollable Content View -->
+      <main
+        class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-gray-900 p-6 md:p-8"
+      >
+        <div class="max-w-7xl mx-auto space-y-6">
+          <!-- ─ VIEW: DASHBOARD ─ -->
+          <div id="dashboard-section" class="content-section active space-y-6">
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div
+                class="stat-card-premium bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-5"
+              >
+                <div
+                  class="stat-icon h-14 w-14 rounded-full flex items-center justify-center flex-shrink-0 bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400 text-2xl"
+                >
+                  <ion-icon name="people"></ion-icon>
                 </div>
-                
-                <div class="flex items-center gap-4">
-                    <button id="themeToggle" class="p-2.5 rounded-full text-gray-500 bg-gray-100 hover:bg-gray-200 dark:text-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors shadow-inner">
-                        <ion-icon name="moon-outline" class="text-xl block dark:hidden"></ion-icon>
-                        <ion-icon name="sunny-outline" class="text-xl hidden dark:block"></ion-icon>
+                <div>
+                  <p
+                    class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide"
+                  >
+                    Total Users
+                  </p>
+                  <p
+                    id="stat-total-users"
+                    class="text-3xl font-bold text-gray-900 dark:text-white mt-1"
+                  >
+                    --
+                  </p>
+                </div>
+              </div>
+
+              <div
+                class="stat-card-premium bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-5"
+              >
+                <div
+                  class="stat-icon h-14 w-14 rounded-full flex items-center justify-center flex-shrink-0 bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400 text-2xl"
+                >
+                  <ion-icon name="bed"></ion-icon>
+                </div>
+                <div>
+                  <p
+                    class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide"
+                  >
+                    Patients
+                  </p>
+                  <p
+                    id="stat-total-patients"
+                    class="text-3xl font-bold text-gray-900 dark:text-white mt-1"
+                  >
+                    --
+                  </p>
+                </div>
+              </div>
+
+              <div
+                class="stat-card-premium bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-5"
+              >
+                <div
+                  class="stat-icon h-14 w-14 rounded-full flex items-center justify-center flex-shrink-0 bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400 text-2xl"
+                >
+                  <ion-icon name="medkit"></ion-icon>
+                </div>
+                <div>
+                  <p
+                    class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide"
+                  >
+                    Doctors
+                  </p>
+                  <p
+                    id="stat-total-doctors"
+                    class="text-3xl font-bold text-gray-900 dark:text-white mt-1"
+                  >
+                    --
+                  </p>
+                </div>
+              </div>
+
+              <div
+                class="stat-card-premium bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-5"
+              >
+                <div
+                  class="stat-icon h-14 w-14 rounded-full flex items-center justify-center flex-shrink-0 bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400 text-2xl"
+                >
+                  <ion-icon name="calendar"></ion-icon>
+                </div>
+                <div>
+                  <p
+                    class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide"
+                  >
+                    Appointments
+                  </p>
+                  <p
+                    id="stat-total-appointments"
+                    class="text-3xl font-bold text-gray-900 dark:text-white mt-1"
+                  >
+                    --
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Charts Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <!-- Chart 1 -->
+              <div
+                class="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm"
+              >
+                <div class="flex justify-between items-center mb-4">
+                  <h3 class="text-lg font-bold text-gray-800 dark:text-white">
+                    Active User Growth
+                  </h3>
+                  <div
+                    class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded dark:bg-blue-900/30 dark:text-blue-300"
+                  >
+                    Live
+                  </div>
+                </div>
+                <div class="relative h-72 w-full">
+                  <canvas id="userGrowthChart"></canvas>
+                </div>
+              </div>
+
+              <!-- Chart 2 -->
+              <div
+                class="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm"
+              >
+                <div class="flex justify-between items-center mb-4">
+                  <h3 class="text-lg font-bold text-gray-800 dark:text-white">
+                    AI Visit Time Matrix
+                  </h3>
+                </div>
+                <div class="relative h-72 w-full">
+                  <canvas id="aiTimeChart"></canvas>
+                </div>
+              </div>
+
+              <!-- Chart 3 (Full Width underneath) -->
+              <div
+                class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm"
+              >
+                <h3
+                  class="text-lg font-bold text-gray-800 dark:text-white mb-4"
+                >
+                  Doctor Appointments Allocation
+                </h3>
+                <div class="relative h-72 w-full">
+                  <canvas id="aiDoctorsChart"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ─ VIEW: USERS ─ -->
+          <div id="users-section" class="content-section">
+            <div
+              class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden"
+            >
+              <div
+                class="px-6 py-5 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex justify-between items-center"
+              >
+                <h3
+                  class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2"
+                >
+                  <ion-icon name="people" class="text-indigo-500"></ion-icon>
+                  Global Directory
+                </h3>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="appt-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Role</th>
+                      <th>Status</th>
+                      <th>Last Login</th>
+                    </tr>
+                  </thead>
+                  <tbody id="usersTableBody">
+                    <tr>
+                      <td colspan="4" class="text-center py-8">Loading...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- ─ VIEW: PATIENTS ─ -->
+          <div id="patients-section" class="content-section">
+            <div
+              class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden"
+            >
+              <div
+                class="px-6 py-5 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+              >
+                <h3
+                  class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2"
+                >
+                  <ion-icon name="accessibility" class="text-emerald-500"></ion-icon>
+                  Registered Patients
+                </h3>
+                <div class="relative">
+                  <div
+                    class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"
+                  >
+                    <ion-icon
+                      name="search-outline"
+                      class="text-gray-400"
+                    ></ion-icon>
+                  </div>
+                  <input
+                    type="text"
+                    id="patient-search"
+                    onkeyup="filterPatientsTable()"
+                    class="bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:w-64 pl-10 p-2.5 shadow-sm transition-colors"
+                    placeholder="Search patients by name/CPR..."
+                  />
+                </div>
+                <button onclick="openPatientModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap">
+                  <ion-icon name="person-add"></ion-icon> Add Patient
+                </button>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="appt-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>CPR Number</th>
+                      <th>Email</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="patientsTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- ─ VIEW: STAFF ─ -->
+          <div id="doctors-section" class="content-section">
+            <div
+              class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden"
+            >
+              <div
+                class="px-6 py-5 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+              >
+                <h3
+                  class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2"
+                >
+                  <ion-icon name="medkit" class="text-blue-500"></ion-icon>
+                  Staff Directory
+                </h3>
+                <div class="flex items-center gap-3">
+                  <div class="relative">
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      <ion-icon name="search-outline" class="text-gray-400"></ion-icon>
+                    </div>
+                    <input type="text" id="doctor-search" onkeyup="filterDoctorsTable()"
+                      class="bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:w-64 pl-10 p-2.5 shadow-sm transition-colors"
+                      placeholder="Search staff..." />
+                  </div>
+                  <button onclick="openStaffModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap">
+                    <ion-icon name="person-add"></ion-icon> Add Staff
+                  </button>
+                </div>
+              </div>
+              <div class="overflow-x-auto p-0" id="doctors-table-container"></div>
+            </div>
+          </div>
+
+          <!-- ─ VIEW: APPOINTMENTS ─ -->
+          <div id="appointments-section" class="content-section">
+            <div
+              class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden"
+            >
+              <div
+                class="px-6 py-5 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+              >
+                <h3
+                  class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2"
+                >
+                  <ion-icon name="calendar" class="text-indigo-500"></ion-icon>
+                  Appointments Master Log
+                </h3>
+                <div class="flex gap-2">
+                  <select
+                    id="appointYear"
+                    onchange="filterAppointments()"
+                    class="bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2 shadow-sm transition-colors"
+                  >
+                    <option value="all">All Years</option>
+                  </select>
+                  <select
+                    id="appointMonth"
+                    onchange="filterAppointments()"
+                    class="bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2 shadow-sm transition-colors"
+                  >
+                    <option value="all">All Months</option>
+                    <option value="0">Jan</option>
+                    <option value="1">Feb</option>
+                    <option value="2">Mar</option>
+                    <option value="3">Apr</option>
+                    <option value="4">May</option>
+                    <option value="5">Jun</option>
+                    <option value="6">Jul</option>
+                    <option value="7">Aug</option>
+                    <option value="8">Sep</option>
+                    <option value="9">Oct</option>
+                    <option value="10">Nov</option>
+                    <option value="11">Dec</option>
+                  </select>
+                </div>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="appt-table">
+                  <thead>
+                    <tr>
+                      <th>Date/Time</th>
+                      <th>Patient</th>
+                      <th>Assigned Doctor</th>
+                      <th>Status / Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="appointmentsTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- ─ VIEW: RECORDS ─ -->
+          <div id="records-section" class="content-section">
+            <div
+              class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden"
+            >
+              <div
+                class="px-6 py-5 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50"
+              >
+                <h3
+                  class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2"
+                >
+                  <ion-icon
+                    name="document-text"
+                    class="text-teal-500"
+                  ></ion-icon>
+                  Health Records
+                </h3>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="appt-table">
+                  <thead>
+                    <tr>
+                      <th>Patient</th>
+                      <th>Summary / Type</th>
+                    </tr>
+                  </thead>
+                  <tbody id="recordsTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- ─ VIEW: PRESCRIPTIONS ─ -->
+          <div id="prescriptions-section" class="content-section">
+            <div
+              class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden"
+            >
+              <div
+                class="px-6 py-5 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50"
+              >
+                <h3
+                  class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2"
+                >
+                  <ion-icon name="flask" class="text-purple-500"></ion-icon>
+                  Pharmacy Operations
+                </h3>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="appt-table">
+                  <thead>
+                    <tr>
+                      <th>Patient</th>
+                      <th>Prescribed By</th>
+                      <th>Medication</th>
+                    </tr>
+                  </thead>
+                  <tbody id="prescriptionsTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- ─ VIEW: AI LOGS ─ -->
+          <div id="ai-logs-section" class="content-section">
+            <div
+              class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden"
+            >
+              <div
+                class="px-6 py-5 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex items-center gap-3"
+              >
+                <div
+                  class="h-8 w-8 rounded bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white"
+                >
+                  <ion-icon name="hardware-chip"></ion-icon>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800 dark:text-white">
+                  AI Engine Logs
+                </h3>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="appt-table">
+                  <thead>
+                    <tr>
+                      <th>User Trigger</th>
+                      <th>Timestamp</th>
+                      <th>Action Record</th>
+                    </tr>
+                  </thead>
+                  <tbody id="aiLogsTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- ─ VIEW: DOCUMENT QUEUE ─ -->
+          <div id="doc-queue-section" class="content-section">
+            <div
+              class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden"
+            >
+              <div
+                class="px-6 py-5 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50"
+              >
+                <h3
+                  class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2"
+                >
+                  <ion-icon
+                    name="cloud-upload"
+                    class="text-blue-500"
+                  ></ion-icon>
+                  Unprocessed Scans
+                </h3>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="appt-table">
+                  <thead>
+                    <tr>
+                      <th>Patient</th>
+                      <th>Upload Date</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="docQueueTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- ─ VIEW: SYSTEM LOGS ─ -->
+          <div id="system-logs-section" class="content-section">
+            <div
+              class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden"
+            >
+              <div
+                class="px-6 py-5 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50"
+              >
+                <h3
+                  class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2"
+                >
+                  <ion-icon name="server" class="text-gray-500"></ion-icon> IT
+                  System Logs
+                </h3>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="appt-table">
+                  <thead>
+                    <tr>
+                      <th>User (IP/Agent)</th>
+                      <th>Date</th>
+                      <th>Timestamp</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="sysLogsTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+
+
+          <!-- ─ VIEW: REPORTS ─ -->
+          <div id="reports-section" class="content-section">
+            <div
+              class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden"
+            >
+              <div
+                class="px-6 py-5 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50"
+              >
+                <h3
+                  class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2"
+                >
+                  <ion-icon name="alert-circle" class="text-red-500"></ion-icon>
+                  Issue Reports
+                </h3>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="appt-table">
+                  <thead>
+                    <tr>
+                      <th>Submitted By</th>
+                      <th>Category</th>
+                      <th>Message</th>
+                      <th>Date Received</th>
+                    </tr>
+                  </thead>
+                  <tbody id="reportsTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- ─ VIEW: BILLING ─ -->
+          <div id="billing-section" class="content-section">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+                <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <h3 class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                        <ion-icon name="cash" class="text-green-500"></ion-icon> Billing & Invoicing Engine
+                    </h3>
+                    <button onclick="openBillModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2">
+                        <ion-icon name="add-circle"></ion-icon> Add New Bill
                     </button>
-                    <div class="hidden md:flex items-center gap-2 pl-4 border-l border-gray-200 dark:border-gray-700">
-                        <span class="relative flex h-3 w-3">
-                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                          <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-                        </span>
-                        <span class="text-sm font-medium text-gray-600 dark:text-gray-300">System Online</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="appt-table">
+                        <thead>
+                            <tr>
+                                <th>Patient</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Date Issued</th>
+                            </tr>
+                        </thead>
+                        <tbody id="billingTableBody">
+                            <tr><td colspan="4" class="text-center py-8">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+          </div>
+
+          <!-- Staff Control section removed - merged into Staff Directory -->
+
+          <!-- ─ VIEW: NOTIFICATIONS ─ -->
+          <div id="notifications-section" class="content-section">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col sm:flex-row gap-6">
+                <div class="w-full sm:w-1/3 border-r border-gray-200 dark:border-gray-700 pr-0 sm:pr-6">
+                    <h2 class="text-xl font-bold dark:text-white mb-4 flex items-center gap-2"><ion-icon name="mail" class="text-indigo-500"></ion-icon> Quick Notification</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Send an email or in-app notification to users or staff.</p>
+                    
+                    <form id="notificationForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Send As (Sender Email)</label>
+                            <input type="email" id="notif-sender" class="w-full p-2.5 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" placeholder="admin@myhealth.com" value="admin@myhealth.com">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Send To</label>
+                            <select id="notif-target" onchange="toggleOtherEmail(this)" class="w-full p-2.5 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                <option value="all_patients">All Patients</option>
+                                <option value="all_doctors">All Doctors</option>
+                                <option value="all_users">All Users</option>
+                                <option value="other">Other (Single User)</option>
+                            </select>
+                        </div>
+                        <div id="other-email-container" class="hidden">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Send To (Email Address)</label>
+                            <input type="email" id="notif-target-other" class="w-full p-2.5 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" placeholder="user@example.com">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Topic</label>
+                            <input type="text" id="notif-topic" class="w-full p-2.5 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" placeholder="Notification Topic">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Message</label>
+                            <textarea id="notif-msg" rows="4" class="w-full p-2.5 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Type your notification here..."></textarea>
+                        </div>
+                        <button type="button" onclick="sendNotification()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
+                            <ion-icon name="paper-plane"></ion-icon> Send Notification
+                        </button>
+                    </form>
+                </div>
+                <div class="w-full sm:w-2/3">
+                    <h2 class="text-xl font-bold dark:text-white mb-4">Recent System Alerts</h2>
+                    <div class="space-y-3" id="recent-alerts-container">
+                        <div class="p-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl">
+                            <div class="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-bold mb-1"><ion-icon name="information-circle"></ion-icon> System Initialized</div>
+                            <p class="text-gray-600 dark:text-gray-400 text-sm">Notifications panel connects to system_logs for alerts.</p>
+                        </div>
                     </div>
                 </div>
             </div>
-        </header>
+          </div>
 
-        <!-- Scrollable Content View -->
-        <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-gray-900 p-6 md:p-8">
-            <div class="max-w-7xl mx-auto space-y-6">
-
-                <!-- ─ VIEW: DASHBOARD ─ -->
-                <div id="dashboard-section" class="content-section active space-y-6">
-                    <!-- Stats Grid -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <div class="stat-card-premium bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-5">
-                            <div class="stat-icon h-14 w-14 rounded-full flex items-center justify-center flex-shrink-0 bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400 text-2xl">
-                                <ion-icon name="people"></ion-icon>
-                            </div>
-                            <div>
-                                <p class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total Users</p>
-                                <p id="stat-total-users" class="text-3xl font-bold text-gray-900 dark:text-white mt-1">--</p>
-                            </div>
-                        </div>
-
-                        <div class="stat-card-premium bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-5">
-                            <div class="stat-icon h-14 w-14 rounded-full flex items-center justify-center flex-shrink-0 bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400 text-2xl">
-                                <ion-icon name="bed"></ion-icon>
-                            </div>
-                            <div>
-                                <p class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Patients</p>
-                                <p id="stat-total-patients" class="text-3xl font-bold text-gray-900 dark:text-white mt-1">--</p>
-                            </div>
-                        </div>
-
-                        <div class="stat-card-premium bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-5">
-                            <div class="stat-icon h-14 w-14 rounded-full flex items-center justify-center flex-shrink-0 bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400 text-2xl">
-                                <ion-icon name="medkit"></ion-icon>
-                            </div>
-                            <div>
-                                <p class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Doctors</p>
-                                <p id="stat-total-doctors" class="text-3xl font-bold text-gray-900 dark:text-white mt-1">--</p>
-                            </div>
-                        </div>
-
-                        <div class="stat-card-premium bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-5">
-                            <div class="stat-icon h-14 w-14 rounded-full flex items-center justify-center flex-shrink-0 bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400 text-2xl">
-                                <ion-icon name="calendar"></ion-icon>
-                            </div>
-                            <div>
-                                <p class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Appointments</p>
-                                <p id="stat-total-appointments" class="text-3xl font-bold text-gray-900 dark:text-white mt-1">--</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Charts Grid -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <!-- Chart 1 -->
-                        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
-                            <div class="flex justify-between items-center mb-4">
-                                <h3 class="text-lg font-bold text-gray-800 dark:text-white">Active User Growth</h3>
-                                <div class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded dark:bg-blue-900/30 dark:text-blue-300">Live</div>
-                            </div>
-                            <div class="relative h-72 w-full">
-                                <canvas id="userGrowthChart"></canvas>
-                            </div>
-                        </div>
-                        
-                        <!-- Chart 2 -->
-                        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
-                            <div class="flex justify-between items-center mb-4">
-                                <h3 class="text-lg font-bold text-gray-800 dark:text-white">AI Visit Time Matrix</h3>
-                            </div>
-                            <div class="relative h-72 w-full">
-                                <canvas id="aiTimeChart"></canvas>
-                            </div>
-                        </div>
-                        
-                        <!-- Chart 3 (Full Width underneath) -->
-                        <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm">
-                            <h3 class="text-lg font-bold text-gray-800 dark:text-white mb-4">Doctor Appointments Allocation</h3>
-                            <div class="relative h-72 w-full">
-                                <canvas id="aiDoctorsChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ─ VIEW: USERS ─ -->
-                <div id="users-section" class="content-section">
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                        <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex justify-between items-center">
-                            <h3 class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2"><ion-icon name="people" class="text-indigo-500"></ion-icon> Global Directory</h3>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="appt-table">
-                                <thead>
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>Role</th>
-                                        <th>Status</th>
-                                        <th>Last Login</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="usersTableBody">
-                                    <tr><td colspan="4" class="text-center py-8">Loading...</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- ─ VIEW: PATIENTS ─ -->
-                <div id="patients-section" class="content-section">
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                        <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
-                            <h3 class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2"><ion-icon name="bed" class="text-emerald-500"></ion-icon> Registered Patients</h3>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="appt-table">
-                                <thead>
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>CPR Number</th>
-                                        <th>Quick Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="patientsTableBody">
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ─ VIEW: DOCTORS ─ -->
-                <div id="doctors-section" class="content-section">
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                        <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <h3 class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2"><ion-icon name="medkit" class="text-blue-500"></ion-icon> Staff Directory</h3>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                    <ion-icon name="search-outline" class="text-gray-400"></ion-icon>
-                                </div>
-                                <input type="text" id="doctor-search" onkeyup="filterDoctorsTable()" class="bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:w-64 pl-10 p-2.5 shadow-sm transition-colors" placeholder="Search staff...">
-                            </div>
-                        </div>
-                        <div class="overflow-x-auto p-0" id="doctors-table-container">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ─ VIEW: APPOINTMENTS ─ -->
-                <div id="appointments-section" class="content-section">
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                        <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <h3 class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2"><ion-icon name="calendar" class="text-indigo-500"></ion-icon> Appointments Master Log</h3>
-                            <div class="flex gap-2">
-                                <select id="appointYear" onchange="filterAppointments()" class="bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2 shadow-sm transition-colors">
-                                    <option value="all">All Years</option>
-                                </select>
-                                <select id="appointMonth" onchange="filterAppointments()" class="bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2 shadow-sm transition-colors">
-                                    <option value="all">All Months</option>
-                                    <option value="0">Jan</option><option value="1">Feb</option><option value="2">Mar</option>
-                                    <option value="3">Apr</option><option value="4">May</option><option value="5">Jun</option>
-                                    <option value="6">Jul</option><option value="7">Aug</option><option value="8">Sep</option>
-                                    <option value="9">Oct</option><option value="10">Nov</option><option value="11">Dec</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="appt-table">
-                                <thead>
-                                    <tr>
-                                        <th>Date/Time</th>
-                                        <th>Patient</th>
-                                        <th>Assigned Doctor</th>
-                                        <th>Status / Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="appointmentsTableBody">
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ─ VIEW: RECORDS ─ -->
-                <div id="records-section" class="content-section">
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                        <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
-                            <h3 class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2"><ion-icon name="document-text" class="text-teal-500"></ion-icon> Health Records</h3>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="appt-table">
-                                <thead><tr><th>Patient</th><th>Summary / Type</th></tr></thead>
-                                <tbody id="recordsTableBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ─ VIEW: PRESCRIPTIONS ─ -->
-                <div id="prescriptions-section" class="content-section">
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                        <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
-                            <h3 class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2"><ion-icon name="flask" class="text-purple-500"></ion-icon> Pharmacy Operations</h3>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="appt-table">
-                                <thead><tr><th>Patient</th><th>Prescribed By</th><th>Medication</th></tr></thead>
-                                <tbody id="prescriptionsTableBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ─ VIEW: AI LOGS ─ -->
-                <div id="ai-logs-section" class="content-section">
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                        <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex items-center gap-3">
-                            <div class="h-8 w-8 rounded bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white"><ion-icon name="hardware-chip"></ion-icon></div>
-                            <h3 class="text-lg font-bold text-gray-800 dark:text-white">AI Engine Logs</h3>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="appt-table">
-                                <thead><tr><th>User Trigger</th><th>Timestamp</th><th>Action Record</th></tr></thead>
-                                <tbody id="aiLogsTableBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ─ VIEW: DOCUMENT QUEUE ─ -->
-                <div id="doc-queue-section" class="content-section">
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                        <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
-                            <h3 class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2"><ion-icon name="cloud-upload" class="text-blue-500"></ion-icon> Unprocessed Scans</h3>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="appt-table">
-                                <thead><tr><th>Patient</th><th>Upload Date</th><th>Action</th></tr></thead>
-                                <tbody id="docQueueTableBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ─ VIEW: SYSTEM LOGS ─ -->
-                <div id="system-logs-section" class="content-section">
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                        <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
-                            <h3 class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2"><ion-icon name="server" class="text-gray-500"></ion-icon> IT System Logs</h3>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="appt-table">
-                                <thead><tr><th>User (IP/Agent)</th><th>Date</th><th>Timestamp</th><th>Status</th></tr></thead>
-                                <tbody id="sysLogsTableBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ─ VIEW: AUDIT TRAIL ─ -->
-                <div id="audit-trail-section" class="content-section">
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                        <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
-                            <h3 class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2"><ion-icon name="footsteps" class="text-orange-500"></ion-icon> Audit Trail</h3>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="appt-table">
-                                <thead><tr><th>User ID</th><th>Operation Executed</th><th>Timestamp</th></tr></thead>
-                                <tbody id="auditTableBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ─ VIEW: REPORTS ─ -->
-                <div id="reports-section" class="content-section">
-                     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                        <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
-                            <h3 class="text-lg font-bold text-gray-800 dark:text-white flex items-center gap-2"><ion-icon name="alert-circle" class="text-red-500"></ion-icon> Issue Reports</h3>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="appt-table">
-                                <thead><tr><th>Submitted By</th><th>Category</th><th>Message</th><th>Date Received</th></tr></thead>
-                                <tbody id="reportsTableBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Placeholder Views for non-table sections -->
-                <div id="billing-section" class="content-section">
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-12 text-center border border-gray-100 dark:border-gray-700 shadow-sm">
-                        <div class="text-6xl text-gray-300 dark:text-gray-600 mb-4"><ion-icon name="cash-outline"></ion-icon></div>
-                        <h2 class="text-2xl font-bold dark:text-white">Billing & Invoicing Engine</h2>
-                        <p class="text-gray-500 dark:text-gray-400 mt-2">Connecting to the new robust billing schema...</p>
-                    </div>
-                </div>
-                
-                <div id="staff-section" class="content-section">
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-12 text-center border border-gray-100 dark:border-gray-700 shadow-sm">
-                        <div class="text-6xl text-gray-300 dark:text-gray-600 mb-4"><ion-icon name="shield-checkmark-outline"></ion-icon></div>
-                        <h2 class="text-2xl font-bold dark:text-white">Staff Level Access Controls</h2>
-                        <p class="text-gray-500 dark:text-gray-400 mt-2">Connecting to the new roles system...</p>
-                    </div>
-                </div>
-                
-                <div id="ai-analysis-section" class="content-section">
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-12 text-center border border-gray-100 dark:border-gray-700 shadow-sm">
-                        <div class="text-6xl text-gray-300 dark:text-gray-600 mb-4"><ion-icon name="analytics-outline"></ion-icon></div>
-                        <h2 class="text-2xl font-bold dark:text-white">AI Diagnostics & Overrides</h2>
-                        <p class="text-gray-500 dark:text-gray-400 mt-2">System healthy.</p>
-                    </div>
-                </div>
-                
-                <div id="settings-section" class="content-section">
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl p-12 text-center border border-gray-100 dark:border-gray-700 shadow-sm">
-                        <div class="text-6xl text-gray-300 dark:text-gray-600 mb-4"><ion-icon name="settings-outline"></ion-icon></div>
-                        <h2 class="text-2xl font-bold dark:text-white">System Settings</h2>
-                        <p class="text-gray-500 dark:text-gray-400 mt-2">Global properties and environment configurations.</p>
-                    </div>
-                </div>
-
+          <div id="ai-analysis-section" class="content-section">
+            <div
+              class="bg-white dark:bg-gray-800 rounded-2xl p-12 text-center border border-gray-100 dark:border-gray-700 shadow-sm"
+            >
+              <div class="text-6xl text-gray-300 dark:text-gray-600 mb-4">
+                <ion-icon name="analytics-outline"></ion-icon>
+              </div>
+              <h2 class="text-2xl font-bold dark:text-white">
+                AI Diagnostics & Overrides
+              </h2>
+              <p class="text-gray-500 dark:text-gray-400 mt-2">
+                System healthy.
+              </p>
             </div>
-        </main>
+          </div>
+
+          <div id="settings-section" class="content-section">
+            <div
+              class="bg-white dark:bg-gray-800 rounded-2xl p-12 text-center border border-gray-100 dark:border-gray-700 shadow-sm"
+            >
+              <div class="text-6xl text-gray-300 dark:text-gray-600 mb-4">
+                <ion-icon name="settings-outline"></ion-icon>
+              </div>
+              <h2 class="text-2xl font-bold dark:text-white">
+                System Settings
+              </h2>
+              <p class="text-gray-500 dark:text-gray-400 mt-2">
+                Global properties and environment configurations.
+              </p>
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
 
     <!-- Document Modal -->
-    <div id="docModal" class="hidden fixed inset-0 z-[2000] bg-gray-900/60 backdrop-blur-sm overflow-y-auto h-full w-full">
-        <div class="relative top-20 mx-auto p-6 border border-gray-200 dark:border-gray-700 w-11/12 md:max-w-xl shadow-2xl rounded-2xl bg-white dark:bg-gray-800">
-            <div class="flex justify-between items-center mb-5">
-                <h3 class="text-xl font-bold text-gray-900 dark:text-white">Document Viewer</h3>
-                <button onclick="closeDocumentModal()" class="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                    <ion-icon name="close-circle" class="text-2xl"></ion-icon>
-                </button>
-            </div>
-            <div id="docModalContent" class="text-gray-600 dark:text-gray-300 space-y-3">
-                <!-- Injected via JS -->
-            </div>
+    <div
+      id="docModal"
+      class="hidden fixed inset-0 z-[2000] bg-gray-900/60 backdrop-blur-sm overflow-y-auto h-full w-full"
+    >
+      <div
+        class="relative top-20 mx-auto p-6 border border-gray-200 dark:border-gray-700 w-11/12 md:max-w-xl shadow-2xl rounded-2xl bg-white dark:bg-gray-800"
+      >
+        <div class="flex justify-between items-center mb-5">
+          <h3 class="text-xl font-bold text-gray-900 dark:text-white">
+            Document Viewer
+          </h3>
+          <button
+            onclick="closeDocumentModal()"
+            class="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+          >
+            <ion-icon name="close-circle" class="text-2xl"></ion-icon>
+          </button>
         </div>
+        <div
+          id="docModalContent"
+          class="text-gray-600 dark:text-gray-300 space-y-3"
+        >
+          <!-- Injected via JS -->
+        </div>
+      </div>
     </div>
 
+    <!-- Bill Modal -->
+    <div id="billModal" class="hidden fixed inset-0 z-[2000] bg-gray-900/60 backdrop-blur-sm overflow-y-auto h-full w-full">
+      <div class="relative top-20 mx-auto p-6 border border-gray-200 dark:border-gray-700 w-11/12 md:max-w-md shadow-2xl rounded-2xl bg-white dark:bg-gray-800">
+        <div class="flex justify-between items-center mb-5">
+          <h3 class="text-xl font-bold text-gray-900 dark:text-white">Create New Bill</h3>
+          <button onclick="closeBillModal()" class="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+            <ion-icon name="close-circle" class="text-2xl"></ion-icon>
+          </button>
+        </div>
+        <form id="createBillForm" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Select Patient</label>
+            <select id="bill-patient" required class="w-full p-2.5 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                <option value="">-- Choose Patient --</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Total Amount ($)</label>
+            <input type="number" id="bill-amount" step="0.01" required class="w-full p-2.5 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="0.00">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tax Amount ($) - optional</label>
+            <input type="number" id="bill-tax" step="0.01" value="0.00" class="w-full p-2.5 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sender Email</label>
+            <input type="email" id="bill-sender" class="w-full p-2.5 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="admin@myhealth.com" value="admin@myhealth.com">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes / Description</label>
+            <textarea id="bill-notes" rows="2" class="w-full p-2.5 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Consultation fee, lab test..."></textarea>
+          </div>
+          <button type="button" onclick="submitBill()" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
+            <ion-icon name="checkmark-circle"></ion-icon> Save & Issue Bill
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Staff Modal -->
+    <div id="staffModal" class="hidden fixed inset-0 z-[2000] bg-gray-900/60 backdrop-blur-sm overflow-y-auto h-full w-full">
+      <div class="relative top-10 mx-auto p-6 border border-gray-200 dark:border-gray-700 w-11/12 md:max-w-lg shadow-2xl rounded-2xl bg-white dark:bg-gray-800">
+        <div class="flex justify-between items-center mb-5">
+          <h3 id="staffModalTitle" class="text-xl font-bold text-gray-900 dark:text-white">Register New Staff</h3>
+          <button onclick="closeStaffModal()" class="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+            <ion-icon name="close-circle" class="text-2xl"></ion-icon>
+          </button>
+        </div>
+        <form id="createStaffForm" class="space-y-4">
+          <input type="hidden" id="edit-staff-id">
+          <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">First Name</label>
+                <input type="text" id="staff-fname" required class="w-full p-2.5 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Last Name</label>
+                <input type="text" id="staff-lname" required class="w-full p-2.5 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+              </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email <span class="text-xs text-gray-500">(Used for login)</span></label>
+            <input type="email" id="staff-email" required class="w-full p-2.5 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+          </div>
+          <div id="staff-password-row">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password</label>
+            <input type="password" id="staff-pass" class="w-full p-2.5 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Specialization</label>
+                <input type="text" id="staff-spec" placeholder="e.g. Cardiology" class="w-full p-2.5 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Department</label>
+                <select id="staff-dept" class="w-full p-2.5 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    <option value="1">General Medicine</option>
+                    <option value="2">Pediatrics</option>
+                    <option value="3">Surgery</option>
+                </select>
+              </div>
+          </div>
+          <button type="button" onclick="submitStaff()" class="w-full mt-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
+            <ion-icon name="person-add"></ion-icon> Register Staff Account
+          </button>
+        </form>
+      </div>
+    </div>
 
     <!-- ══════════════════════════════════════
          JAVASCRIPT LOGIC
     ══════════════════════════════════════ -->
     <script>
-        // ── Layout & Theme Logic ──
-        const themeToggleBtn = document.getElementById('themeToggle');
-        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
+      // ── Layout & Theme Logic ──
+      const themeToggleBtn = document.getElementById("themeToggle");
+      if (
+        localStorage.getItem("color-theme") === "dark" ||
+        (!("color-theme" in localStorage) &&
+          window.matchMedia("(prefers-color-scheme: dark)").matches)
+      ) {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+
+      themeToggleBtn.addEventListener("click", function () {
+        if (document.documentElement.classList.contains("dark")) {
+          document.documentElement.classList.remove("dark");
+          localStorage.setItem("color-theme", "light");
         } else {
-            document.documentElement.classList.remove('dark');
+          document.documentElement.classList.add("dark");
+          localStorage.setItem("color-theme", "dark");
         }
+      });
 
-        themeToggleBtn.addEventListener('click', function() {
-            if (document.documentElement.classList.contains('dark')) {
-                document.documentElement.classList.remove('dark');
-                localStorage.setItem('color-theme', 'light');
-            } else {
-                document.documentElement.classList.add('dark');
-                localStorage.setItem('color-theme', 'dark');
-            }
-        });
+      const sidebar = document.getElementById("sidebar");
+      const mainContent = document.getElementById("mainContent");
+      const toggleBtn = document.getElementById("toggleSidebar");
 
-        const sidebar = document.getElementById('sidebar');
-        const mainContent = document.getElementById('mainContent');
-        const toggleBtn = document.getElementById('toggleSidebar');
-
-        toggleBtn.addEventListener('click', () => {
-            if (window.innerWidth >= 1024) {
-                if (sidebar.classList.contains('sidebar-expanded')) {
-                    sidebar.classList.replace('sidebar-expanded', 'sidebar-collapsed');
-                    mainContent.style.marginLeft = '4.5rem';
-                } else {
-                    sidebar.classList.replace('sidebar-collapsed', 'sidebar-expanded');
-                    mainContent.style.marginLeft = '16rem';
-                }
-            } else {
-                sidebar.classList.toggle('active');
-            }
-        });
-        
-        window.onload = function() {
-            setTimeout(() => {
-                const overlay = document.getElementById('loading-overlay');
-                if (overlay) {
-                    overlay.style.opacity = '0';
-                    overlay.style.pointerEvents = 'none';
-                }
-            }, 300);
-        };
-
-        function showSection(sectionId) {
-            document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active'));
-            const target = document.getElementById(sectionId + '-section');
-            if (target) target.classList.add('active');
-            else document.getElementById('dashboard-section').classList.add('active');
-
-            document.querySelectorAll('.sidebar-link').forEach(link => link.classList.remove('active'));
-            const activeLink = document.querySelector(`.sidebar-link[data-view="${sectionId}"]`) || document.querySelector(`.sidebar-link[data-view="dashboard"]`);
-            if (activeLink) activeLink.classList.add('active');
-
-            const title = sectionId.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
-            const breadcrumb = document.getElementById('breadcrumbTitle');
-            if (breadcrumb) breadcrumb.textContent = title + " View";
-            
-            if (window.location.hash !== '#' + sectionId) {
-                history.replaceState(null, null, '#' + sectionId);
-            }
-            if (window.innerWidth < 1024) sidebar.classList.remove('active');
+      toggleBtn.addEventListener("click", () => {
+        if (window.innerWidth >= 1024) {
+          if (sidebar.classList.contains("sidebar-expanded")) {
+            sidebar.classList.replace("sidebar-expanded", "sidebar-collapsed");
+            mainContent.style.marginLeft = "4.5rem";
+          } else {
+            sidebar.classList.replace("sidebar-collapsed", "sidebar-expanded");
+            mainContent.style.marginLeft = "16rem";
+          }
+        } else {
+          sidebar.classList.toggle("active");
         }
+      });
 
-        function syncViewWithHash() {
-            const hash = window.location.hash.substring(1) || "dashboard";
-            showSection(hash);
+      window.onload = function () {
+        setTimeout(() => {
+          const overlay = document.getElementById("loading-overlay");
+          if (overlay) {
+            overlay.style.opacity = "0";
+            overlay.style.pointerEvents = "none";
+          }
+        }, 300);
+      };
+
+      function showSection(sectionId) {
+        document
+          .querySelectorAll(".content-section")
+          .forEach((sec) => sec.classList.remove("active"));
+        const target = document.getElementById(sectionId + "-section");
+        if (target) target.classList.add("active");
+        else
+          document.getElementById("dashboard-section").classList.add("active");
+
+        document
+          .querySelectorAll(".sidebar-link")
+          .forEach((link) => link.classList.remove("active"));
+        const activeLink =
+          document.querySelector(`.sidebar-link[data-view="${sectionId}"]`) ||
+          document.querySelector(`.sidebar-link[data-view="dashboard"]`);
+        if (activeLink) activeLink.classList.add("active");
+
+        const title = sectionId
+          .replace("-", " ")
+          .replace(/\b\w/g, (l) => l.toUpperCase());
+        const breadcrumb = document.getElementById("breadcrumbTitle");
+        if (breadcrumb) breadcrumb.textContent = title + " View";
+
+        if (window.location.hash !== "#" + sectionId) {
+          history.replaceState(null, null, "#" + sectionId);
         }
+        if (window.innerWidth < 1024) sidebar.classList.remove("active");
+      }
 
-        window.addEventListener("hashchange", syncViewWithHash);
-        window.addEventListener("load", syncViewWithHash);
+      function syncViewWithHash() {
+        const hash = window.location.hash.substring(1) || "dashboard";
+        showSection(hash);
+      }
+
+      window.addEventListener("hashchange", syncViewWithHash);
+      window.addEventListener("load", syncViewWithHash);
     </script>
 
+    <!-- Book Appointment Modal -->
+    <div id="bookApptModal" class="hidden fixed inset-0 z-[2000] bg-gray-900/60 backdrop-blur-sm overflow-y-auto h-full w-full">
+      <div class="relative top-20 mx-auto p-6 border border-gray-200 dark:border-gray-700 w-11/12 md:max-w-md shadow-2xl rounded-2xl bg-white dark:bg-gray-800">
+        <div class="flex justify-between items-center mb-5 border-b border-gray-100 dark:border-gray-700 pb-4">
+          <h3 id="bookApptTitle" class="text-xl font-bold text-gray-900 dark:text-white">Book Appointment</h3>
+          <button onclick="closeBookApptModal()" class="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+            <ion-icon name="close-circle" class="text-2xl"></ion-icon>
+          </button>
+        </div>
+        <form id="bookApptForm" class="space-y-4">
+          <input type="hidden" id="book-patient-id">
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reason for Appointment</label>
+            <input type="text" id="book-reason" required class="w-full p-2.5 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white transition-colors" placeholder="e.g. Regular Checkup">
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date and Time</label>
+            <input type="datetime-local" id="book-date" required class="w-full p-2.5 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-colors">
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Staff/Doctor ID (Optional)</label>
+            <input type="number" id="book-doctor" class="w-full p-2.5 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white transition-colors" placeholder="Staff ID">
+          </div>
+          
+          <button type="button" onclick="submitBookAppt()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 mt-2">
+            <ion-icon name="calendar"></ion-icon> Confirm Booking
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Patient Add/Edit Modal -->
+    <div id="patientModal" class="hidden fixed inset-0 z-[2000] bg-gray-900/60 backdrop-blur-sm overflow-y-auto h-full w-full">
+      <div class="relative top-10 mx-auto p-6 border border-gray-200 dark:border-gray-700 w-11/12 md:max-w-lg shadow-2xl rounded-2xl bg-white dark:bg-gray-800">
+        <div class="flex justify-between items-center mb-5">
+          <h3 id="patientModalTitle" class="text-xl font-bold text-gray-900 dark:text-white">Add Patient</h3>
+          <button onclick="closePatientModal()" class="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+            <ion-icon name="close-circle" class="text-2xl"></ion-icon>
+          </button>
+        </div>
+        <form id="patientForm" class="space-y-4">
+          <input type="hidden" id="edit-patient-id">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">First Name</label>
+              <input type="text" id="patient-fname" required class="w-full p-2.5 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" placeholder="John">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Last Name</label>
+              <input type="text" id="patient-lname" required class="w-full p-2.5 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" placeholder="Doe">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+            <input type="email" id="patient-email" required class="w-full p-2.5 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" placeholder="john@example.com">
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">CPR</label>
+              <input type="text" id="patient-cpr" class="w-full p-2.5 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" placeholder="0001010001">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone</label>
+              <input type="text" id="patient-phone" class="w-full p-2.5 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" placeholder="+973 XXXX XXXX">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Gender</label>
+              <select id="patient-gender" class="w-full p-2.5 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Blood Type</label>
+              <select id="patient-blood" class="w-full p-2.5 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                <option value="">Unknown</option>
+                <option value="A+">A+</option><option value="A-">A-</option>
+                <option value="B+">B+</option><option value="B-">B-</option>
+                <option value="AB+">AB+</option><option value="AB-">AB-</option>
+                <option value="O+">O+</option><option value="O-">O-</option>
+              </select>
+            </div>
+          </div>
+          <div id="patient-password-row">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password</label>
+            <input type="password" id="patient-password" class="w-full p-2.5 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white" placeholder="Min 6 chars">
+          </div>
+          <button type="button" onclick="submitPatient()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
+            <ion-icon name="checkmark-circle"></ion-icon> <span id="patientSubmitText">Save Patient</span>
+          </button>
+        </form>
+      </div>
+    </div>
+
     <!-- Load Admin Logic -->
-    <script src="../js/admin.js"></script>
-</body>
+    <script src="../js/admin.js?v=2.2"></script>
+  </body>
 </html>

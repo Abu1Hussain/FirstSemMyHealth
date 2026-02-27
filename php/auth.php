@@ -205,6 +205,13 @@ if ($isLoggingIn) {
     $stmtLogin->bind_param("i", $user['user_id']);
     $stmtLogin->execute();
     $stmtLogin->close();
+    
+    // --- Log the login event ---
+    $logMsg = "User logged in successfully";
+    $stmtLog = $conn->prepare("INSERT INTO system_logs (user_id, event, status) VALUES (?, ?, 'info')");
+    $stmtLog->bind_param("is", $user['user_id'], $logMsg);
+    $stmtLog->execute();
+    $stmtLog->close();
 
 
     // --- Step 4: Login successful — save user info to session ---

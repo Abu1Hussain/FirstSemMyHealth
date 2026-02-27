@@ -25,8 +25,8 @@ session_start();
 header('Content-Type: application/json');
 
 /* ── Connect to the database and AI config ── */
-require_once '../DataBase/db_connect.php';
-require_once '../Ai/ai_config.php';
+require_once __DIR__ . '/../DataBase/db_connect.php';
+require_once __DIR__ . '/../Ai/ai_config.php';
 
 /* ── Make sure the user is logged in ── */
 if (!isset($_SESSION['user_id'])) {
@@ -191,22 +191,30 @@ if (isset($_POST['book_appointment'])) {
 
     // Build the system prompt for OpenAI
     $systemPrompt = "You are a medical triage AI. Analyze the patient's symptoms and return JSON with:
-1. \"priority\" – one of: \"Highly Important\", \"Important\", or \"Normal\"
+1. \"priority\" – MUST be one of: \"Fast/Hard\", \"Medium\", or \"Normal\"
 2. \"suggestion\" – a short sentence advising what the patient should do (max 2 sentences)
 
 Rules:
-- Chest pain, breathing difficulty, severe bleeding → Highly Important
-- Fever, persistent pain, infection, vomiting → Important
+- Chest pain, breathing difficulty, severe bleeding → Fast/Hard
+- Fever, persistent pain, infection, vomiting → Medium
 - Routine checkups, mild symptoms → Normal
 
-Return ONLY valid JSON. Example: {\"priority\": \"Important\", \"suggestion\": \"Schedule within 24 hours.\"}";
+Return ONLY valid JSON without any markdown formatting like ```json. Example: {\"priority\": \"Medium\", \"suggestion\": \"Schedule within 24 hours.\"}";
 
     $userMessage = "Patient symptoms: " . $reason;
     $aiReplyText = callOpenAI($systemPrompt, $userMessage);
 
     if ($aiReplyText) {
-        // Try to parse the JSON from OpenAI
-        $aiResult = json_decode($aiReplyText, true);
+        // Robustly extract JSON object from the AI response
+        $startIndex = strpos($aiReplyText, '{');
+        $endIndex   = strrpos($aiReplyText, '}');
+        
+        if ($startIndex !== false && $endIndex !== false && $endIndex >= $startIndex) {
+            $cleanJson = substr($aiReplyText, $startIndex, $endIndex - $startIndex + 1);
+            $aiResult = json_decode($cleanJson, true);
+        } else {
+            $aiResult = null;
+        }
 
         if ($aiResult && isset($aiResult['priority'])) {
             $priority     = $aiResult['priority'];
@@ -221,7 +229,6 @@ Return ONLY valid JSON. Example: {\"priority\": \"Important\", \"suggestion\": \
         $priority     = keywordFallbackPriority($reason);
         $aiSuggestion = 'AI service unavailable. Priority set by keyword analysis.';
     }
-
 
     /* ── Doctor Selection ── */
 

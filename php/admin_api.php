@@ -33,7 +33,7 @@ session_start();
 header('Content-Type: application/json');
 
 /* ── Connect to the database ── */
-require_once '../DataBase/db_connect.php';
+require_once __DIR__ . '/../DataBase/db_connect.php';
 
 /* ── Make sure the user is logged in AND is an admin ── */
 if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
@@ -184,7 +184,7 @@ if ($action === 'doctors') {
         "SELECT d.doctor_id as id, d.doctor_id, CONCAT(d.first_name, ' ', d.last_name) as name,
                 d.first_name, d.last_name, d.specialization,
                 COALESCE(dept.name, d.department) as department, d.phone, d.profile_image, d.capacity, u.email, d.is_active,
-                (SELECT COUNT(*) FROM medical_records WHERE doctor_id = d.doctor_id) as records_count
+                (SELECT COUNT(*) FROM appointments WHERE doctor_id = d.doctor_id AND LOWER(status) = 'completed') as records_count
          FROM doctors d
          JOIN users u ON d.user_id = u.user_id
          LEFT JOIN departments dept ON d.department_id = dept.dept_id
@@ -296,7 +296,7 @@ if ($action === 'chart_data') {
     for ($i = 6; $i >= 0; $i--) {
         $day = date('Y-m-d', strtotime("-$i days"));
         $label = date('D', strtotime($day));
-        $res = $conn->query("SELECT COUNT(*) as c FROM users WHERE DATE(created_at) = '$day'");
+        $res = $conn->query("SELECT COUNT(*) as c FROM users WHERE DATE(created_at) = '$day' AND role = 'patient'");
         $count = ($res && $row = $res->fetch_assoc()) ? (int)$row['c'] : 0;
         
         $signups['labels'][] = $label;
@@ -496,6 +496,288 @@ if ($action === 'feedback') {
     exit();
 }
 
+
+/* ─────────────────────────────────────────────
+   ACTION: billing
+   Returns all invoices
+   ───────────────────────────────────────────── */
+
+if ($action === 'billing') {
+    $invoices = [];
+    $result = $conn->query(
+        "SELECT i.invoice_id, i.total_amount, i.status, i.issue_date, 
+                CONCAT(p.first_name, ' ', p.last_name) as patient_name
+         FROM invoices i
+         JOIN patients p ON i.patient_id = p.patient_id
+         ORDER BY i.issue_date DESC"
+    );
+
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            $invoices[] = [
+                'id' => $row['invoice_id'],
+                'patient' => $row['patient_name'],
+                'amount' => '$' . number_format($row['total_amount'], 2),
+                'status' => ucfirst($row['status']),
+                'date' => date('M d, Y', strtotime($row['issue_date']))
+            ];
+        }
+    }
+    echo json_encode(['status' => 'success', 'data' => $invoices]);
+    exit();
+}
+
+/* ─────────────────────────────────────────────
+   ACTION: create_bill
+   Creates a new invoice record
+   ───────────────────────────────────────────── */
+
+if ($action === 'create_bill' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $patient_id = $_POST['patient_id'] ?? 0;
+    $amount = $_POST['amount'] ?? 0;
+    $notes = $_POST['notes'] ?? '';
+    $sender = $_POST['sender'] ?? ''; 
+    $full_notes = "Sender: $sender | " . $notes;
+
+    $stmt = $conn->prepare("INSERT INTO invoices (patient_id, total_amount, status, issue_date, notes) VALUES (?, ?, 'unpaid', NOW(), ?)");
+    $stmt->bind_param("ids", $patient_id, $amount, $full_notes);
+    
+    if ($stmt->execute()) {
+        echo json_encode(['status' => 'success', 'message' => 'Bill created successfully']);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Database error']);
+    }
+    $stmt->close();
+    exit();
+}
+
+/* ─────────────────────────────────────────────
+   ACTION: add_staff
+   Creates a new doctor account
+   ───────────────────────────────────────────── */
+
+if ($action === 'add_staff' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $fname = trim($_POST['fname'] ?? '');
+    $lname = trim($_POST['lname'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $pass  = $_POST['password'] ?? '';
+    $spec  = trim($_POST['specialization'] ?? 'General Medicine');
+    $dept  = (int)($_POST['department'] ?? 1);
+
+    if (empty($fname) || empty($lname) || empty($email) || empty($pass)) {
+        echo json_encode(['status' => 'error', 'message' => 'All fields required']);
+        exit();
+    }
+
+    $conn->begin_transaction();
+    try {
+        $hashed = password_hash($pass, PASSWORD_DEFAULT);
+        $role = 'doctor';
+        
+        $stmt1 = $conn->prepare("INSERT INTO users (email, hash_password, role) VALUES (?, ?, ?)");
+        $stmt1->bind_param("sss", $email, $hashed, $role);
+        $stmt1->execute();
+        $user_id = $conn->insert_id;
+        $stmt1->close();
+
+        $stmt2 = $conn->prepare("INSERT INTO doctors (first_name, last_name, specialization, department, user_id, department_id, email) VALUES (?, ?, ?, 'General', ?, ?, ?)");
+        $stmt2->bind_param("sssiis", $fname, $lname, $spec, $user_id, $dept, $email);
+        $stmt2->execute();
+        $stmt2->close();
+
+        $conn->commit();
+        echo json_encode(['status' => 'success', 'message' => 'Staff member added successfully']);
+    } catch (Exception $e) {
+        $conn->rollback();
+        echo json_encode(['status' => 'error', 'message' => 'Failed to create staff account. Email may already exist.']);
+    }
+    exit();
+}
+
+/* ─────────────────────────────────────────────
+   ACTION: send_notification
+   Simulates sending a notification 
+   ───────────────────────────────────────────── */
+
+if ($action === 'send_notification' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $sender = $_POST['sender'] ?? 'admin';
+    $target = $_POST['target'] ?? '';
+    $topic  = $_POST['topic'] ?? '';
+    $msg    = $_POST['message'] ?? '';
+    
+    // First log to system_logs as before
+    $event = "Notification Sent by $sender to $target";
+    $stmt = $conn->prepare("INSERT INTO system_logs (user_id, event, status, created_at) VALUES (?, ?, 'success', NOW())");
+    $stmt->bind_param("is", $_SESSION['user_id'], $event);
+    $stmt->execute();
+    $stmt->close();
+
+    // Now insert into notifications table
+    if ($target === 'all_patients' || $target === 'all_doctors' || $target === 'all_users') {
+        // Send to group - target_user_id is NULL, target holds the group name
+        $stmt = $conn->prepare("INSERT INTO notifications (sender, target, topic, message) VALUES (?, ?, ?, ?)");
+        $stmt->bind_param("ssss", $sender, $target, $topic, $msg);
+        $stmt->execute();
+        $stmt->close();
+    } else {
+        // Send to specific email - resolve user_id first
+        $user_id = null;
+        $stmt = $conn->prepare("SELECT user_id FROM users WHERE email = ?");
+        $stmt->bind_param("s", $target);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        if ($row = $res->fetch_assoc()) {
+            $user_id = $row['user_id'];
+        }
+        $stmt->close();
+        
+        $stmt = $conn->prepare("INSERT INTO notifications (sender, target, target_user_id, topic, message) VALUES (?, ?, ?, ?, ?)");
+        $stmt->bind_param("ssiss", $sender, $target, $user_id, $topic, $msg);
+        $stmt->execute();
+        $stmt->close();
+    }
+
+    echo json_encode(['status' => 'success', 'message' => 'Notification successfully dispatched and saved!']);
+    exit();
+}
+
+/* ─────────────────────────────────────────────
+   ACTION: add_patient (POST)
+   ───────────────────────────────────────────── */
+
+if (isset($_POST['add_patient'])) {
+    $fname = trim($_POST['first_name'] ?? '');
+    $lname = trim($_POST['last_name'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $password = $_POST['password'] ?? '';
+    $cpr = trim($_POST['cpr'] ?? '');
+    $phone = trim($_POST['phone'] ?? '');
+    $gender = trim($_POST['gender'] ?? 'Male');
+    $blood = trim($_POST['blood_type'] ?? '');
+
+    if (!$fname || !$lname || !$email || strlen($password) < 6) {
+        echo json_encode(['status' => 'error', 'message' => 'First name, last name, email, and password (min 6 chars) are required.']);
+        exit();
+    }
+
+    $conn->begin_transaction();
+    try {
+        $hash = password_hash($password, PASSWORD_DEFAULT);
+        $role = 'patient';
+        $stmt1 = $conn->prepare("INSERT INTO users (email, password, role) VALUES (?, ?, ?)");
+        $stmt1->bind_param("sss", $email, $hash, $role);
+        $stmt1->execute();
+        $user_id = $conn->insert_id;
+        $stmt1->close();
+
+        $stmt2 = $conn->prepare("INSERT INTO patients (first_name, last_name, cpr, gender, phone, blood_type, user_id) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt2->bind_param("ssssssi", $fname, $lname, $cpr, $gender, $phone, $blood, $user_id);
+        $stmt2->execute();
+        $stmt2->close();
+
+        $conn->commit();
+        echo json_encode(['status' => 'success', 'message' => 'Patient added successfully.']);
+    } catch (Exception $e) {
+        $conn->rollback();
+        echo json_encode(['status' => 'error', 'message' => 'Failed to add patient. Email may already exist.']);
+    }
+    exit();
+}
+
+/* ─────────────────────────────────────────────
+   ACTION: update_patient (POST)
+   ───────────────────────────────────────────── */
+
+if (isset($_POST['update_patient'])) {
+    $pid = intval($_POST['patient_id'] ?? 0);
+    $fname = trim($_POST['first_name'] ?? '');
+    $lname = trim($_POST['last_name'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $cpr = trim($_POST['cpr'] ?? '');
+    $phone = trim($_POST['phone'] ?? '');
+    $gender = trim($_POST['gender'] ?? 'Male');
+    $blood = trim($_POST['blood_type'] ?? '');
+
+    $stmt = $conn->prepare("UPDATE patients SET first_name=?, last_name=?, cpr=?, gender=?, phone=?, blood_type=? WHERE patient_id=?");
+    $stmt->bind_param("ssssssi", $fname, $lname, $cpr, $gender, $phone, $blood, $pid);
+    $stmt->execute();
+    $stmt->close();
+
+    // Also update email in users table
+    $stmt2 = $conn->prepare("UPDATE users SET email=? WHERE user_id = (SELECT user_id FROM patients WHERE patient_id=?)");
+    $stmt2->bind_param("si", $email, $pid);
+    $stmt2->execute();
+    $stmt2->close();
+
+    echo json_encode(['status' => 'success', 'message' => 'Patient updated successfully.']);
+    exit();
+}
+
+/* ─────────────────────────────────────────────
+   ACTION: delete_patient (POST)
+   ───────────────────────────────────────────── */
+
+if (isset($_POST['delete_patient'])) {
+    $pid = intval($_POST['patient_id'] ?? 0);
+    // Get user_id first
+    $result = $conn->query("SELECT user_id FROM patients WHERE patient_id=$pid");
+    $row = $result->fetch_assoc();
+    if ($row) {
+        $uid = $row['user_id'];
+        $conn->query("DELETE FROM patients WHERE patient_id=$pid");
+        $conn->query("DELETE FROM users WHERE user_id=$uid");
+        echo json_encode(['status' => 'success', 'message' => 'Patient deleted.']);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Patient not found.']);
+    }
+    exit();
+}
+
+/* ─────────────────────────────────────────────
+   ACTION: update_staff (POST)
+   ───────────────────────────────────────────── */
+
+if (isset($_POST['update_staff'])) {
+    $did = intval($_POST['doctor_id'] ?? 0);
+    $fname = trim($_POST['first_name'] ?? '');
+    $lname = trim($_POST['last_name'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $phone = trim($_POST['phone'] ?? '');
+    $spec = trim($_POST['specialization'] ?? '');
+
+    $stmt = $conn->prepare("UPDATE doctors SET first_name=?, last_name=?, specialization=?, phone=? WHERE doctor_id=?");
+    $stmt->bind_param("ssssi", $fname, $lname, $spec, $phone, $did);
+    $stmt->execute();
+    $stmt->close();
+
+    // Also update email in users table
+    $stmt2 = $conn->prepare("UPDATE users SET email=? WHERE user_id = (SELECT user_id FROM doctors WHERE doctor_id=?)");
+    $stmt2->bind_param("si", $email, $did);
+    $stmt2->execute();
+    $stmt2->close();
+
+    echo json_encode(['status' => 'success', 'message' => 'Staff updated successfully.']);
+    exit();
+}
+
+/* ─────────────────────────────────────────────
+   ACTION: delete_staff (POST)
+   ───────────────────────────────────────────── */
+
+if (isset($_POST['delete_staff'])) {
+    $did = intval($_POST['doctor_id'] ?? 0);
+    $result = $conn->query("SELECT user_id FROM doctors WHERE doctor_id=$did");
+    $row = $result->fetch_assoc();
+    if ($row) {
+        $uid = $row['user_id'];
+        $conn->query("DELETE FROM doctors WHERE doctor_id=$did");
+        $conn->query("DELETE FROM users WHERE user_id=$uid");
+        echo json_encode(['status' => 'success', 'message' => 'Staff member deleted.']);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Staff member not found.']);
+    }
+    exit();
+}
 
 /* ─────────────────────────────────────────────
    Unknown action — return an error

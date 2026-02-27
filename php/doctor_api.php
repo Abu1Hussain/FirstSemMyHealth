@@ -445,6 +445,34 @@ $response['all_prescriptions'] = $allPrescriptions;
 $response['all_patients']     = $allPatients;
 $response['all_staff']        = $allStaff;
 
+/* ═══════════════════════════════
+   NOTIFICATIONS
+   ═══════════════════════════════ */
+$notifications = [];
+$stmt = $conn->prepare(
+    "SELECT notif_id, sender, topic, message, is_read, created_at 
+     FROM notifications 
+     WHERE target = 'all_users' 
+        OR target = 'all_doctors' 
+        OR target_user_id = ?
+     ORDER BY created_at DESC"
+);
+$stmt->bind_param("i", $userId);
+$stmt->execute();
+$res = $stmt->get_result();
+while ($row = $res->fetch_assoc()) {
+    $notifications[] = [
+        'id'      => $row['notif_id'],
+        'sender'  => $row['sender'],
+        'topic'   => $row['topic'],
+        'message' => $row['message'],
+        'is_read' => $row['is_read'],
+        'date'    => date('M d, Y h:i A', strtotime($row['created_at']))
+    ];
+}
+$stmt->close();
+$response['notifications'] = $notifications;
+
 
 /* ═══════════════════════════════
    SEND EVERYTHING BACK
