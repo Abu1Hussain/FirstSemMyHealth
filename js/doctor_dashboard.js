@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  const loadingOverlay = document.getElementById("loading-overlay");
+  const loadingOverlay = document.getElementById("loading-overlay") || { style: {} };
 
   let patientAdmissionsChartInstance, departmentPopularityChartInstance;
   let isCalendarRendered = false;
@@ -205,7 +205,7 @@ document.addEventListener("DOMContentLoaded", function () {
           }
 
           if (sidebar) {
-            const sidebarAvatarImg = sidebar.querySelector("img");
+            const sidebarAvatarImg = document.getElementById("sidebar-doc-img");
             if (sidebarAvatarImg)
               sidebarAvatarImg.src = responseData.user.image_url;
           }
@@ -220,6 +220,11 @@ document.addEventListener("DOMContentLoaded", function () {
               "text-white",
             );
           }
+        }
+
+        /* ── Initialize Presence Status ── */
+        if (responseData.user && responseData.user.presence_status) {
+          window.updatePresenceUI(responseData.user.presence_status);
         }
 
         /* ── Populate Profile Email & Specialization ── */
@@ -557,6 +562,41 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
 
+
+  /* ─────────────────────────────────────────────
+     renderAllAppointments(appointments)
+     Renders the full historical appointment directory
+     ───────────────────────────────────────────── */
+  function renderAllAppointments(appointments) {
+    // Simply to ensure no crash occurs and map data to any future historical tables if needed.
+    // If there's an #appointments-full-list container anywhere, we'd render it here.
+    const listContainer = document.getElementById("appointments-full-list");
+    if (!listContainer) return; // Silent return if element not instantiated on UI
+    
+    let allIter = [];
+    if(appointments.past) allIter = allIter.concat(appointments.past);
+    if(appointments.today) allIter = allIter.concat(appointments.today);
+    if(appointments.upcoming) allIter = allIter.concat(appointments.upcoming);
+
+    if (allIter.length === 0) {
+      listContainer.innerHTML = '<p class="text-gray-500 py-6 text-center">No historical appointments found.</p>';
+      return;
+    }
+    
+    let html = '<table class="appt-table"><thead><tr><th>Date</th><th>Patient</th><th>Type</th><th>Status</th></tr></thead><tbody>';
+    allIter.forEach((a) => {
+      const d = new Date(a.appointment_date).toLocaleDateString();
+      const statusBadge = a.status === 'completed' ? 'badge-green' : (a.status === 'pending' ? 'badge-yellow' : 'badge-blue');
+      html += `<tr>
+            <td>${d}</td>
+            <td><strong>${a.patient_name || '--'}</strong></td>
+            <td>${a.appointment_type || '--'}</td>
+            <td><span class="badge ${statusBadge}">${a.status || '--'}</span></td>
+        </tr>`;
+    });
+    html += "</tbody></table>";
+    listContainer.innerHTML = html;
+  };
 
   /* ─────────────────────────────────────────────
      switchModalTab(tabName)
@@ -1187,7 +1227,7 @@ document.addEventListener("DOMContentLoaded", function () {
       if (timeLeft <= 0) {
         clearInterval(timerInterval);
         timerDisplay.textContent = "00:00";
-        alert("Time is up!");
+        if (typeof Swal !== 'undefined') { Swal.fire({ toast: true, position: 'top-end', icon: 'warning', title: '⏰ Time is up!', showConfirmButton: false, timer: 3000 }); } else { alert("Time is up!"); }
         return;
       }
 
@@ -1593,3 +1633,72 @@ window.handleLogout = function () {
     }
   }
 };
+
+/* ═══════════════════════════════════════════════════════════
+   Doctor Presence System
+   ═══════════════════════════════════════════════════════════ */
+
+const PRESENCE_CONFIG = {
+  on_duty:          { emoji: '🩺', label: 'On Duty',          bg: 'bg-emerald-100', border: 'border-emerald-300', text: 'text-emerald-700', darkBg: 'dark:bg-emerald-900/30', darkBorder: 'dark:border-emerald-600', darkText: 'dark:text-emerald-400' },
+  in_consultation:  { emoji: '🚪', label: 'In Consultation',  bg: 'bg-rose-100',    border: 'border-rose-300',    text: 'text-rose-700',    darkBg: 'dark:bg-rose-900/30',    darkBorder: 'dark:border-rose-600',    darkText: 'dark:text-rose-400' },
+  on_break:         { emoji: '☕', label: 'On Break',          bg: 'bg-amber-100',   border: 'border-amber-300',   text: 'text-amber-700',   darkBg: 'dark:bg-amber-900/30',   darkBorder: 'dark:border-amber-600',   darkText: 'dark:text-amber-400' },
+  off_shift:        { emoji: '🌙', label: 'Off Shift',        bg: 'bg-slate-100',   border: 'border-slate-300',   text: 'text-slate-500',   darkBg: 'dark:bg-slate-900/30',   darkBorder: 'dark:border-slate-600',   darkText: 'dark:text-slate-400' }
+};
+
+window.updatePresenceUI = function(status) {
+  const config = PRESENCE_CONFIG[status] || PRESENCE_CONFIG.on_duty;
+  const btn = document.getElementById('presenceToggle');
+  const emoji = document.getElementById('presence-emoji');
+  const label = document.getElementById('presence-label');
+  if (!btn) return;
+
+  // Remove all presence classes
+  Object.values(PRESENCE_CONFIG).forEach(c => {
+    btn.classList.remove(c.bg, c.border, c.text, c.darkBg, c.darkBorder, c.darkText);
+  });
+
+  // Apply new classes
+  btn.classList.add(config.bg, config.border, config.text, config.darkBg, config.darkBorder, config.darkText);
+  if (emoji) emoji.textContent = config.emoji;
+  if (label) label.textContent = config.label;
+};
+
+window.setPresence = function(status) {
+  const formData = new FormData();
+  formData.append('action', 'update_presence');
+  formData.append('status', status);
+
+  fetch('../php/doctor_api.php', { method: 'POST', body: formData })
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === 'success') {
+        window.updatePresenceUI(status);
+        // Close the dropdown
+        document.getElementById('presenceDropdown')?.classList.add('hidden');
+        // Show toast if SweetAlert2 available
+        if (typeof Swal !== 'undefined') {
+          const config = PRESENCE_CONFIG[status];
+          Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: `${config.emoji} Status: ${config.label}`, showConfirmButton: false, timer: 2000, timerProgressBar: true });
+        }
+      }
+    })
+    .catch(() => {
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: 'Failed to update status', showConfirmButton: false, timer: 2000 });
+      }
+    });
+};
+
+window.togglePresenceDropdown = function() {
+  const dd = document.getElementById('presenceDropdown');
+  if (dd) dd.classList.toggle('hidden');
+};
+
+// Close presence dropdown on click outside
+document.addEventListener('click', function(e) {
+  const wrapper = document.getElementById('presence-wrapper');
+  const dd = document.getElementById('presenceDropdown');
+  if (wrapper && dd && !wrapper.contains(e.target)) {
+    dd.classList.add('hidden');
+  }
+});

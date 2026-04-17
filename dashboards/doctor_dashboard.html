@@ -15,7 +15,30 @@
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
     <script>
-        tailwind.config = { darkMode: 'class' }
+        if (localStorage.getItem('darkMode') === 'enabled') {
+            document.documentElement.classList.add('dark');
+        }
+        tailwind.config = { 
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            200: '#c7d2fe',
+                            300: '#a5b4fc',
+                            400: '#818cf8',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            800: '#3730a3',
+                            900: '#312e81',
+                        }
+                    }
+                }
+            }
+        };
     </script>
     <style>
         body { font-family: 'Inter', sans-serif; }
@@ -30,7 +53,8 @@
         .dark ::-webkit-scrollbar-thumb:hover { background: #718096; }
 
         /* ── Sidebar ── */
-        .sidebar { transition: width 0.3s ease-in-out; }
+        .sidebar { transition: width 0.3s ease-in-out; overflow-x: hidden; scrollbar-width: none; -ms-overflow-style: none; }
+        .sidebar::-webkit-scrollbar { display: none; }
         .sidebar-collapsed { width: 4.5rem; }
         .sidebar-expanded  { width: 16rem; }
         .sidebar-collapsed .sidebar-text,
@@ -163,27 +187,91 @@
         .schedule-reason { font-size: 12px; color: #6b7280; }
     </style>
 </head>
-<body class="flex h-screen overflow-hidden bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
+<body class="flex flex-col h-screen overflow-hidden bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
 
-    <!-- ── Loading Overlay ── -->
-    <div id="loading-overlay">
-        <div class="spinner"></div>
-    </div>
 
+
+    
     <!-- ══════════════════════════════════════
+         GLOBAL TOP HEADER
+    ══════════════════════════════════════ -->
+    <header class="h-20 w-full flex-shrink-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md shadow-sm border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-6 z-50">
+        <div class="flex items-center gap-4">
+            <a href="../index.html" class="flex items-center gap-3 cursor-pointer group pr-4 md:border-r border-gray-200 dark:border-gray-700">
+                <img src="../image/HealthcareNewIcon-removebg-preview.png" alt="MyHealth Logo" class="h-12 w-auto group-hover:scale-105 transition-transform" />
+                <span class="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-indigo-600 dark:from-primary-400 dark:to-indigo-400 tracking-tight">MyHealth</span>
+            </a>
+            <button id="sidebarToggle" class="flex p-2 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500">
+                <ion-icon name="menu-outline" class="text-3xl"></ion-icon>
+            </button>
+        </div>
+        <div class="flex items-center space-x-4">
+                <!-- Telemedicine Video -->
+                <button onclick="window.initTelemedicine()" class="flex relative p-2 rounded-full text-white bg-teal-500 hover:bg-teal-600 shadow-lg shadow-teal-500/30 focus:outline-none transition-transform hover:scale-110">
+                    <ion-icon name="videocam" class="text-xl"></ion-icon>
+                </button>
+                <!-- Telemedicine Call -->
+                <button onclick="openPhoneCallModal()" class="flex relative p-2 rounded-full text-white bg-blue-500 hover:bg-blue-600 shadow-lg shadow-blue-500/30 focus:outline-none transition-transform hover:scale-110">
+                    <ion-icon name="call" class="text-xl"></ion-icon>
+                </button>
+                <button id="darkModeToggle" class="flex p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none transition-all">
+                    <ion-icon name="moon-outline" id="darkModeIcon" class="text-xl"></ion-icon>
+                </button>
+                <button onclick="showSection('notifications')" class="flex relative p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none transition-all">
+                    <ion-icon name="notifications-outline" class="text-xl"></ion-icon>
+                    <span id="header-notif-badge" class="hidden absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
+                </button>
+                <!-- Doctor Presence Status -->
+                <div class="relative" id="presence-wrapper">
+                    <button id="presenceToggle" onclick="togglePresenceDropdown()" class="flex items-center gap-2 px-3 py-1.5 rounded-full border-2 transition-all duration-300 text-sm font-semibold cursor-pointer hover:shadow-md focus:outline-none bg-emerald-100 border-emerald-300 text-emerald-700 dark:bg-emerald-900/30 dark:border-emerald-600 dark:text-emerald-400">
+                        <span id="presence-emoji">🩺</span>
+                        <span id="presence-label" class="hidden md:inline">On Duty</span>
+                        <ion-icon name="chevron-down-outline" class="text-xs"></ion-icon>
+                    </button>
+                    <div id="presenceDropdown" class="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-2xl py-2 hidden ring-1 ring-black/5 dark:ring-white/10 z-30 border border-gray-100 dark:border-gray-700 overflow-hidden">
+                        <p class="px-4 py-1.5 text-[10px] font-bold uppercase text-gray-400 tracking-wider">Set Your Status</p>
+                        <button onclick="setPresence('on_duty')" class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors text-left">
+                            <span class="text-lg">🩺</span>
+                            <div><div class="text-sm font-semibold text-gray-800 dark:text-gray-100">On Duty</div><div class="text-[11px] text-gray-400">Ready for appointments</div></div>
+                        </button>
+                        <button onclick="setPresence('in_consultation')" class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors text-left">
+                            <span class="text-lg">🚪</span>
+                            <div><div class="text-sm font-semibold text-gray-800 dark:text-gray-100">In Consultation</div><div class="text-[11px] text-gray-400">Currently with a patient</div></div>
+                        </button>
+                        <button onclick="setPresence('on_break')" class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors text-left">
+                            <span class="text-lg">☕</span>
+                            <div><div class="text-sm font-semibold text-gray-800 dark:text-gray-100">On Break</div><div class="text-[11px] text-gray-400">Temporarily unavailable</div></div>
+                        </button>
+                        <button onclick="setPresence('off_shift')" class="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-900/20 transition-colors text-left">
+                            <span class="text-lg">🌙</span>
+                            <div><div class="text-sm font-semibold text-gray-800 dark:text-gray-100">Off Shift</div><div class="text-[11px] text-gray-400">Logged out / away</div></div>
+                        </button>
+                    </div>
+                </div>
+                <div class="relative">
+                    <button id="userMenuButton" class="flex items-center space-x-2 focus:outline-none p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all">
+                        <div class="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold" id="header-avatar">?</div>
+                        <span class="hidden md:inline text-sm font-medium text-gray-700 dark:text-gray-300" id="user-name">Loading...</span>
+                        <ion-icon name="chevron-down-outline" class="hidden md:inline text-xs text-gray-500 dark:text-gray-400"></ion-icon>
+                    </button>
+                    <!-- User Dropdown Menu -->
+                    <div id="userMenu" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl py-1 hidden ring-1 ring-black ring-opacity-5 z-20 border border-gray-100 dark:border-gray-700 animate-fade-in">
+                        <a href="javascript:void(0)" data-section="profile" class="sidebar-link block px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors">
+                            <ion-icon name="person-outline" class="mr-2 align-middle"></ion-icon> My Profile
+                        </a>
+                        <a href="javascript:void(0)" onclick="handleLogout()" class="block px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-gray-700 transition-colors border-t border-gray-100 dark:border-gray-700">
+                            <ion-icon name="log-out-outline" class="mr-2 align-middle"></ion-icon> Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden relative">
+<!-- ══════════════════════════════════════
          SIDEBAR
     ══════════════════════════════════════ -->
-    <aside id="sidebar" class="sidebar sidebar-expanded bg-white dark:bg-gray-800 shadow-xl flex flex-col space-y-2 border-r border-gray-200 dark:border-gray-700 fixed inset-y-0 left-0 z-30 overflow-y-auto">
-        <!-- Logo -->
-        <div class="h-16 flex items-center justify-center px-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-            <div class="flex items-center">
-                <svg class="h-10 w-10 text-blue-600 dark:text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-                </svg>
-                <span class="sidebar-logo-text ml-3 text-2xl font-bold text-gray-800 dark:text-white">MyHealth</span>
-            </div>
-        </div>
-
+    <aside id="sidebar" class="sidebar sidebar-expanded bg-white dark:bg-gray-800 shadow-xl flex flex-col space-y-2 border-r border-gray-200 dark:border-gray-700 absolute inset-y-0 left-0 z-30 overflow-y-auto">
         <!-- Nav Links -->
         <nav class="flex-grow px-2 space-y-1 pt-2">
             <a href="javascript:void(0)" data-section="dashboard" class="sidebar-link active flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 group transition-all">
@@ -226,9 +314,9 @@
                     <p class="text-xs text-gray-500 dark:text-gray-400">Doctor</p>
                 </div>
             </div>
-            <a href="javascript:void(0)" onclick="handleLogout()" class="w-full mt-3 flex items-center justify-center py-2 px-4 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                <ion-icon name="log-out-outline" class="text-lg mr-2"></ion-icon>
-                <span class="sidebar-text">Logout</span>
+            <a href="javascript:void(0)" onclick="handleLogout()" class="w-full mt-3 flex items-center justify-center py-2 border-2 border-red-500 rounded-xl text-sm font-bold text-red-600 dark:text-red-400 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 transition-all group overflow-hidden">
+                <ion-icon name="log-out-outline" class="text-xl flex-shrink-0 transition-colors"></ion-icon>
+                <span class="sidebar-text ml-2 whitespace-nowrap">Logout</span>
             </a>
         </div>
     </aside>
@@ -236,41 +324,9 @@
     <!-- ══════════════════════════════════════
          MAIN CONTENT
     ══════════════════════════════════════ -->
-    <div id="mainContent" class="flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ml-64">
+    <div id="mainContent" class="flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ml-64 h-full">
 
-        <!-- Top Header -->
-        <header class="h-16 bg-white dark:bg-gray-800 shadow-md flex items-center justify-between px-6 flex-shrink-0 border-b border-gray-200 dark:border-gray-700">
-            <div class="flex items-center">
-                <button id="sidebarToggle" class="flex p-2 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500">
-                    <ion-icon name="menu-outline" class="text-2xl"></ion-icon>
-                </button>
-            </div>
-            <div class="flex items-center space-x-4">
-                <button id="darkModeToggle" class="flex p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none transition-all">
-                    <ion-icon name="moon-outline" id="darkModeIcon" class="text-xl"></ion-icon>
-                </button>
-                <button onclick="showSection('notifications')" class="flex relative p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none transition-all">
-                    <ion-icon name="notifications-outline" class="text-xl"></ion-icon>
-                    <span id="header-notif-badge" class="hidden absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
-                </button>
-                <div class="relative">
-                    <button id="userMenuButton" class="flex items-center space-x-2 focus:outline-none p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all">
-                        <div class="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold" id="header-avatar">?</div>
-                        <span class="hidden md:inline text-sm font-medium text-gray-700 dark:text-gray-300" id="user-name">Loading...</span>
-                        <ion-icon name="chevron-down-outline" class="hidden md:inline text-xs text-gray-500 dark:text-gray-400"></ion-icon>
-                    </button>
-                    <!-- User Dropdown Menu -->
-                    <div id="userMenu" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl py-1 hidden ring-1 ring-black ring-opacity-5 z-20 border border-gray-100 dark:border-gray-700 animate-fade-in">
-                        <a href="javascript:void(0)" data-section="profile" class="sidebar-link block px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors">
-                            <ion-icon name="person-outline" class="mr-2 align-middle"></ion-icon> My Profile
-                        </a>
-                        <a href="javascript:void(0)" onclick="handleLogout()" class="block px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-gray-700 transition-colors border-t border-gray-100 dark:border-gray-700">
-                            <ion-icon name="log-out-outline" class="mr-2 align-middle"></ion-icon> Logout
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </header>
+        
 
         <!-- Content Body -->
         <main class="flex-1 overflow-x-hidden overflow-y-auto p-6 space-y-6">
@@ -333,7 +389,22 @@
                             <button class="text-blue-600 text-xs font-bold hover:underline" onclick="showSection('patients')">View All</button>
                         </div>
                         <div class="p-6" id="today-schedule">
-                            <p class="text-gray-400 text-center py-10">Preparing your schedule...</p>
+                            <div class="space-y-4">
+                                <div class="flex items-center gap-4">
+                                    <div class="skeleton skeleton-circle h-10 w-10"></div>
+                                    <div class="flex-grow space-y-2">
+                                        <div class="skeleton skeleton-text h-3 w-1/3"></div>
+                                        <div class="skeleton skeleton-text h-3 w-1/2"></div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-4">
+                                    <div class="skeleton skeleton-circle h-10 w-10"></div>
+                                    <div class="flex-grow space-y-2">
+                                        <div class="skeleton skeleton-text h-3 w-1/3"></div>
+                                        <div class="skeleton skeleton-text h-3 w-1/2"></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -341,7 +412,7 @@
                     <div class="space-y-6">
                         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
                             <h2 class="text-lg font-bold text-gray-800 dark:text-white mb-4">Quick Actions</h2>
-                            <div class="grid grid-cols-3 gap-3">
+                            <div class="grid grid-cols-4 gap-3">
                                 <button onclick="showSection('patients')" class="flex flex-col items-center gap-2 p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 hover:bg-blue-600 hover:text-white transition-all group">
                                     <ion-icon name="people-outline" class="text-xl group-hover:scale-125 transition-transform"></ion-icon>
                                     <span class="text-[10px] font-bold uppercase">Patients</span>
@@ -353,6 +424,10 @@
                                 <button onclick="showSection('records')" class="flex flex-col items-center gap-2 p-4 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all group">
                                     <ion-icon name="document-text-outline" class="text-xl group-hover:scale-125 transition-transform"></ion-icon>
                                     <span class="text-[10px] font-bold uppercase">Records</span>
+                                </button>
+                                <button onclick="window.initTelemedicine()" class="flex flex-col items-center gap-2 p-4 rounded-xl bg-teal-50 dark:bg-teal-900/20 text-teal-600 hover:bg-teal-600 hover:text-white transition-all group">
+                                    <ion-icon name="videocam-outline" class="text-xl group-hover:scale-125 transition-transform"></ion-icon>
+                                    <span class="text-[10px] font-bold uppercase">Telemedicine</span>
                                 </button>
                             </div>
                         </div>
@@ -457,7 +532,11 @@
                          <h2 class="text-lg font-bold text-gray-800 dark:text-white">Patient Directory</h2>
                     </div>
                     <div class="p-6 overflow-x-auto" id="patients-full-list">
-                         <p class="text-gray-500 text-center py-8">Loading patient directory...</p>
+                         <div class="space-y-4">
+                            <div class="skeleton skeleton-text h-4 w-full"></div>
+                            <div class="skeleton skeleton-text h-4 w-5/6"></div>
+                            <div class="skeleton skeleton-text h-4 w-3/4"></div>
+                         </div>
                     </div>
                 </div>
             </div>
@@ -477,7 +556,10 @@
                             <h2 class="text-lg font-bold text-gray-800 dark:text-white">Recent Meds Issued</h2>
                         </div>
                         <div class="p-6 overflow-x-auto" id="prescriptions-list-container">
-                             <p class="text-gray-500 py-4">Loading medications...</p>
+                             <div class="space-y-4">
+                                <div class="skeleton skeleton-text h-4 w-full"></div>
+                                <div class="skeleton skeleton-text h-4 w-3/4"></div>
+                             </div>
                         </div>
                     </div>
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
@@ -513,7 +595,10 @@
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-100 dark:border-gray-700">
                     <div class="p-6">
                         <div id="records-list-container" class="overflow-x-auto">
-                            <p class="text-gray-500 dark:text-gray-400">Loading records…</p>
+                            <div class="space-y-4 py-4">
+                                <div class="skeleton skeleton-text h-4 w-full"></div>
+                                <div class="skeleton skeleton-text h-4 w-5/6"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -638,10 +723,122 @@
                             <input type="text" id="form-diagnosis" placeholder="e.g. Common Cold" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                         </div>
                     </div>
-                    <div>
-                        <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Clinical Summary</label>
-                        <textarea id="form-summary" rows="2" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Enter findings..."></textarea>
+                    
+                    <!-- AI SCRIBE INJECTION -->
+                    <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mt-2 relative">
+                        <div class="flex justify-between items-center mb-2">
+                            <h4 class="text-xs font-bold text-blue-800 dark:text-blue-300 uppercase flex items-center gap-1">
+                                <ion-icon name="sparkles"></ion-icon> Gemini AI Scribe
+                            </h4>
+                            <button type="button" id="btn-start-scribe" onclick="startScribeDictation()" class="bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-md flex items-center gap-1 transition-all">
+                                <ion-icon name="mic"></ion-icon> Record Audio
+                            </button>
+                        </div>
+                        <p id="scribe-status" class="text-[10px] text-blue-600 dark:text-blue-400 mb-2">Dictate your notes or patient conversation. AI will format it.</p>
+                        <textarea id="scribe-transcript" rows="2" class="w-full bg-white dark:bg-gray-800 border placeholder-blue-300 border-blue-100 dark:border-blue-700 rounded-lg px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Transcript will appear here..."></textarea>
+                        
+                        <button type="button" id="btn-generate-soap" onclick="generateSOAP()" class="w-full mt-2 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold rounded-lg transition-all hidden">
+                            Format to SOAP Notes
+                        </button>
                     </div>
+
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">Clinical Summary (SOAP)</label>
+                        <textarea id="form-summary" rows="4" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Enter findings or let AI Scribe auto-fill this..."></textarea>
+                    </div>
+
+            <script>
+                // AI Scribe Logic (Web Speech API)
+                let recognition;
+                let isRecording = false;
+
+                function startScribeDictation() {
+                    if (!('webkitSpeechRecognition' in window)) {
+                        Swal.fire('Error', 'Your browser does not support Speech Recognition. Try Chrome.', 'error');
+                        return;
+                    }
+
+                    if(isRecording) {
+                        recognition.stop();
+                        return;
+                    }
+
+                    recognition = new webkitSpeechRecognition();
+                    recognition.continuous = true;
+                    recognition.interimResults = true;
+
+                    const statusTxt = document.getElementById('scribe-status');
+                    const transcriptBox = document.getElementById('scribe-transcript');
+                    const recordBtn = document.getElementById('btn-start-scribe');
+                    const soapBtn = document.getElementById('btn-generate-soap');
+
+                    recognition.onstart = function() {
+                        isRecording = true;
+                        statusTxt.innerHTML = '<span class="text-red-500 animate-pulse">🔴 Listening...</span>';
+                        recordBtn.innerHTML = '<ion-icon name="stop"></ion-icon> Stop Scribe';
+                        recordBtn.classList.replace('bg-red-500', 'bg-gray-700');
+                    };
+
+                    recognition.onresult = function(event) {
+                        let finalTranscript = '';
+                        for (let i = event.resultIndex; i < event.results.length; ++i) {
+                            if (event.results[i].isFinal) {
+                                finalTranscript += event.results[i][0].transcript;
+                            }
+                        }
+                        if(finalTranscript) {
+                            transcriptBox.value += finalTranscript + ' ';
+                        }
+                    };
+
+                    recognition.onerror = function(event) {
+                        console.error("Speech error", event);
+                    };
+
+                    recognition.onend = function() {
+                        isRecording = false;
+                        statusTxt.innerText = 'Dictation complete. Ready for formatting.';
+                        recordBtn.innerHTML = '<ion-icon name="mic"></ion-icon> Record Audio';
+                        recordBtn.classList.replace('bg-gray-700', 'bg-red-500');
+                        
+                        if(transcriptBox.value.trim().length > 10) {
+                            soapBtn.classList.remove('hidden');
+                        }
+                    };
+
+                    recognition.start();
+                }
+
+                async function generateSOAP() {
+                    const transcript = document.getElementById('scribe-transcript').value;
+                    const statusTxt = document.getElementById('scribe-status');
+                    
+                    statusTxt.innerHTML = '<span class="animate-pulse">✨ AI is structuring clinical notes...</span>';
+                    document.getElementById('btn-generate-soap').disabled = true;
+
+                    try {
+                        const res = await fetch('../Ai/clinical_scribe.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ transcript })
+                        });
+                        const data = await res.json();
+                        
+                        if(data.error) throw new Error(data.error);
+
+                        // Format into form summary
+                        const soap = data.soap;
+                        document.getElementById('form-summary').value = 
+                            `S: ${soap.subjective}\nO: ${soap.objective}\nA: ${soap.assessment}\nP: ${soap.plan}`;
+                        
+                        statusTxt.innerHTML = '<span class="text-green-600">✅ SOAP Note Generated successfully.</span>';
+                    } catch(err) {
+                        statusTxt.innerHTML = `<span class="text-red-600">❌ Error: ${err.message}</span>`;
+                    } finally {
+                        document.getElementById('btn-generate-soap').disabled = false;
+                    }
+                }
+            </script>
                     <div class="border-t border-gray-100 dark:border-gray-700 pt-3">
                         <label class="flex items-center gap-2 mb-2 cursor-pointer">
                             <input type="checkbox" id="add-prescription-toggle" class="rounded border-gray-300 text-blue-600">
@@ -779,10 +976,265 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 
+    <!-- ── TELEMEDICINE MODAL (WebRTC) ── -->
+    <div id="telemed-modal" class="fixed inset-0 z-[3000] overflow-hidden hidden bg-gray-950/95 backdrop-blur-xl flex items-center justify-center">
+        <!-- Ambient glow background -->
+        <div class="absolute inset-0 overflow-hidden pointer-events-none">
+            <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-teal-500/10 rounded-full blur-[120px] animate-pulse"></div>
+            <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-[120px] animate-pulse" style="animation-delay:1s"></div>
+        </div>
+
+        <div class="relative w-full max-w-6xl p-4 md:p-6">
+            <!-- Top Bar -->
+            <div class="flex items-center justify-between mb-3 px-2">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2 bg-white/10 backdrop-blur-md rounded-full px-4 py-2 border border-white/10">
+                        <span class="relative flex h-2.5 w-2.5">
+                            <span id="vc-live-dot" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                        </span>
+                        <span id="vc-status-label" class="text-white text-xs font-semibold tracking-wider uppercase">Ready</span>
+                    </div>
+                    <div id="vc-timer-badge" class="hidden bg-white/10 backdrop-blur-md rounded-full px-4 py-2 border border-white/10">
+                        <span id="vc-call-timer" class="text-white text-xs font-mono tabular-nums">00:00</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-gray-400 text-xs font-medium hidden md:block">MyHealth Telemedicine</span>
+                    <button onclick="window.endTelemedicine()" class="p-2.5 bg-white/10 hover:bg-red-600 rounded-full text-white/70 hover:text-white shadow-xl transition-all hover:scale-110 border border-white/10 hover:border-red-500">
+                        <ion-icon name="close" class="text-xl"></ion-icon>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Video Container -->
+            <div class="relative rounded-[1.5rem] overflow-hidden shadow-[0_0_80px_rgba(45,212,191,0.15)] border border-white/10">
+                <!-- Remote Video (Full) -->
+                <div class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 aspect-video flex items-center justify-center relative">
+                    <video id="remote-video" class="w-full h-full object-cover absolute inset-0" autoplay playsinline></video>
+                    <!-- Waiting State Overlay -->
+                    <div id="vc-waiting-overlay" class="absolute inset-0 flex flex-col items-center justify-center z-10 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+                        <div class="relative mb-6">
+                            <div class="absolute inset-0 rounded-full bg-teal-500/20 animate-ping"></div>
+                            <div class="relative h-24 w-24 rounded-full bg-gradient-to-br from-teal-400 to-indigo-500 flex items-center justify-center shadow-lg shadow-teal-500/20 border-4 border-white/10">
+                                <ion-icon name="videocam" class="text-4xl text-white"></ion-icon>
+                            </div>
+                        </div>
+                        <p class="text-white text-lg font-semibold mb-1">Ready to start consultation</p>
+                        <p class="text-gray-400 text-sm">Click the green button to begin the call</p>
+                    </div>
+                </div>
+
+                <!-- Local Video (Picture-in-Picture) -->
+                <div class="absolute bottom-20 right-5 md:bottom-24 md:right-6 w-36 md:w-52 aspect-video bg-gray-800 rounded-2xl overflow-hidden shadow-2xl border-2 border-white/20 z-20 group cursor-move hover:border-teal-400/50 transition-all hover:shadow-teal-500/20 hover:shadow-xl">
+                    <video id="local-video" class="w-full h-full object-cover" autoplay muted playsinline></video>
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="absolute bottom-1.5 left-2 text-[10px] text-white/80 font-medium bg-black/50 rounded-full px-2 py-0.5 backdrop-blur-sm">You</div>
+                </div>
+
+                <!-- Controls Bar -->
+                <div class="absolute bottom-4 md:bottom-5 left-1/2 transform -translate-x-1/2 flex items-center gap-3 md:gap-4 bg-black/50 backdrop-blur-xl px-5 md:px-8 py-3 md:py-4 rounded-2xl z-20 border border-white/10 shadow-2xl">
+                    <!-- Mic Toggle -->
+                    <button id="vc-mic-btn" onclick="toggleVCMic()" class="w-12 h-12 md:w-14 md:h-14 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-all hover:scale-110 border border-white/5">
+                        <ion-icon name="mic-outline" class="text-xl md:text-2xl"></ion-icon>
+                    </button>
+                    <!-- Camera Toggle -->
+                    <button id="vc-cam-btn" onclick="toggleVCCam()" class="w-12 h-12 md:w-14 md:h-14 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-all hover:scale-110 border border-white/5">
+                        <ion-icon name="videocam-outline" class="text-xl md:text-2xl"></ion-icon>
+                    </button>
+                    <!-- Screen Share -->
+                    <button id="vc-share-btn" class="w-12 h-12 md:w-14 md:h-14 bg-white/10 hover:bg-teal-500 rounded-full flex items-center justify-center text-white transition-all hover:scale-110 border border-white/5 hidden md:flex">
+                        <ion-icon name="desktop-outline" class="text-xl md:text-2xl"></ion-icon>
+                    </button>
+                    <!-- Divider -->
+                    <div class="w-px h-8 bg-white/20 hidden md:block"></div>
+                    <!-- Start Call -->
+                    <button onclick="window.telemedSession.startCall()" class="w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-teal-400 to-emerald-600 hover:from-teal-300 hover:to-emerald-500 rounded-full flex items-center justify-center text-white shadow-lg shadow-teal-500/30 transition-all hover:scale-110 ring-4 ring-teal-500/20">
+                        <ion-icon name="call" class="text-2xl md:text-3xl"></ion-icon>
+                    </button>
+                    <!-- End Call -->
+                    <button onclick="window.endTelemedicine()" class="w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-red-500 to-rose-700 hover:from-red-400 hover:to-rose-600 rounded-full flex items-center justify-center text-white shadow-lg shadow-red-500/30 transition-all hover:scale-110 ring-4 ring-red-500/20">
+                        <ion-icon name="call" class="text-2xl md:text-3xl rotate-[135deg]"></ion-icon>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Video Call Controls Logic -->
+    <script>
+      let vcMicMuted = false, vcCamOff = false, vcTimerInterval = null, vcSeconds = 0;
+
+      function toggleVCMic() {
+        vcMicMuted = !vcMicMuted;
+        const btn = document.getElementById('vc-mic-btn');
+        if (vcMicMuted) {
+          btn.classList.replace('bg-white/10', 'bg-red-500/80');
+          btn.querySelector('ion-icon').setAttribute('name', 'mic-off-outline');
+        } else {
+          btn.classList.replace('bg-red-500/80', 'bg-white/10');
+          btn.querySelector('ion-icon').setAttribute('name', 'mic-outline');
+        }
+      }
+
+      function toggleVCCam() {
+        vcCamOff = !vcCamOff;
+        const btn = document.getElementById('vc-cam-btn');
+        if (vcCamOff) {
+          btn.classList.replace('bg-white/10', 'bg-red-500/80');
+          btn.querySelector('ion-icon').setAttribute('name', 'videocam-off-outline');
+        } else {
+          btn.classList.replace('bg-red-500/80', 'bg-white/10');
+          btn.querySelector('ion-icon').setAttribute('name', 'videocam-outline');
+        }
+      }
+
+      const vcObserver = new MutationObserver(() => {
+        const modal = document.getElementById('telemed-modal');
+        if (!modal.classList.contains('hidden')) {
+          vcSeconds = 0;
+          document.getElementById('vc-status-label').textContent = 'Ready';
+          document.getElementById('vc-waiting-overlay').classList.remove('hidden');
+          document.getElementById('vc-timer-badge').classList.add('hidden');
+          setTimeout(() => {
+            if (!modal.classList.contains('hidden')) {
+              document.getElementById('vc-status-label').textContent = 'Live';
+              document.getElementById('vc-waiting-overlay').classList.add('hidden');
+              document.getElementById('vc-timer-badge').classList.remove('hidden');
+              vcTimerInterval = setInterval(() => {
+                vcSeconds++;
+                const m = String(Math.floor(vcSeconds / 60)).padStart(2, '0');
+                const s = String(vcSeconds % 60).padStart(2, '0');
+                document.getElementById('vc-call-timer').textContent = m + ':' + s;
+              }, 1000);
+            }
+          }, 2500);
+        } else {
+          clearInterval(vcTimerInterval);
+          vcMicMuted = false; vcCamOff = false;
+        }
+      });
+      const telemedModal = document.getElementById('telemed-modal');
+      if (telemedModal) vcObserver.observe(telemedModal, { attributes: true, attributeFilter: ['class'] });
+    </script>
+
+    <!-- ── PHONE CALL MODAL ── -->
+    <div id="phone-call-modal" class="fixed inset-0 z-[3000] overflow-hidden hidden bg-gray-900/95 backdrop-blur-md flex items-center justify-center">
+        <div class="relative w-full max-w-md p-6">
+            <button onclick="endPhoneCall()" class="absolute top-2 right-2 z-10 m-4 p-3 bg-red-600/80 rounded-full text-white hover:bg-red-700 shadow-xl transition-transform hover:scale-110">
+                <ion-icon name="close" class="text-2xl"></ion-icon>
+            </button>
+            <div class="bg-gradient-to-b from-gray-800 to-gray-900 rounded-3xl overflow-hidden shadow-2xl border border-gray-700 p-8 flex flex-col items-center text-center">
+                <div class="relative mb-6">
+                    <div id="phone-call-pulse" class="absolute inset-0 rounded-full bg-blue-500/20 animate-ping"></div>
+                    <div class="relative h-28 w-28 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30 border-4 border-white/10">
+                        <ion-icon name="person" class="text-5xl text-white"></ion-icon>
+                    </div>
+                </div>
+                <h3 id="phone-call-name" class="text-2xl font-bold text-white mb-1">Patient</h3>
+                <p id="phone-call-status" class="text-blue-400 text-sm font-medium mb-6 tracking-wide">Calling...</p>
+                <div id="phone-call-timer" class="text-3xl font-mono text-gray-300 mb-8 tabular-nums hidden">00:00</div>
+                <div id="phone-audio-bars" class="flex items-end gap-1 h-10 mb-8 hidden">
+                    <div class="w-1 bg-blue-400 rounded-full animate-pulse" style="height:30%;animation-delay:0s"></div>
+                    <div class="w-1 bg-blue-400 rounded-full animate-pulse" style="height:60%;animation-delay:0.15s"></div>
+                    <div class="w-1 bg-blue-400 rounded-full animate-pulse" style="height:90%;animation-delay:0.3s"></div>
+                    <div class="w-1 bg-indigo-400 rounded-full animate-pulse" style="height:100%;animation-delay:0.1s"></div>
+                    <div class="w-1 bg-indigo-400 rounded-full animate-pulse" style="height:70%;animation-delay:0.25s"></div>
+                    <div class="w-1 bg-blue-400 rounded-full animate-pulse" style="height:50%;animation-delay:0.05s"></div>
+                    <div class="w-1 bg-blue-400 rounded-full animate-pulse" style="height:80%;animation-delay:0.2s"></div>
+                    <div class="w-1 bg-indigo-400 rounded-full animate-pulse" style="height:40%;animation-delay:0.35s"></div>
+                    <div class="w-1 bg-blue-400 rounded-full animate-pulse" style="height:65%;animation-delay:0.12s"></div>
+                </div>
+                <div class="flex items-center gap-6">
+                    <button id="phone-mute-btn" onclick="togglePhoneMute()" class="w-14 h-14 bg-gray-700 hover:bg-gray-600 rounded-full flex items-center justify-center text-white shadow-lg transition-all hover:scale-110">
+                        <ion-icon name="mic-outline" class="text-2xl"></ion-icon>
+                    </button>
+                    <button onclick="endPhoneCall()" class="w-16 h-16 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center text-white shadow-lg transition-all hover:scale-110 ring-4 ring-red-600/30">
+                        <ion-icon name="call" class="text-3xl rotate-[135deg]"></ion-icon>
+                    </button>
+                    <button id="phone-speaker-btn" onclick="togglePhoneSpeaker()" class="w-14 h-14 bg-gray-700 hover:bg-gray-600 rounded-full flex items-center justify-center text-white shadow-lg transition-all hover:scale-110">
+                        <ion-icon name="volume-high-outline" class="text-2xl"></ion-icon>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Phone Call Logic -->
+    <script>
+      let phoneCallInterval = null;
+      let phoneCallSeconds = 0;
+      let phoneMuted = false;
+      let phoneSpeaker = false;
+
+      function openPhoneCallModal() {
+        const modal = document.getElementById('phone-call-modal');
+        modal.classList.remove('hidden');
+        document.getElementById('phone-call-status').textContent = 'Calling...';
+        document.getElementById('phone-call-timer').classList.add('hidden');
+        document.getElementById('phone-audio-bars').classList.add('hidden');
+        document.getElementById('phone-call-pulse').classList.remove('hidden');
+        phoneCallSeconds = 0;
+        setTimeout(() => {
+          if (!modal.classList.contains('hidden')) {
+            document.getElementById('phone-call-status').textContent = 'Connected';
+            document.getElementById('phone-call-timer').classList.remove('hidden');
+            document.getElementById('phone-audio-bars').classList.remove('hidden');
+            document.getElementById('phone-call-pulse').classList.add('hidden');
+            phoneCallInterval = setInterval(() => {
+              phoneCallSeconds++;
+              const m = String(Math.floor(phoneCallSeconds / 60)).padStart(2, '0');
+              const s = String(phoneCallSeconds % 60).padStart(2, '0');
+              document.getElementById('phone-call-timer').textContent = m + ':' + s;
+            }, 1000);
+          }
+        }, 2000);
+      }
+
+      function endPhoneCall() {
+        clearInterval(phoneCallInterval);
+        phoneCallInterval = null;
+        document.getElementById('phone-call-modal').classList.add('hidden');
+        phoneMuted = false; phoneSpeaker = false;
+      }
+
+      function togglePhoneMute() {
+        phoneMuted = !phoneMuted;
+        const btn = document.getElementById('phone-mute-btn');
+        if (phoneMuted) {
+          btn.classList.replace('bg-gray-700', 'bg-red-500');
+          btn.classList.replace('hover:bg-gray-600', 'hover:bg-red-600');
+          btn.querySelector('ion-icon').setAttribute('name', 'mic-off-outline');
+        } else {
+          btn.classList.replace('bg-red-500', 'bg-gray-700');
+          btn.classList.replace('hover:bg-red-600', 'hover:bg-gray-600');
+          btn.querySelector('ion-icon').setAttribute('name', 'mic-outline');
+        }
+      }
+
+      function togglePhoneSpeaker() {
+        phoneSpeaker = !phoneSpeaker;
+        const btn = document.getElementById('phone-speaker-btn');
+        if (phoneSpeaker) {
+          btn.classList.replace('bg-gray-700', 'bg-blue-500');
+          btn.classList.replace('hover:bg-gray-600', 'hover:bg-blue-600');
+        } else {
+          btn.classList.replace('bg-blue-500', 'bg-gray-700');
+          btn.classList.replace('hover:bg-blue-600', 'hover:bg-gray-600');
+        }
+      }
+    </script>
+
+    <!-- WebRTC Telemedicine Engine -->
+    <script src="../js/webrtc-telemed.js"></script>
+
     <!-- Doctor Dashboard Backend & UI Script -->
     <script src="../js/doctor_dashboard.js"></script>
 
     <!-- AI Care Navigator Widget -->
     <script src="../js/ai-widget.js"></script>
+    <script src="../js/custom_cursor.js"></script>
+
+    </div>
 </body>
 </html>

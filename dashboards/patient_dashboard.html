@@ -1,26 +1,48 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" class="">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyHealth – Patient Dashboard</title>
+    <title>MyHealth â€“ Patient Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-    <link rel="stylesheet" href="../css/dashboard.css">
 
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
     <script>
-        tailwind.config = { darkMode: 'class' }
+        if (localStorage.getItem('darkMode') === 'enabled') {
+            document.documentElement.classList.add('dark');
+        }
+        tailwind.config = { 
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            200: '#c7d2fe',
+                            300: '#a5b4fc',
+                            400: '#818cf8',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            800: '#3730a3',
+                            900: '#312e81',
+                        }
+                    }
+                }
+            }
+        };
     </script>
     <style>
         body { font-family: 'Inter', sans-serif; }
 
-        /* ── Scrollbar ── */
+        /* â”€â”€ Scrollbar â”€â”€ */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
         ::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
@@ -29,25 +51,25 @@
         .dark ::-webkit-scrollbar-thumb { background: #4a5568; }
         .dark ::-webkit-scrollbar-thumb:hover { background: #718096; }
 
-        /* ── Sidebar ── */
-        .sidebar { transition: width 0.3s ease-in-out; }
+        /* â”€â”€ Sidebar â”€â”€ */
+        .sidebar { transition: width 0.3s ease-in-out; overflow-x: hidden; scrollbar-width: none; -ms-overflow-style: none; }
+        .sidebar::-webkit-scrollbar { display: none; }
         .sidebar-collapsed { width: 4.5rem; }
         .sidebar-expanded  { width: 16rem; }
         .sidebar-collapsed .sidebar-text,
         .sidebar-collapsed .sidebar-logo-text,
-        .sidebar-collapsed .profile-info { visibility: hidden; width: 0; opacity: 0; position: absolute; pointer-events: none; }
-        .sidebar-collapsed .sidebar-link { justify-content: center; padding-left: 0; padding-right: 0; width: 3.5rem; margin: 0 auto; height: 3.5rem; }
-        .sidebar-collapsed .sidebar-link ion-icon { margin: 0; font-size: 1.8rem; flex-shrink: 0; }
+        .sidebar-collapsed .profile-info { display: none; }
         .sidebar-expanded .sidebar-text,
         .sidebar-expanded .sidebar-logo-text,
         .sidebar-expanded .profile-info { display: inline; }
         .sidebar-expanded .sidebar-logo-text { display: block; }
+        .sidebar-collapsed .badge-new { display: none !important; }
 
-        /* ── Section Visibility ── */
+        /* â”€â”€ Section Visibility â”€â”€ */
         .content-section { display: none; }
         .content-section.active { display: block; }
 
-        /* ── Loading Overlay ── */
+        /* â”€â”€ Loading Overlay â”€â”€ */
         #loading-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(255,255,255,0.85); z-index: 9999;
@@ -62,7 +84,7 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ── Table Styling ── */
+        /* â”€â”€ Table Styling â”€â”€ */
         .appt-table { width: 100%; border-collapse: collapse; font-size: 14px; }
         .appt-table thead tr { background: transparent !important; }
         .appt-table thead th { padding: 12px 14px; text-align: left; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: #374151 !important; border-bottom: 1px solid #e5e7eb !important; background: transparent !important; }
@@ -73,7 +95,7 @@
         .dark .appt-table tbody tr:hover { background: #1f2937; }
         .dark .appt-table tbody tr:hover td { background: #1f2937 !important; color: #fff; }
 
-        /* ── Badges ── */
+        /* â”€â”€ Badges â”€â”€ */
         .badge { padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
         .badge-green  { background: #dcfce7; color: #166534; }
         .badge-red    { background: #fee2e2; color: #991b1b; }
@@ -86,7 +108,7 @@
         .dark .badge-blue   { background: #1e40af; color: #bfdbfe; }
         .dark .badge-gray   { background: #374151; color: #d1d5db; }
 
-        /* ── Timeline Slot Styling ── */
+        /* â”€â”€ Timeline Slot Styling â”€â”€ */
         .timeline-hour {
             background: #fff;
             border: 1px solid #e2e8f0;
@@ -164,7 +186,7 @@
         
         /* see more btn */
         #btn-toggle-doctors.active ion-icon { transform: rotate(180deg); }
-        /* ── Doctor Card Mini ── */
+        /* â”€â”€ Doctor Card Mini â”€â”€ */
         .doctor-card-mini {
             background: #fff;
             border-radius: 16px;
@@ -183,7 +205,7 @@
             border-color: #4f46e5;
         }
 
-        /* ── Global Interactive Refinements ── */
+        /* â”€â”€ Global Interactive Refinements â”€â”€ */
         .sidebar-link {
             transition: var(--transition) !important;
         }
@@ -216,7 +238,7 @@
 
 
 
-        /* ── Dark Mode Form Fixes ── */
+        /* â”€â”€ Dark Mode Form Fixes â”€â”€ */
         .dark select option {
             background-color: #1f2937;
             color: #fff;
@@ -233,94 +255,36 @@
         }
     </style>
 </head>
-<body class="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
+<body class="flex flex-col h-screen overflow-hidden bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
 
-    <!-- ── Loading Overlay ── -->
-    <div id="loading-overlay">
-        <div class="spinner"></div>
-    </div>
 
-    <!-- ══════════════════════════════════════
-         SIDEBAR
-    ══════════════════════════════════════ -->
-    <aside id="sidebar" class="sidebar sidebar-expanded bg-white dark:bg-gray-800 shadow-xl flex flex-col space-y-2 border-r border-gray-200 dark:border-gray-700 fixed inset-y-0 left-0 z-30 overflow-y-auto">
-        <!-- Logo -->
-        <div class="h-16 flex items-center justify-center px-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-            <div class="flex items-center">
-                <svg class="h-10 w-10 text-blue-600 dark:text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-                </svg>
-                <span class="sidebar-logo-text ml-3 text-2xl font-bold text-gray-800 dark:text-white">MyHealth</span>
-            </div>
+
+    
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+         GLOBAL TOP HEADER
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <header class="h-20 w-full flex-shrink-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md shadow-sm border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-6 z-50">
+        <div class="flex items-center gap-4">
+            <a href="../index.html" class="flex items-center gap-3 cursor-pointer group pr-4 md:border-r border-gray-200 dark:border-gray-700">
+                <img src="../image/HealthcareNewIcon-removebg-preview.png" alt="MyHealth Logo" class="h-12 w-auto group-hover:scale-105 transition-transform" />
+                <span class="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-indigo-600 dark:from-primary-400 dark:to-indigo-400 tracking-tight">MyHealth</span>
+            </a>
+            <button id="sidebarToggle" class="flex p-2 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500">
+                <ion-icon name="menu-outline" class="text-3xl"></ion-icon>
+            </button>
         </div>
-
-        <!-- Nav Links -->
-        <nav class="flex-grow px-2 space-y-1 pt-2">
-            <a href="javascript:void(0)" data-view="dashboard" class="sidebar-link active flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-colors">
-                <ion-icon name="grid-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
-                <span class="sidebar-text ml-3 text-sm font-medium">Dashboard</span>
-            </a>
-            <a href="javascript:void(0)" data-view="appointments" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-colors">
-                <ion-icon name="calendar-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
-                <span class="sidebar-text ml-3 text-sm font-medium">Appointments</span>
-            </a>
-            <a href="javascript:void(0)" data-view="records" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-colors">
-                <ion-icon name="document-text-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
-                <span class="sidebar-text ml-3 text-sm font-medium">Health Records</span>
-            </a>
-            <a href="javascript:void(0)" data-view="prescriptions" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-colors">
-                <ion-icon name="flask-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
-                <span class="sidebar-text ml-3 text-sm font-medium">Prescriptions</span>
-            </a>
-            <a href="javascript:void(0)" data-view="notifications" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-colors">
-                <ion-icon name="notifications-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
-                <span class="sidebar-text ml-3 text-sm font-medium">Notifications <span id="notif-badge" class="hidden ml-2 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full"></span></span>
-            </a>
-            <a href="javascript:void(0)" onclick="if(window.openAIWidget) window.openAIWidget()" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-colors">
-                <ion-icon name="chatbubble-ellipses-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
-                <span class="sidebar-text ml-3 text-sm font-medium">AI Helper</span>
-            </a>
-            <a href="javascript:void(0)" data-view="profile" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-colors">
-                <ion-icon name="person-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
-                <span class="sidebar-text ml-3 text-sm font-medium">My Profile</span>
-            </a>
-        </nav>
-
-        <!-- Bottom: User Info + Logout -->
-        <div class="mt-auto p-4 border-t border-gray-200 dark:border-gray-700">
-            <div class="flex items-center">
-                <div id="user-initial-sidebar" class="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">?</div>
-                <div class="profile-info ml-3">
-                    <p id="sidebar-user-name" class="text-sm font-medium text-gray-800 dark:text-white">Loading…</p>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">Patient Account</p>
-                </div>
-            </div>
-            <a href="javascript:void(0)" onclick="handleLogout()" class="w-full mt-3 flex items-center justify-center py-2 px-4 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                <ion-icon name="log-out-outline" class="text-lg mr-2"></ion-icon>
-                <span class="sidebar-text">Logout</span>
-            </a>
-        </div>
-    </aside>
-
-    <!-- ══════════════════════════════════════
-         MAIN CONTENT
-    ══════════════════════════════════════ -->
-    <div id="mainContent" class="flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ml-64">
-
-        <!-- Top Header -->
-        <header class="h-16 bg-white dark:bg-gray-800 shadow-md flex items-center justify-between px-6 flex-shrink-0 border-b border-gray-200 dark:border-gray-700 z-20">
-            <div class="flex items-center">
-                <button id="sidebarToggle" class="flex p-2 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none">
-                    <ion-icon name="menu-outline" class="text-2xl"></ion-icon>
-                </button>
-                <h2 class="ml-4 text-lg font-semibold text-gray-700 dark:text-gray-200 hidden sm:block">
-                    Welcome back, <span id="welcome-name" class="text-blue-600 dark:text-blue-400">Patient</span>! 👋
-                </h2>
-            </div>
-            <div class="flex items-center space-x-4">
+        <div class="flex items-center space-x-4">
                 <!-- Dark Mode -->
                 <button id="darkModeToggle" class="flex p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none transition-colors">
                     <ion-icon name="moon-outline" id="darkModeIcon" class="text-xl"></ion-icon>
+                </button>
+                <!-- Telemedicine Video -->
+                <button onclick="window.initTelemedicine()" class="flex relative p-2 rounded-full text-white bg-teal-500 hover:bg-teal-600 shadow-lg shadow-teal-500/30 focus:outline-none">
+                    <ion-icon name="videocam" class="text-xl"></ion-icon>
+                </button>
+                <!-- Telemedicine Call -->
+                <button onclick="openPhoneCallModal()" class="flex relative p-2 rounded-full text-white bg-blue-500 hover:bg-blue-600 shadow-lg shadow-blue-500/30 focus:outline-none transition-transform hover:scale-110">
+                    <ion-icon name="call" class="text-xl"></ion-icon>
                 </button>
                 <!-- Notifications -->
                 <button onclick="showSection('notifications')" class="flex relative p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none">
@@ -340,14 +304,84 @@
                     </div>
                 </div>
             </div>
-        </header>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden relative">
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+         SIDEBAR
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <aside id="sidebar" class="sidebar sidebar-expanded bg-white dark:bg-gray-800 shadow-xl flex flex-col space-y-2 border-r border-gray-200 dark:border-gray-700 absolute inset-y-0 left-0 z-30 overflow-y-auto">
+        <!-- Nav Links -->
+        <nav class="flex-grow px-2 space-y-1 pt-2">
+            <a href="javascript:void(0)" data-view="dashboard" class="sidebar-link active flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-all">
+                <ion-icon name="grid-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
+                <span class="sidebar-text ml-3 text-sm font-medium">Dashboard</span>
+            </a>
+            <a href="javascript:void(0)" data-view="appointments" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-all">
+                <ion-icon name="calendar-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
+                <span class="sidebar-text ml-3 text-sm font-medium">Appointments</span>
+            </a>
+            <a href="javascript:void(0)" data-view="records" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-all">
+                <ion-icon name="document-text-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
+                <span class="sidebar-text ml-3 text-sm font-medium">Health Records</span>
+            </a>
+            <a href="javascript:void(0)" data-view="prescriptions" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-all">
+                <ion-icon name="flask-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
+                <span class="sidebar-text ml-3 text-sm font-medium">Prescriptions</span>
+            </a>
+            <a href="javascript:void(0)" data-view="lab-analyzer" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-colors relative">
+                <ion-icon name="scan-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
+                <span class="sidebar-text ml-3 text-sm font-medium">AI Lab Analyzer</span>
+                <span class="badge-new hidden md:inline-block ml-2 bg-indigo-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest absolute right-2">New</span>
+            </a>
+            <a href="javascript:void(0)" data-view="billing" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-all relative">
+                <ion-icon name="card-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
+                <span class="sidebar-text ml-3 text-sm font-medium">Billing</span>
+                <span class="badge-new hidden md:inline-block ml-2 bg-indigo-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-widest absolute right-2">New</span>
+            </a>
+            <a href="javascript:void(0)" data-view="notifications" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-all">
+                <ion-icon name="notifications-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
+                <span class="sidebar-text ml-3 text-sm font-medium">Notifications <span id="notif-badge" class="hidden ml-2 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full"></span></span>
+            </a>
+            <a href="javascript:void(0)" onclick="if(window.openAIWidget) window.openAIWidget()" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-all">
+                <ion-icon name="chatbubble-ellipses-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
+                <span class="sidebar-text ml-3 text-sm font-medium">AI Helper</span>
+            </a>
+            <a href="javascript:void(0)" data-view="profile" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-all">
+                <ion-icon name="person-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
+                <span class="sidebar-text ml-3 text-sm font-medium">My Profile</span>
+            </a>
+        </nav>
+
+        <!-- Bottom: User Info + Logout -->
+        <div class="mt-auto p-4 border-t border-gray-200 dark:border-gray-700">
+            <div class="flex items-center">
+                <div id="user-initial-sidebar" class="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">?</div>
+                <div class="profile-info ml-3">
+                    <p id="sidebar-user-name" class="text-sm font-medium text-gray-800 dark:text-white">Loadingâ€¦</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Patient Account</p>
+                </div>
+            </div>
+            <a href="javascript:void(0)" onclick="handleLogout()" class="w-full mt-3 flex items-center justify-center py-2 border-2 border-red-500 rounded-xl text-sm font-bold text-red-600 dark:text-red-400 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 transition-all group overflow-hidden">
+                <ion-icon name="log-out-outline" class="text-xl flex-shrink-0 transition-colors"></ion-icon>
+                <span class="sidebar-text ml-2 whitespace-nowrap">Logout</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+         MAIN CONTENT
+    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+    <div id="mainContent" class="flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ml-64 h-full">
+
+        
 
         <!-- Content Body -->
         <main class="flex-1 overflow-x-hidden overflow-y-auto p-6 space-y-6">
 
-            <!-- ═══════════════════════════════
+            <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
                  VIEW: DASHBOARD
-            ═══════════════════════════════ -->
+            â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
             <div id="view-dashboard" class="content-section space-y-8" data-aos="fade-up">
                 <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Patient Dashboard</h1>
 
@@ -388,11 +422,31 @@
                 <!-- Doctors Section -->
                 <div class="space-y-4">
                     <div class="flex items-center justify-between">
-                        <h3 class="text-xl font-bold text-gray-900 dark:text-white">👨‍⚕️ Available Doctors</h3>
+                        <h3 class="text-xl font-bold text-gray-900 dark:text-white">ðŸ‘¨â€âš•ï¸ Available Doctors</h3>
                         <a href="javascript:void(0)" data-view="appointments" class="sidebar-link text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors">Book Now &rarr;</a>
                     </div>
                     <div id="doctors-list" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                        <p class="col-span-full py-12 text-center text-gray-500 dark:text-gray-400">Loading doctors...</p>
+                        <!-- Skeleton Loaders -->
+                        <div class="col-span-1 bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
+                            <div class="skeleton skeleton-circle mx-auto mb-4"></div>
+                            <div class="skeleton skeleton-text h-4 w-3/4 mx-auto"></div>
+                            <div class="skeleton skeleton-text h-3 w-1/2 mx-auto"></div>
+                        </div>
+                        <div class="col-span-1 bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700">
+                            <div class="skeleton skeleton-circle mx-auto mb-4"></div>
+                            <div class="skeleton skeleton-text h-4 w-3/4 mx-auto"></div>
+                            <div class="skeleton skeleton-text h-3 w-1/2 mx-auto"></div>
+                        </div>
+                        <div class="col-span-1 bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 hidden md:block">
+                            <div class="skeleton skeleton-circle mx-auto mb-4"></div>
+                            <div class="skeleton skeleton-text h-4 w-3/4 mx-auto"></div>
+                            <div class="skeleton skeleton-text h-3 w-1/2 mx-auto"></div>
+                        </div>
+                        <div class="col-span-1 bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 hidden md:block">
+                            <div class="skeleton skeleton-circle mx-auto mb-4"></div>
+                            <div class="skeleton skeleton-text h-4 w-3/4 mx-auto"></div>
+                            <div class="skeleton skeleton-text h-3 w-1/2 mx-auto"></div>
+                        </div>
                     </div>
                     <div id="doctors-toggle-container" class="flex justify-center mt-4 hidden">
                         <button id="btn-toggle-doctors" class="flex items-center gap-2 px-6 py-2 rounded-full border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white transition-all duration-300 font-medium text-sm">
@@ -414,19 +468,19 @@
                 </div>
             </div>
 
-            <!-- ═══════════════════════════════
+            <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
                  VIEW: APPOINTMENTS
-            ═══════════════════════════════ -->
+            â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
             <div id="view-appointments" class="content-section space-y-10" data-aos="fade-up">
                 <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Appointments</h1>
 
                 <!-- Tab Switcher -->
                 <div class="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-xl w-fit">
                     <button onclick="switchAppointmentTab('today')" id="tab-btn-today" class="px-6 py-2.5 rounded-lg text-sm font-bold transition-all bg-white dark:bg-gray-700 shadow-sm text-blue-600 dark:text-blue-400">
-                        📊 Today's Visit
+                        ðŸ“Š Today's Visit
                     </button>
                     <button onclick="switchAppointmentTab('future')" id="tab-btn-future" class="px-6 py-2.5 rounded-lg text-sm font-bold transition-all text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
-                        📅 Future Schedule
+                        ðŸ“… Future Schedule
                     </button>
                 </div>
 
@@ -435,7 +489,7 @@
                     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
                         <div class="p-6 border-b border-gray-100 dark:border-gray-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                             <div>
-                                <h3 class="text-lg font-bold text-gray-900 dark:text-white">📊 Today's Availability</h3>
+                                <h3 class="text-lg font-bold text-gray-900 dark:text-white">ðŸ“Š Today's Availability</h3>
                                 <p class="text-sm text-gray-500">Live chair occupancy at our clinic</p>
                             </div>
                             <select id="availability-doctor-filter" class="w-full md:w-auto bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
@@ -522,13 +576,13 @@
                                 </div>
 
                                 <button type="button" id="btn-analyze" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
-                                    ➡️ Next
+                                    âž¡ï¸ Next
                                 </button>
 
                                 <!-- AI Loading -->
                                 <div id="ai-loading" class="hidden text-center py-4 bg-blue-50 dark:bg-blue-900/30 rounded-xl border border-blue-100 dark:border-blue-800 animate-pulse">
                                     <div class="spinner mx-auto mb-2"></div>
-                                    <p class="text-sm font-bold text-blue-700 dark:text-blue-300">🤖 AI is thinking...</p>
+                                    <p class="text-sm font-bold text-blue-700 dark:text-blue-300">ðŸ¤– AI is thinking...</p>
                                 </div>
                             </form>
                         </div>
@@ -540,7 +594,7 @@
                                     <div class="p-2 bg-indigo-100 dark:bg-indigo-900 rounded-lg">
                                         <ion-icon name="sparkles" class="text-2xl text-indigo-600"></ion-icon>
                                     </div>
-                                    <h3 class="text-xl font-bold text-gray-900 dark:text-white">🤖 AI Analysis Result</h3>
+                                    <h3 class="text-xl font-bold text-gray-900 dark:text-white">ðŸ¤– AI Analysis Result</h3>
                                 </div>
                                 
                                 <div class="space-y-6 pt-2">
@@ -584,7 +638,7 @@
                                         <input type="hidden" id="selected-time-slot" name="selected_time">
                                         
                                         <button type="button" id="btn-confirm-book" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all hidden">
-                                            🚀 Confirm Booking Now
+                                            ðŸš€ Confirm Booking Now
                                         </button>
                                     </div>
                                 </div>
@@ -611,21 +665,32 @@
                                 </tr>
                             </thead>
                             <tbody id="appointments-list">
-                                <tr><td colspan="6" class="py-12 text-center text-gray-500">Loading your schedule...</td></tr>
+                                <tr>
+                                    <td colspan="6" class="py-4">
+                                        <div class="skeleton skeleton-text h-4 w-full mb-2"></div>
+                                        <div class="skeleton skeleton-text h-4 w-3/4"></div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="6" class="py-4">
+                                        <div class="skeleton skeleton-text h-4 w-full mb-2"></div>
+                                        <div class="skeleton skeleton-text h-4 w-5/6"></div>
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- ═══════════════════════════════
+            <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
                  VIEW: HEALTH RECORDS
-            ═══════════════════════════════ -->
+            â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
             <div id="view-records" class="content-section space-y-6" data-aos="fade-up">
                 <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Health Records</h1>
                 <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
                     <div class="px-6 py-5 border-b border-gray-100 dark:border-gray-700">
-                        <h3 class="text-lg font-bold text-gray-900 dark:text-white">📋 Your Medical History</h3>
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-white">ðŸ“‹ Your Medical History</h3>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="appt-table">
@@ -638,21 +703,26 @@
                                 </tr>
                             </thead>
                             <tbody id="records-list">
-                                <tr><td colspan="4" class="py-12 text-center text-gray-500">No medical records found.</td></tr>
+                                <tr>
+                                    <td colspan="4" class="py-4">
+                                        <div class="skeleton skeleton-text h-4 w-full mb-2"></div>
+                                        <div class="skeleton skeleton-text h-4 w-3/4"></div>
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- ═══════════════════════════════
+            <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
                  VIEW: PRESCRIPTIONS
-            ═══════════════════════════════ -->
+            â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
             <div id="view-prescriptions" class="content-section space-y-6" data-aos="fade-up">
                 <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Prescriptions</h1>
                 <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
                     <div class="px-6 py-5 border-b border-gray-100 dark:border-gray-700">
-                        <h3 class="text-lg font-bold text-gray-900 dark:text-white">💊 Medication List</h3>
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-white">ðŸ’Š Medication List</h3>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="appt-table">
@@ -666,16 +736,154 @@
                                 </tr>
                             </thead>
                             <tbody id="prescriptions-list">
-                                <tr><td colspan="5" class="py-12 text-center text-gray-500">No prescriptions found.</td></tr>
+                                <tr>
+                                    <td colspan="5" class="py-4">
+                                        <div class="skeleton skeleton-text h-4 w-full mb-2"></div>
+                                        <div class="skeleton skeleton-text h-4 w-3/4"></div>
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- ═══════════════════════════════
+            <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+                 VIEW: AI LAB ANALYZER
+            â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+            <div id="view-lab-analyzer" class="content-section space-y-6 hidden" data-aos="fade-up">
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+                    <ion-icon name="scan-circle" class="text-indigo-600 dark:text-indigo-400"></ion-icon> 
+                    AI Lab Analyzer
+                </h1>
+                <p class="text-gray-500 dark:text-gray-400 max-w-2xl">Upload a photo or document of your recent lab results. Our Gemini AI Vision model will read the data and explain what your metrics mean in simple, everyday language.</p>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Upload Box -->
+                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-8 flex flex-col items-center justify-center text-center space-y-4">
+                        <div class="w-full relative group">
+                            <input type="file" id="lab-image-input" accept="image/png, image/jpeg, image/webp" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                            <div class="w-full border-2 border-dashed border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/10 rounded-2xl p-10 transition-colors group-hover:border-indigo-500 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/30">
+                                <ion-icon name="cloud-upload-outline" class="text-6xl text-indigo-400 mb-2"></ion-icon>
+                                <h3 class="text-lg font-bold text-indigo-900 dark:text-indigo-200">Drag & Drop your Lab Result Image</h3>
+                                <p class="text-sm text-indigo-600 dark:text-indigo-400 mt-1">or click to browse from your device</p>
+                                <p class="text-xs text-gray-400 mt-4">Supported formats: JPG, PNG, WEBP (Max 5MB)</p>
+                            </div>
+                        </div>
+                        
+                        <div id="file-preview-container" class="hidden w-full text-left bg-gray-50 dark:bg-gray-700 p-4 rounded-xl border border-gray-200 dark:border-gray-600 flex items-center gap-4">
+                            <ion-icon name="image" class="text-3xl text-gray-400"></ion-icon>
+                            <div class="flex-grow overflow-hidden">
+                                <p id="file-name-display" class="font-bold text-sm text-gray-700 dark:text-gray-200 truncate">document.jpg</p>
+                                <p class="text-xs text-gray-500">Ready for analysis</p>
+                            </div>
+                            <button onclick="document.getElementById('file-preview-container').classList.add('hidden'); document.getElementById('lab-image-input').value = '';" class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors">
+                                <ion-icon name="trash"></ion-icon>
+                            </button>
+                        </div>
+                        
+                        <div class="w-full pt-4">
+                            <button id="btn-analyze-lab" onclick="analyzeLabImage()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-200 dark:shadow-none transition-all flex items-center justify-center gap-2">
+                                <ion-icon name="sparkles"></ion-icon> Analyze Lab Results
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Analysis Output -->
+                    <div class="bg-gray-50 dark:bg-gray-800/50 rounded-2xl shadow-inner border border-gray-100 dark:border-gray-700 p-6 flex flex-col items-center justify-center relative min-h-[400px]">
+                        
+                        <div id="lab-ai-empty" class="text-center text-gray-400 space-y-4">
+                            <ion-icon name="document-text-outline" class="text-5xl opacity-50"></ion-icon>
+                            <p class="font-medium text-sm">Upload a document to see the AI breakdown here.</p>
+                        </div>
+
+                        <div id="lab-ai-loading" class="hidden text-center text-indigo-500 space-y-4 animate-pulse">
+                            <div class="spinner mx-auto border-indigo-200 border-t-indigo-600"></div>
+                            <p class="font-bold">Gemini 1.5 Vision is decoding your lab results...</p>
+                            <p class="text-xs text-gray-500">This usually takes about 5 to 10 seconds.</p>
+                        </div>
+
+                        <div id="lab-ai-result" class="hidden w-full h-full text-left space-y-4 animate-fade-in custom-scroll overflow-y-auto pr-2 absolute inset-0 p-6">
+                            <div class="flex items-center gap-2 mb-4">
+                                <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xl">
+                                    <ion-icon name="sparkles"></ion-icon>
+                                </div>
+                                <h3 class="font-bold text-lg text-gray-900 dark:text-white">AI Breakdown</h3>
+                            </div>
+                            <div id="lab-ai-text" class="text-gray-700 dark:text-gray-300 text-[15px] leading-relaxed whitespace-pre-wrap bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm">
+                                <!-- AI Content injects here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <script>
+                // Inline UI logic for file reading & uploading
+                document.getElementById('lab-image-input').addEventListener('change', function(e) {
+                    if (e.target.files.length > 0) {
+                        document.getElementById('file-name-display').innerText = e.target.files[0].name;
+                        document.getElementById('file-preview-container').classList.remove('hidden');
+                        document.getElementById('lab-ai-empty').classList.remove('hidden');
+                        document.getElementById('lab-ai-result').classList.add('hidden');
+                        document.getElementById('lab-ai-loading').classList.add('hidden');
+                    }
+                });
+
+                async function analyzeLabImage() {
+                    const fileInput = document.getElementById('lab-image-input');
+                    if (fileInput.files.length === 0) {
+                        Swal.fire({icon: 'error', title: 'Oops...', text: 'Please attach an image first!'});
+                        return;
+                    }
+
+                    const file = fileInput.files[0];
+                    const reader = new FileReader();
+
+                    reader.onload = async function() {
+                        const base64String = reader.result;
+                        const mimeType = file.type;
+
+                        document.getElementById('lab-ai-empty').classList.add('hidden');
+                        document.getElementById('lab-ai-result').classList.add('hidden');
+                        document.getElementById('lab-ai-loading').classList.remove('hidden');
+
+                        try {
+                            const res = await fetch('../Ai/multimodal_labs.php', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    image: base64String,
+                                    mime: mimeType
+                                })
+                            });
+
+                            const data = await res.json();
+                            
+                            document.getElementById('lab-ai-loading').classList.add('hidden');
+                            
+                            if (data.error) {
+                                Swal.fire({icon: 'error', title: 'Analysis Failed', text: data.error});
+                                document.getElementById('lab-ai-empty').classList.remove('hidden');
+                            } else {
+                                document.getElementById('lab-ai-text').innerText = data.reply;
+                                document.getElementById('lab-ai-result').classList.remove('hidden');
+                            }
+                            
+                        } catch (err) {
+                            document.getElementById('lab-ai-loading').classList.add('hidden');
+                            document.getElementById('lab-ai-empty').classList.remove('hidden');
+                            Swal.fire({icon: 'error', title: 'Network Error', text: err.message});
+                        }
+                    };
+
+                    reader.readAsDataURL(file);
+                }
+            </script>
+
+            <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
                  VIEW: PROFILE
-            ═══════════════════════════════ -->
+            â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
             <div id="view-profile" class="content-section space-y-6" data-aos="fade-up">
                 <h1 class="text-3xl font-bold text-gray-900 dark:text-white">My Profile</h1>
                 <div class="max-w-xl mx-auto">
@@ -717,14 +925,101 @@
                 </div>
             </div>
 
-            <!-- ═══════════════════════════════
+            <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+                 VIEW: BILLING
+            â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+            <div id="view-billing" class="content-section space-y-6" data-aos="fade-up">
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Billing &amp; Invoices</h1>
+
+                <!-- Urgent red banner for unpaid bills -->
+                <div id="billing-alert-banner" class="hidden">
+                    <div class="bg-gradient-to-r from-red-500 to-rose-600 rounded-2xl p-5 text-white shadow-lg shadow-red-200/50 dark:shadow-none flex items-center gap-4">
+                        <div class="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                            <ion-icon name="alert-circle-outline" class="text-3xl"></ion-icon>
+                        </div>
+                        <div class="flex-1">
+                            <p class="font-bold text-lg">You have unpaid bills!</p>
+                            <p class="text-red-100 text-sm" id="billing-alert-text">Please review and settle your outstanding invoices below.</p>
+                        </div>
+                        <div class="flex-shrink-0 text-right">
+                            <span id="billing-alert-total" class="text-2xl font-black">$0.00</span>
+                            <p class="text-red-200 text-xs">Total Due</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Receipt cards rendered by JS -->
+                <div id="billingPatientCards" class="grid gap-5 md:grid-cols-2">
+                    <div class="md:col-span-2 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 py-16 text-center">
+                        <ion-icon name="receipt-outline" style="font-size: 4rem;" class="text-gray-200 dark:text-gray-700 block mx-auto mb-3"></ion-icon>
+                        <p class="text-gray-400 dark:text-gray-500 text-lg font-medium">No invoices yet</p>
+                        <p class="text-gray-300 dark:text-gray-600 text-sm mt-1">When your clinic issues a bill, it will appear here.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+                 MODAL: PAYMENT FORM
+            â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+            <div id="paymentModal" class="hidden fixed inset-0 z-[2000] bg-gray-900/60 backdrop-blur-sm overflow-y-auto h-full w-full flex items-center justify-center">
+              <div class="relative mx-auto p-0 w-11/12 md:max-w-md shadow-2xl rounded-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div class="bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-5 text-white">
+                  <div class="flex justify-between items-center">
+                    <div>
+                      <h3 class="text-xl font-bold">Secure Payment</h3>
+                      <p class="text-indigo-200 text-sm mt-1">Invoice <span id="pay-invoice-label" class="font-mono">#INV-0000</span></p>
+                    </div>
+                    <button onclick="closePaymentModal()" class="text-white/70 hover:text-white transition-colors">
+                      <ion-icon name="close-circle" class="text-2xl"></ion-icon>
+                    </button>
+                  </div>
+                  <div class="mt-4 bg-white/15 rounded-xl px-4 py-3 flex justify-between items-center">
+                    <span class="text-sm text-indigo-100">Amount Due</span>
+                    <span id="pay-invoice-amount" class="text-2xl font-bold">$0.00</span>
+                  </div>
+                </div>
+                <form id="paymentForm" class="p-6 space-y-4">
+                  <input type="hidden" id="pay-invoice-id" value="">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Card Number</label>
+                    <div class="relative">
+                      <input type="text" id="pay-card-number" maxlength="19" required class="w-full p-3 pl-12 bg-gray-50 border border-gray-300 text-gray-900 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white font-mono tracking-wider" placeholder="1234 5678 9012 3456" oninput="formatCardNumber(this)">
+                      <ion-icon name="card-outline" class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl"></ion-icon>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Cardholder Name</label>
+                    <input type="text" id="pay-card-holder" required class="w-full p-3 bg-gray-50 border border-gray-300 text-gray-900 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Full name on card">
+                  </div>
+                  <div class="grid grid-cols-2 gap-4">
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expiry Date</label>
+                      <input type="text" id="pay-card-expiry" maxlength="5" required class="w-full p-3 bg-gray-50 border border-gray-300 text-gray-900 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white font-mono" placeholder="MM/YY" oninput="formatExpiry(this)">
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">CVV</label>
+                      <input type="password" id="pay-card-cvv" maxlength="4" required class="w-full p-3 bg-gray-50 border border-gray-300 text-gray-900 rounded-xl focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white font-mono tracking-[0.5em]" placeholder="***">
+                    </div>
+                  </div>
+                  <div class="pt-2 flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
+                    <ion-icon name="lock-closed-outline"></ion-icon>
+                    <span>Secured with 256-bit SSL encryption &mdash; Demo Mode</span>
+                  </div>
+                  <button type="button" onclick="processPayment()" id="payBtn" class="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-bold py-3.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-200 dark:shadow-none">
+                    <ion-icon name="shield-checkmark-outline" class="text-lg"></ion-icon> Pay Now
+                  </button>
+                </form>
+              </div>
+            </div>
+
+            <!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
                  VIEW: NOTIFICATIONS
-            ═══════════════════════════════ -->
+            â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
             <div id="view-notifications" class="content-section space-y-6" data-aos="fade-up">
                 <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Notifications</h1>
                 <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
                     <div class="px-6 py-5 border-b border-gray-100 dark:border-gray-700">
-                        <h3 class="text-lg font-bold text-gray-900 dark:text-white">🔔 Your Notifications</h3>
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-white">ðŸ”” Your Notifications</h3>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="appt-table">
@@ -746,7 +1041,7 @@
         </main>
     </div><!-- /mainContent -->
 
-    <!-- ── DOCTOR PROFILE MODAL ── -->
+    <!-- â”€â”€ DOCTOR PROFILE MODAL â”€â”€ -->
     <div id="doctor-modal" class="fixed inset-0 z-50 overflow-hidden hidden">
         <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" onclick="closeDoctorModal()"></div>
         <div class="absolute inset-0 flex items-center justify-center p-4">
@@ -787,7 +1082,7 @@
         </div>
     </div>
 
-    <!-- ── NOTIFICATION MODAL ── -->
+    <!-- â”€â”€ NOTIFICATION MODAL â”€â”€ -->
     <div id="notif-modal" class="fixed inset-0 z-[2000] overflow-hidden hidden">
         <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" onclick="closeNotifModal()"></div>
         <div class="absolute inset-0 flex items-center justify-center p-4 py-12">
@@ -834,16 +1129,283 @@
         </div>
     </div>
 
-    <!-- ══ Scripts ══ -->
+    <!-- â•â• Scripts â•â• -->
     <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
+    <!-- â”€â”€ TELEMEDICINE MODAL (WebRTC) â”€â”€ -->
+    <div id="telemed-modal" class="fixed inset-0 z-[3000] overflow-hidden hidden bg-gray-950/95 backdrop-blur-xl flex items-center justify-center">
+        <!-- Ambient glow background -->
+        <div class="absolute inset-0 overflow-hidden pointer-events-none">
+            <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-teal-500/10 rounded-full blur-[120px] animate-pulse"></div>
+            <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-[120px] animate-pulse" style="animation-delay:1s"></div>
+        </div>
+
+        <div class="relative w-full max-w-6xl p-4 md:p-6">
+            <!-- Top Bar -->
+            <div class="flex items-center justify-between mb-3 px-2">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2 bg-white/10 backdrop-blur-md rounded-full px-4 py-2 border border-white/10">
+                        <span class="relative flex h-2.5 w-2.5">
+                            <span id="vc-live-dot" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                        </span>
+                        <span id="vc-status-label" class="text-white text-xs font-semibold tracking-wider uppercase">Connecting</span>
+                    </div>
+                    <div id="vc-timer-badge" class="hidden bg-white/10 backdrop-blur-md rounded-full px-4 py-2 border border-white/10">
+                        <span id="vc-call-timer" class="text-white text-xs font-mono tabular-nums">00:00</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-gray-400 text-xs font-medium hidden md:block">MyHealth Telemedicine</span>
+                    <button onclick="window.endTelemedicine()" class="p-2.5 bg-white/10 hover:bg-red-600 rounded-full text-white/70 hover:text-white shadow-xl transition-all hover:scale-110 border border-white/10 hover:border-red-500">
+                        <ion-icon name="close" class="text-xl"></ion-icon>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Video Container -->
+            <div class="relative rounded-[1.5rem] overflow-hidden shadow-[0_0_80px_rgba(45,212,191,0.15)] border border-white/10">
+                <!-- Remote Video (Full) -->
+                <div class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 aspect-video flex items-center justify-center relative">
+                    <video id="remote-video" class="w-full h-full object-cover absolute inset-0" autoplay playsinline></video>
+                    <!-- Waiting State Overlay -->
+                    <div id="vc-waiting-overlay" class="absolute inset-0 flex flex-col items-center justify-center z-10 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+                        <div class="relative mb-6">
+                            <div class="absolute inset-0 rounded-full bg-teal-500/20 animate-ping"></div>
+                            <div class="relative h-24 w-24 rounded-full bg-gradient-to-br from-teal-400 to-indigo-500 flex items-center justify-center shadow-lg shadow-teal-500/20 border-4 border-white/10">
+                                <ion-icon name="videocam" class="text-4xl text-white"></ion-icon>
+                            </div>
+                        </div>
+                        <p class="text-white text-lg font-semibold mb-1">Waiting for participant...</p>
+                        <p class="text-gray-400 text-sm">Your camera preview is below</p>
+                    </div>
+                </div>
+
+                <!-- Local Video (Picture-in-Picture) -->
+                <div class="absolute bottom-20 right-5 md:bottom-24 md:right-6 w-36 md:w-52 aspect-video bg-gray-800 rounded-2xl overflow-hidden shadow-2xl border-2 border-white/20 z-20 group cursor-move hover:border-teal-400/50 transition-all hover:shadow-teal-500/20 hover:shadow-xl">
+                    <video id="local-video" class="w-full h-full object-cover" autoplay muted playsinline></video>
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="absolute bottom-1.5 left-2 text-[10px] text-white/80 font-medium bg-black/50 rounded-full px-2 py-0.5 backdrop-blur-sm">You</div>
+                </div>
+
+                <!-- Controls Bar -->
+                <div class="absolute bottom-4 md:bottom-5 left-1/2 transform -translate-x-1/2 flex items-center gap-3 md:gap-4 bg-black/50 backdrop-blur-xl px-5 md:px-8 py-3 md:py-4 rounded-2xl z-20 border border-white/10 shadow-2xl">
+                    <!-- Mic Toggle -->
+                    <button id="vc-mic-btn" onclick="toggleVCMic()" class="w-12 h-12 md:w-14 md:h-14 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-all hover:scale-110 border border-white/5">
+                        <ion-icon name="mic-outline" class="text-xl md:text-2xl"></ion-icon>
+                    </button>
+                    <!-- Camera Toggle -->
+                    <button id="vc-cam-btn" onclick="toggleVCCam()" class="w-12 h-12 md:w-14 md:h-14 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-all hover:scale-110 border border-white/5">
+                        <ion-icon name="videocam-outline" class="text-xl md:text-2xl"></ion-icon>
+                    </button>
+                    <!-- Screen Share -->
+                    <button id="vc-share-btn" class="w-12 h-12 md:w-14 md:h-14 bg-white/10 hover:bg-teal-500 rounded-full flex items-center justify-center text-white transition-all hover:scale-110 border border-white/5 hidden md:flex">
+                        <ion-icon name="desktop-outline" class="text-xl md:text-2xl"></ion-icon>
+                    </button>
+                    <!-- Divider -->
+                    <div class="w-px h-8 bg-white/20 hidden md:block"></div>
+                    <!-- Start / Answer Call -->
+                    <button onclick="window.telemedSession.answerCall({})" class="w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-teal-400 to-emerald-600 hover:from-teal-300 hover:to-emerald-500 rounded-full flex items-center justify-center text-white shadow-lg shadow-teal-500/30 transition-all hover:scale-110 ring-4 ring-teal-500/20">
+                        <ion-icon name="videocam" class="text-2xl md:text-3xl"></ion-icon>
+                    </button>
+                    <!-- End Call -->
+                    <button onclick="window.endTelemedicine()" class="w-14 h-14 md:w-16 md:h-16 bg-gradient-to-br from-red-500 to-rose-700 hover:from-red-400 hover:to-rose-600 rounded-full flex items-center justify-center text-white shadow-lg shadow-red-500/30 transition-all hover:scale-110 ring-4 ring-red-500/20">
+                        <ion-icon name="call" class="text-2xl md:text-3xl rotate-[135deg]"></ion-icon>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Video Call Controls Logic -->
+    <script>
+      let vcMicMuted = false, vcCamOff = false, vcTimerInterval = null, vcSeconds = 0;
+
+      function toggleVCMic() {
+        vcMicMuted = !vcMicMuted;
+        const btn = document.getElementById('vc-mic-btn');
+        if (vcMicMuted) {
+          btn.classList.replace('bg-white/10', 'bg-red-500/80');
+          btn.querySelector('ion-icon').setAttribute('name', 'mic-off-outline');
+        } else {
+          btn.classList.replace('bg-red-500/80', 'bg-white/10');
+          btn.querySelector('ion-icon').setAttribute('name', 'mic-outline');
+        }
+      }
+
+      function toggleVCCam() {
+        vcCamOff = !vcCamOff;
+        const btn = document.getElementById('vc-cam-btn');
+        if (vcCamOff) {
+          btn.classList.replace('bg-white/10', 'bg-red-500/80');
+          btn.querySelector('ion-icon').setAttribute('name', 'videocam-off-outline');
+        } else {
+          btn.classList.replace('bg-red-500/80', 'bg-white/10');
+          btn.querySelector('ion-icon').setAttribute('name', 'videocam-outline');
+        }
+      }
+
+      // Auto-start call timer when modal opens
+      const vcObserver = new MutationObserver(() => {
+        const modal = document.getElementById('telemed-modal');
+        if (!modal.classList.contains('hidden')) {
+          vcSeconds = 0;
+          document.getElementById('vc-status-label').textContent = 'Connecting';
+          document.getElementById('vc-waiting-overlay').classList.remove('hidden');
+          document.getElementById('vc-timer-badge').classList.add('hidden');
+          setTimeout(() => {
+            if (!modal.classList.contains('hidden')) {
+              document.getElementById('vc-status-label').textContent = 'Live';
+              document.getElementById('vc-waiting-overlay').classList.add('hidden');
+              document.getElementById('vc-timer-badge').classList.remove('hidden');
+              vcTimerInterval = setInterval(() => {
+                vcSeconds++;
+                const m = String(Math.floor(vcSeconds / 60)).padStart(2, '0');
+                const s = String(vcSeconds % 60).padStart(2, '0');
+                document.getElementById('vc-call-timer').textContent = m + ':' + s;
+              }, 1000);
+            }
+          }, 2500);
+        } else {
+          clearInterval(vcTimerInterval);
+          vcMicMuted = false; vcCamOff = false;
+        }
+      });
+      const telemedModal = document.getElementById('telemed-modal');
+      if (telemedModal) vcObserver.observe(telemedModal, { attributes: true, attributeFilter: ['class'] });
+    </script>
+
+    <!-- â”€â”€ PHONE CALL MODAL â”€â”€ -->
+    <div id="phone-call-modal" class="fixed inset-0 z-[3000] overflow-hidden hidden bg-gray-900/95 backdrop-blur-md flex items-center justify-center">
+        <div class="relative w-full max-w-md p-6">
+            <!-- Close Button -->
+            <button onclick="endPhoneCall()" class="absolute top-2 right-2 z-10 m-4 p-3 bg-red-600/80 rounded-full text-white hover:bg-red-700 shadow-xl transition-transform hover:scale-110">
+                <ion-icon name="close" class="text-2xl"></ion-icon>
+            </button>
+            <!-- Call Card -->
+            <div class="bg-gradient-to-b from-gray-800 to-gray-900 rounded-3xl overflow-hidden shadow-2xl border border-gray-700 p-8 flex flex-col items-center text-center">
+                <!-- Animated Pulse Ring -->
+                <div class="relative mb-6">
+                    <div id="phone-call-pulse" class="absolute inset-0 rounded-full bg-blue-500/20 animate-ping"></div>
+                    <div class="relative h-28 w-28 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30 border-4 border-white/10">
+                        <ion-icon name="person" class="text-5xl text-white"></ion-icon>
+                    </div>
+                </div>
+                <!-- Caller Info -->
+                <h3 id="phone-call-name" class="text-2xl font-bold text-white mb-1">MyHealth Clinic</h3>
+                <p id="phone-call-status" class="text-blue-400 text-sm font-medium mb-6 tracking-wide">Calling...</p>
+                <!-- Timer -->
+                <div id="phone-call-timer" class="text-3xl font-mono text-gray-300 mb-8 tabular-nums hidden">00:00</div>
+                <!-- Audio Visualizer -->
+                <div id="phone-audio-bars" class="flex items-end gap-1 h-10 mb-8 hidden">
+                    <div class="w-1 bg-blue-400 rounded-full animate-pulse" style="height:30%;animation-delay:0s"></div>
+                    <div class="w-1 bg-blue-400 rounded-full animate-pulse" style="height:60%;animation-delay:0.15s"></div>
+                    <div class="w-1 bg-blue-400 rounded-full animate-pulse" style="height:90%;animation-delay:0.3s"></div>
+                    <div class="w-1 bg-indigo-400 rounded-full animate-pulse" style="height:100%;animation-delay:0.1s"></div>
+                    <div class="w-1 bg-indigo-400 rounded-full animate-pulse" style="height:70%;animation-delay:0.25s"></div>
+                    <div class="w-1 bg-blue-400 rounded-full animate-pulse" style="height:50%;animation-delay:0.05s"></div>
+                    <div class="w-1 bg-blue-400 rounded-full animate-pulse" style="height:80%;animation-delay:0.2s"></div>
+                    <div class="w-1 bg-indigo-400 rounded-full animate-pulse" style="height:40%;animation-delay:0.35s"></div>
+                    <div class="w-1 bg-blue-400 rounded-full animate-pulse" style="height:65%;animation-delay:0.12s"></div>
+                </div>
+                <!-- Controls -->
+                <div class="flex items-center gap-6">
+                    <button id="phone-mute-btn" onclick="togglePhoneMute()" class="w-14 h-14 bg-gray-700 hover:bg-gray-600 rounded-full flex items-center justify-center text-white shadow-lg transition-all hover:scale-110">
+                        <ion-icon name="mic-outline" class="text-2xl"></ion-icon>
+                    </button>
+                    <button onclick="endPhoneCall()" class="w-16 h-16 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center text-white shadow-lg transition-all hover:scale-110 ring-4 ring-red-600/30">
+                        <ion-icon name="call" class="text-3xl rotate-[135deg]"></ion-icon>
+                    </button>
+                    <button id="phone-speaker-btn" onclick="togglePhoneSpeaker()" class="w-14 h-14 bg-gray-700 hover:bg-gray-600 rounded-full flex items-center justify-center text-white shadow-lg transition-all hover:scale-110">
+                        <ion-icon name="volume-high-outline" class="text-2xl"></ion-icon>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Phone Call Logic -->
+    <script>
+      let phoneCallInterval = null;
+      let phoneCallSeconds = 0;
+      let phoneMuted = false;
+      let phoneSpeaker = false;
+
+      function openPhoneCallModal() {
+        const modal = document.getElementById('phone-call-modal');
+        modal.classList.remove('hidden');
+        document.getElementById('phone-call-status').textContent = 'Calling...';
+        document.getElementById('phone-call-timer').classList.add('hidden');
+        document.getElementById('phone-audio-bars').classList.add('hidden');
+        document.getElementById('phone-call-pulse').classList.remove('hidden');
+        phoneCallSeconds = 0;
+
+        // Simulate connecting after 2s
+        setTimeout(() => {
+          if (!modal.classList.contains('hidden')) {
+            document.getElementById('phone-call-status').textContent = 'Connected';
+            document.getElementById('phone-call-timer').classList.remove('hidden');
+            document.getElementById('phone-audio-bars').classList.remove('hidden');
+            document.getElementById('phone-call-pulse').classList.add('hidden');
+            phoneCallInterval = setInterval(() => {
+              phoneCallSeconds++;
+              const m = String(Math.floor(phoneCallSeconds / 60)).padStart(2, '0');
+              const s = String(phoneCallSeconds % 60).padStart(2, '0');
+              document.getElementById('phone-call-timer').textContent = m + ':' + s;
+            }, 1000);
+          }
+        }, 2000);
+      }
+
+      function endPhoneCall() {
+        clearInterval(phoneCallInterval);
+        phoneCallInterval = null;
+        document.getElementById('phone-call-modal').classList.add('hidden');
+        phoneMuted = false;
+        phoneSpeaker = false;
+      }
+
+      function togglePhoneMute() {
+        phoneMuted = !phoneMuted;
+        const btn = document.getElementById('phone-mute-btn');
+        if (phoneMuted) {
+          btn.classList.replace('bg-gray-700', 'bg-red-500');
+          btn.classList.replace('hover:bg-gray-600', 'hover:bg-red-600');
+          btn.querySelector('ion-icon').setAttribute('name', 'mic-off-outline');
+        } else {
+          btn.classList.replace('bg-red-500', 'bg-gray-700');
+          btn.classList.replace('hover:bg-red-600', 'hover:bg-gray-600');
+          btn.querySelector('ion-icon').setAttribute('name', 'mic-outline');
+        }
+      }
+
+      function togglePhoneSpeaker() {
+        phoneSpeaker = !phoneSpeaker;
+        const btn = document.getElementById('phone-speaker-btn');
+        if (phoneSpeaker) {
+          btn.classList.replace('bg-gray-700', 'bg-blue-500');
+          btn.classList.replace('hover:bg-gray-600', 'hover:bg-blue-600');
+        } else {
+          btn.classList.replace('bg-blue-500', 'bg-gray-700');
+          btn.classList.replace('hover:bg-blue-600', 'hover:bg-gray-600');
+        }
+      }
+    </script>
+    <!-- WebRTC Telemedicine Engine -->
+    <script src="../js/webrtc-telemed.js"></script>
+
     <!-- Unified Patient JS -->
     <script src="../js/dashboard.js?v=2"></script>
 
     <!-- AI Care Navigator Widget -->
     <script src="../js/ai-widget.js"></script>
+    <script src="../js/custom_cursor.js"></script>
+
+    </div>
 </body>
 </html>
+
+
 

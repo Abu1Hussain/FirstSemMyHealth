@@ -1,4 +1,5 @@
 <?php
+ob_start();
 /*
  * ═══════════════════════════════════════════════════════════
  * Appointment Booking Handler
@@ -30,7 +31,7 @@ require_once __DIR__ . '/../Ai/ai_config.php';
 
 /* ── Make sure the user is logged in ── */
 if (!isset($_SESSION['user_id'])) {
-    echo json_encode(['status' => 'error', 'message' => 'Please log in first.']);
+    ob_clean(); echo json_encode(['status' => 'error', 'message' => 'Please log in first.']);
     exit();
 }
 
@@ -53,7 +54,7 @@ if (isset($_POST['take_ticket'])) {
 
     if (!$patientResult || $patientResult->num_rows === 0) {
         $stmt->close();
-        echo json_encode(['status' => 'error', 'message' => 'Patient profile not found.']);
+        ob_clean(); echo json_encode(['status' => 'error', 'message' => 'Patient profile not found.']);
         exit();
     }
     $patientId = $patientResult->fetch_assoc()['patient_id'];
@@ -68,7 +69,7 @@ if (isset($_POST['take_ticket'])) {
     $stmt->close();
 
     if ($ticketCount >= 2) {
-        echo json_encode(['status' => 'error', 'message' => 'Daily limit reached. You can only take 2 tickets per day.']);
+        ob_clean(); echo json_encode(['status' => 'error', 'message' => 'Daily limit reached. You can only take 2 tickets per day.']);
         exit();
     }
 
@@ -82,7 +83,7 @@ if (isset($_POST['take_ticket'])) {
         if ($currentHour < 9) {
             $hour = 9;
         } else if ($currentHour >= 17) {
-            echo json_encode(['status' => 'error', 'message' => 'Clinic is closed. Please come back tomorrow.']);
+            ob_clean(); echo json_encode(['status' => 'error', 'message' => 'Clinic is closed. Please come back tomorrow.']);
             exit();
         } else {
             $hour = $currentHour;
@@ -133,13 +134,13 @@ if (isset($_POST['take_ticket'])) {
         $stmtTick->execute();
         $stmtTick->close();
 
-        echo json_encode([
+        ob_clean(); echo json_encode([
             'status'        => 'success',
             'ticket_number' => $ticketCode,
             'message'       => 'Ticket generated successfully.'
         ]);
     } else {
-        echo json_encode(['status' => 'error', 'message' => 'Failed to generate ticket.']);
+        ob_clean(); echo json_encode(['status' => 'error', 'message' => 'Failed to generate ticket.']);
     }
     $stmt->close();
     exit();
@@ -170,7 +171,7 @@ if (isset($_POST['book_appointment'])) {
 
         if (!$patientResult || $patientResult->num_rows === 0) {
             $stmt->close();
-            echo json_encode(['status' => 'error', 'message' => 'Patient profile not found. Please contact support.']);
+            ob_clean(); echo json_encode(['status' => 'error', 'message' => 'Patient profile not found. Please contact support.']);
             exit();
         }
 
@@ -270,7 +271,7 @@ Return ONLY valid JSON without any markdown formatting like ```json. Example: {\
         // Validate it's within bounds
         $reqHour = (int)explode(':', $selectedTimePost)[0];
         if ($reqHour < $startHour || $reqHour >= $endHour) {
-            echo json_encode(['status' => 'error', 'message' => "Selected time is outside clinic hours."]);
+            ob_clean(); echo json_encode(['status' => 'error', 'message' => "Selected time is outside clinic hours."]);
             exit();
         }
 
@@ -293,7 +294,7 @@ Return ONLY valid JSON without any markdown formatting like ```json. Example: {\
             $assignedTime = $slotStart;
             // queueNumber calculated later based on daily total
         } else {
-            echo json_encode(['status' => 'error', 'message' => "Selected time slot is fully booked. Please choose another."]);
+            ob_clean(); echo json_encode(['status' => 'error', 'message' => "Selected time slot is fully booked. Please choose another."]);
             exit();
         }
 
@@ -333,7 +334,7 @@ Return ONLY valid JSON without any markdown formatting like ```json. Example: {\
 
     // If no slot was found, the doctor is fully booked
     if (!$assignedTime) {
-        echo json_encode([
+        ob_clean(); echo json_encode([
             'status'  => 'error',
             'message' => "Sorry, $doctorName is fully booked on $requestDate. Please try a different date or doctor."
         ]);
@@ -396,12 +397,12 @@ Return ONLY valid JSON without any markdown formatting like ```json. Example: {\
         $stmtTick->execute();
         $stmtTick->close();
 
-        echo json_encode([
+        ob_clean(); echo json_encode([
             'status'  => 'success',
             'message' => "Appointment booked successfully! AI Priority: $priority. Ticket: $ticketCode"
         ]);
     } else {
-        echo json_encode([
+        ob_clean(); echo json_encode([
             'status'  => 'error',
             'message' => "Failed to book appointment. Please try again."
         ]);
@@ -423,7 +424,7 @@ if (isset($_POST['terminate_appointment'])) {
     $today = date('Y-m-d');
 
     if (!$apptId) {
-        echo json_encode(['status' => 'error', 'message' => 'Appointment ID is required.']);
+        ob_clean(); echo json_encode(['status' => 'error', 'message' => 'Appointment ID is required.']);
         exit();
     }
 
@@ -445,13 +446,13 @@ if (isset($_POST['terminate_appointment'])) {
     $stmtCheck->close();
 
     if (!$apptInfo) {
-        echo json_encode(['status' => 'error', 'message' => 'Appointment not found.']);
+        ob_clean(); echo json_encode(['status' => 'error', 'message' => 'Appointment not found.']);
         exit();
     }
 
     // Authorization Check
     if ($userRole !== 'admin' && $apptInfo['user_id'] != $userId) {
-        echo json_encode(['status' => 'error', 'message' => 'Unauthorized access.']);
+        ob_clean(); echo json_encode(['status' => 'error', 'message' => 'Unauthorized access.']);
         exit();
     }
 
@@ -469,9 +470,9 @@ if (isset($_POST['terminate_appointment'])) {
         $stmtLog->execute();
         $stmtLog->close();
 
-        echo json_encode(['status' => 'success', 'message' => $msg]);
+        ob_clean(); echo json_encode(['status' => 'success', 'message' => $msg]);
     } else {
-        echo json_encode(['status' => 'error', 'message' => 'Failed to delete appointment.']);
+        ob_clean(); echo json_encode(['status' => 'error', 'message' => 'Failed to delete appointment.']);
     }
     $stmt->close();
     exit();
@@ -509,3 +510,4 @@ function keywordFallbackPriority($symptoms) {
     return 'Normal';
 }
 ?>
+

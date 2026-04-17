@@ -8,10 +8,16 @@
   "use strict";
 
   /* ── Config ── */
-  const GEMINI_API_KEY = "AIzaSyC0ys1cMFP4l1kRYBSeB-mBSdCdsSJk8-w";
-  const GEMINI_TEXT_MODEL = "gemini-2.0-flash";
-  const SYSTEM_PROMPT =
-    "You are a helpful navigation assistant for a healthcare website called MyHealth. Your ONLY purpose is to guide users to the correct pages on our website. YOU MUST NEVER PROVIDE MEDICAL ADVICE, DIAGNOSES, OR ANSWER HEALTH-RELATED QUESTIONS. If a user asks a medical question, politely redirect them to book an appointment with a doctor. The website has these pages: Dashboard, Appointments (book and view), Medical Records, Prescriptions, Profile. Help users navigate to these sections.";
+  const GEMINI_API_KEY = "AIzaSyDhLYX0y12fw4Sri1YDIUfLTP8iXX-7f_s";
+  const GEMINI_TEXT_MODEL = "gemini-2.5-flash";
+
+  // Fallback system prompt used ONLY if the server proxy is unreachable
+  const FALLBACK_SYSTEM_PROMPT =
+    "You are a helpful navigation assistant for a healthcare website called MyHealth. Help users navigate to Dashboard, Appointments, Medical Records, Prescriptions, or Profile. If asked a medical question, politely redirect them to book an appointment with a doctor.";
+
+  // Whether to use server-side proxy (enables deep context, role-based prompts, emergency detection)
+  const USE_SERVER_PROXY = true;
+  const SERVER_PROXY_URL = "../Ai/ai_chat.php";
 
   /* ── Helpers: load external scripts ── */
   function loadScript(src) {
@@ -193,8 +199,56 @@
         h("rect", { x: 6, y: 6, width: 12, height: 12, rx: 2 })
       );
 
-    /* ── Gemini Text Chat API ── */
-    async function sendToGemini(messages) {
+    /* ── Handle AI Action Triggers ── */
+    function handleAIAction(action) {
+      if (!action) return;
+      if (action.type === 'navigate' && action.target) {
+        // Try to navigate using the showSection function available in dashboards
+        if (typeof window.showSection === 'function') {
+          window.showSection(action.target);
+        }
+      }
+      if (action.type === 'book_appointment') {
+        // Navigate to appointments section and highlight the specialty
+        if (typeof window.showSection === 'function') {
+          window.showSection('appointments');
+        }
+      }
+      if (action.type === 'emergency_alert') {
+        // Show a full-screen emergency alert
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'error',
+            title: '🚨 Emergency Detected',
+            html: '<p style="font-size:16px;">Please <strong>call emergency services (999/911)</strong> immediately or go to the nearest Emergency Room.</p>',
+            confirmButtonText: 'I understand',
+            confirmButtonColor: '#dc2626',
+            allowOutsideClick: false,
+          });
+        }
+      }
+    }
+
+    /* ── Server-Side Proxy API Call ── */
+    async function sendToServerProxy(messages) {
+      const res = await fetch(SERVER_PROXY_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages }),
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        // Handle action triggers
+        if (data.action) {
+          setTimeout(() => handleAIAction(data.action), 500);
+        }
+        return data.reply || "I'm sorry, I couldn't process that right now.";
+      }
+      return "I'm sorry, I couldn't process that right now.";
+    }
+
+    /* ── Direct Gemini API Call (Fallback) ── */
+    async function sendToGeminiFallback(messages) {
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_TEXT_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
       const contents = messages.map((m) => ({
         role: m.role === "user" ? "user" : "model",
@@ -205,7 +259,7 @@
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+          system_instruction: { parts: [{ text: FALLBACK_SYSTEM_PROMPT }] },
           contents,
         }),
       });
@@ -214,6 +268,19 @@
         data?.candidates?.[0]?.content?.parts?.[0]?.text ||
         "I'm sorry, I couldn't process that right now."
       );
+    }
+
+    /* ── Unified Send Function ── */
+    async function sendToGemini(messages) {
+      if (USE_SERVER_PROXY) {
+        try {
+          return await sendToServerProxy(messages);
+        } catch (e) {
+          console.warn("AI Proxy unreachable, falling back to direct Gemini:", e);
+          return await sendToGeminiFallback(messages);
+        }
+      }
+      return await sendToGeminiFallback(messages);
     }
 
     /* ── Inject Widget CSS ── */

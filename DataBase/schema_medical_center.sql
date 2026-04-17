@@ -116,7 +116,7 @@ CREATE TABLE IF NOT EXISTS `appointments` (
   `appointment_id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `patient_id` INT UNSIGNED NOT NULL,
   `doctor_id` INT UNSIGNED NULL,
-  `appointment_date DATETIME NOT NULL,
+  `appointment_date` DATETIME NOT NULL,
   `appointment_type` VARCHAR(100) NULL,
   `status` VARCHAR(50) NULL DEFAULT 'pending',
   `reason` TEXT NULL,

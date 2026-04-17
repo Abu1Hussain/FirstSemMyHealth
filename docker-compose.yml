@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8000:80"
+    volumes:
+      - ./:/var/www/html/
+    environment:
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASS=secret123
+      - DB_NAME=medical_center
+    depends_on:
+      - db
+    networks:
+      - myhealth_network
+
+  db:
+    image: mysql:8.0
+    command: --default-authentication-plugin=mysql_native_password
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=secret123
+      - MYSQL_DATABASE=medical_center
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - myhealth_network
+
+volumes:
+  db_data:
+
+networks:
+  myhealth_network:
+    driver: bridge

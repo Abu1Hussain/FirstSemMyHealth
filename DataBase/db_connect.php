@@ -19,10 +19,10 @@
  */
 
 /* ── Database credentials ── */
-$servername = "localhost";   // Where MySQL is running
-$username   = "root";        // MySQL username (XAMPP default is 'root')
-$password   = "";            // MySQL password (XAMPP default is empty)
-$dbname     = "medical_center";  // The primary database for this project
+$servername = getenv('DB_HOST') ?: "localhost";   // Where MySQL is running
+$username   = getenv('DB_USER') ?: "root";        // MySQL username (XAMPP default is 'root')
+$password   = getenv('DB_PASS') !== false ? getenv('DB_PASS') : "";            // MySQL password (XAMPP default is empty)
+$dbname     = getenv('DB_NAME') ?: "medical_center";  // The primary database for this project
 
 /* ── Connect to MySQL and select the database ── */
 $conn = new mysqli($servername, $username, $password, $dbname);

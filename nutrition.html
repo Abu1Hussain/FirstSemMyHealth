@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Nutrition Hub – Free Tool</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Ionicons for premium icons -->
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+
+    <script>
+        if (localStorage.getItem('darkMode') === 'enabled') {
+            document.documentElement.classList.add('dark');
+        }
+        tailwind.config = { 
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: {
+                            500: '#10b981', // emerald
+                            600: '#059669',
+                            700: '#047857',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .dark .glass-panel {
+            background: rgba(31, 41, 55, 0.85);
+            border-color: rgba(255, 255, 255, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-gray-900 text-slate-800 dark:text-gray-100 transition-colors duration-300 antialiased overflow-x-hidden min-h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <nav class="glass-panel sticky w-full z-50 top-0 transition-all duration-300 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between h-20 items-center">
+            <a href="index.html" class="flex items-center gap-3 cursor-pointer group">
+                <img src="image/HealthcareNewIcon-removebg-preview.png" alt="MyHealth Logo" class="h-12 w-auto group-hover:scale-105 transition-transform" />
+                <span class="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-indigo-600 dark:from-indigo-400 dark:to-indigo-400 tracking-tight">MyHealth</span>
+            </a>
+            <div class="flex items-center gap-3">
+                <button id="themeToggle" class="p-2 sm:p-2.5 rounded-full text-slate-500 bg-slate-100/80 hover:bg-slate-200 dark:text-gray-400 dark:bg-gray-800 dark:hover:bg-gray-700 transition-colors shadow-sm outline-none focus:ring-2 focus:ring-primary-500 mr-2">
+                    <ion-icon name="moon-outline" class="text-lg sm:text-xl block dark:hidden"></ion-icon>
+                    <ion-icon name="sunny-outline" class="text-lg sm:text-xl hidden dark:block"></ion-icon>
+                </button>
+                <a href="index.html" class="text-sm font-semibold text-slate-600 hover:text-primary-600 dark:text-gray-300 transition-colors">← Back to Clinic</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Tool Container -->
+    <main class="flex-grow flex items-center justify-center py-12 px-4 relative">
+        <!-- Decoration -->
+        <div class="absolute top-10 left-10 w-72 h-72 bg-emerald-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 dark:opacity-10 z-0 hidden md:block"></div>
+        <div class="absolute bottom-10 right-10 w-72 h-72 bg-green-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 dark:opacity-10 z-0 hidden md:block"></div>
+
+        <div class="glass-panel w-full max-w-4xl p-8 md:p-12 rounded-[2rem] shadow-2xl relative z-10 transition-all hover:shadow-primary-500/10">
+            <div class="text-center mb-10">
+                <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-4">Calculate Your Macros</h1>
+                <p class="text-lg text-slate-600 dark:text-gray-400">Instantly generate your baseline caloric burn and macro nutrient targets.</p>
+            </div>
+
+            <!-- Form -->
+            <form id="macro-form" class="space-y-6 max-w-lg mx-auto">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">Age</label>
+                        <input type="number" id="age" required class="w-full bg-slate-100 dark:bg-gray-800 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary-500 outline-none text-slate-900 dark:text-white placeholder-slate-400">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">Gender</label>
+                        <select id="gender" class="w-full bg-slate-100 dark:bg-gray-800 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary-500 outline-none text-slate-900 dark:text-white">
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">Weight (kg)</label>
+                        <input type="number" id="weight" step="0.1" required class="w-full bg-slate-100 dark:bg-gray-800 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary-500 outline-none text-slate-900 dark:text-white placeholder-slate-400">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">Height (cm)</label>
+                        <input type="number" id="height" required class="w-full bg-slate-100 dark:bg-gray-800 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary-500 outline-none text-slate-900 dark:text-white placeholder-slate-400">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">Activity Level</label>
+                    <select id="activity" class="w-full bg-slate-100 dark:bg-gray-800 border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary-500 outline-none text-slate-900 dark:text-white">
+                        <option value="1.2">Sedentary (Little to no exercise)</option>
+                        <option value="1.375">Lightly Active (Light exercise 1-3 days/week)</option>
+                        <option value="1.55">Moderately Active (Moderate exercise 3-5 days/week)</option>
+                        <option value="1.725">Very Active (Hard exercise 6-7 days/week)</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 rounded-xl shadow-lg transition-transform hover:-translate-y-1 mt-4">
+                    Calculate Nutrition Facts
+                </button>
+            </form>
+
+            <!-- Results -->
+            <div id="results" class="hidden mt-10 p-8 rounded-[1.5rem] bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 fade-in transition-all">
+                <h3 class="text-2xl font-bold text-emerald-900 dark:text-emerald-400 text-center mb-6">Your Daily Targets</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center mb-8">
+                    <div class="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
+                        <div class="text-sm font-semibold text-slate-500">Calories</div>
+                        <div id="res-calories" class="text-xl font-black text-emerald-600 mt-1">2000</div>
+                    </div>
+                    <div class="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border-b-4 border-blue-400">
+                        <div class="text-sm font-semibold text-slate-500">Protein</div>
+                        <div id="res-protein" class="text-xl font-black text-blue-600 mt-1">150g</div>
+                    </div>
+                    <div class="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border-b-4 border-amber-400">
+                        <div class="text-sm font-semibold text-slate-500">Carbs</div>
+                        <div id="res-carbs" class="text-xl font-black text-amber-600 mt-1">200g</div>
+                    </div>
+                    <div class="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border-b-4 border-rose-400">
+                        <div class="text-sm font-semibold text-slate-500">Fats</div>
+                        <div id="res-fats" class="text-xl font-black text-rose-600 mt-1">65g</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visual Food Logging UI (Now Always Visible) -->
+            <div class="mt-8 bg-white dark:bg-gray-800 rounded-[1.5rem] p-8 shadow-xl border border-slate-100 dark:border-gray-700 relative z-10 transition-all hover:shadow-primary-500/10">
+                <h4 class="text-2xl font-bold text-slate-900 dark:text-white mb-2 flex items-center gap-2">
+                    <ion-icon name="nutrition" class="text-emerald-500"></ion-icon> Search Integrated Food Database
+                </h4>
+                <p class="text-sm text-slate-500 mb-6">Powered by global nutrition APIs. Search for any food item to see its exact caloric value and thumbnail.</p>
+                <div class="flex gap-2 mb-6">
+                    <input type="text" id="food-search-query" placeholder="e.g. Avocado Toast" class="flex-grow bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-700 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500 text-sm">
+                    <button onclick="searchFood()" type="button" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold shadow-md transition-colors text-sm">Search Database</button>
+                </div>
+
+                <h5 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4 mt-2">Database Directory</h5>
+                <!-- Open Grid Container -->
+                <div id="food-timeline" class="flex flex-wrap gap-6 py-2 pb-6 justify-center sm:justify-start">
+                    <!-- Food Cards Dynamically Injected Here -->
+                    <div class="flex flex-col items-center flex-shrink-0 animate-pulse bg-slate-50 dark:bg-gray-800 p-2 rounded-xl border border-dashed border-slate-300 dark:border-gray-600 w-28 h-32 justify-center" id="empty-state">
+                        <ion-icon name="search-outline" class="text-3xl text-slate-300 dark:text-gray-600 mb-2"></ion-icon>
+                        <p class="text-xs text-slate-400 text-center">No search made yet.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Theme Toggle Logic
+        const themeToggleBtn = document.getElementById('themeToggle');
+        if (localStorage.getItem('darkMode') === 'enabled') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+
+        themeToggleBtn.addEventListener('click', function() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('darkMode', 'disabled');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('darkMode', 'enabled');
+            }
+        });
+
+        document.getElementById('macro-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const age = parseInt(document.getElementById('age').value);
+            const weight = parseFloat(document.getElementById('weight').value);
+            const height = parseFloat(document.getElementById('height').value);
+            const gender = document.getElementById('gender').value;
+            const activity = parseFloat(document.getElementById('activity').value);
+
+            let bmr = (gender === 'male') ? (10 * weight) + (6.25 * height) - (5 * age) + 5 : (10 * weight) + (6.25 * height) - (5 * age) - 161;
+            const tdee = Math.round(bmr * activity);
+            
+            document.getElementById('res-calories').innerText = tdee + ' kcal';
+            document.getElementById('res-protein').innerText = Math.round((tdee * 0.3) / 4) + 'g';
+            document.getElementById('res-carbs').innerText = Math.round((tdee * 0.4) / 4) + 'g';
+            document.getElementById('res-fats').innerText = Math.round((tdee * 0.3) / 9) + 'g';
+
+            document.getElementById('results').classList.remove('hidden');
+        });
+
+        async function searchFood(isInitialLoad = false) {
+            const query = document.getElementById('food-search-query').value.trim();
+            if (!query && !isInitialLoad) return;
+
+            const timeline = document.getElementById('food-timeline');
+            const emptyState = document.getElementById('empty-state');
+            if(emptyState) emptyState.remove();
+
+            // Clear previous results unless it's initial load building the flex grid
+            if (!isInitialLoad && query) {
+                timeline.innerHTML = '';
+            }
+
+            // Loading state
+            const loadingHtml = `<div class="flex-shrink-0 flex items-center justify-center w-28 h-28 bg-slate-100 rounded-xl" id="temp-load"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div></div>`;
+            timeline.insertAdjacentHTML('beforeend', loadingHtml);
+
+            try {
+                // Call secure proxy (Phase 2 requirement bypasses CORS and secures keys)
+                const res = await fetch(`php/nutrition_api.php?query=${encodeURIComponent(query)}`);
+                const data = await res.json();
+                
+                document.getElementById('temp-load').remove();
+
+                if (data.hints && data.hints.length > 0) {
+                    data.hints.forEach((hint, index) => {
+                        const food = hint.food;
+                        const calories = food.nutrients.ENERC_KCAL ? Math.round(food.nutrients.ENERC_KCAL) : '0';
+                        const imageSrc = food.image ? food.image : '';
+
+                        let visualHtml = '';
+                        if (imageSrc && !imageSrc.includes('placeholder')) {
+                            // Enforce standardized image sizing layout
+                            visualHtml = `<img src="${imageSrc}" alt="${food.label}" class="w-24 h-24 object-cover rounded-xl shadow-sm border border-slate-200">`;
+                        } else {
+                            visualHtml = `<div class="w-24 h-24 bg-emerald-50 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center border border-emerald-100 dark:border-emerald-800 shadow-sm"><ion-icon name="restaurant" class="text-3xl text-emerald-400"></ion-icon></div>`;
+                        }
+
+                        // Use simple incremental delay for cascading animation
+                        const animDelay = index * 100;
+                        const card = `
+                        <div class="flex flex-col items-center flex-shrink-0 animate-fade-in-up" style="animation-delay: ${animDelay}ms;">
+                            ${visualHtml}
+                            <p class="text-xs font-semibold text-slate-800 dark:text-gray-200 mt-2 text-center" style="max-width: 90px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" title="${food.label}">${food.label}</p>
+                            <p class="text-sm font-bold text-emerald-600 dark:text-emerald-400 text-center mt-1">${calories} kcal</p>
+                        </div>`;
+                        
+                        timeline.insertAdjacentHTML('beforeend', card);
+                    });
+                } else {
+                    if (query) alert('Food not found in database.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Connection to Nutrition Engine failed.');
+                const loader = document.getElementById('temp-load');
+                if (loader) loader.remove();
+            }
+        }
+
+        // Initialize user request: Browse all food automatically by firing empty query on load
+        document.addEventListener('DOMContentLoaded', () => {
+            searchFood(true);
+        });
+    </script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</body>
+</html>

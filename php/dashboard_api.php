@@ -141,10 +141,11 @@ $doctorsQuery = $conn->query(
      FROM doctors"
 );
 
-while ($doctor = $doctorsQuery->fetch_assoc()) {
-    // Build the full image URL path relative to the dashboard page
-    $doctor['image_url'] = '../image/' . $doctor['profile_image'];
-    $doctors[] = $doctor;
+if ($doctorsQuery) {
+    while ($doctor = $doctorsQuery->fetch_assoc()) {
+        $doctor['image_url'] = '../image/' . $doctor['profile_image'];
+        $doctors[] = $doctor;
+    }
 }
 $response['doctors'] = $doctors;
 
@@ -170,10 +171,14 @@ for ($hour = $startHour; $hour < $endHour; $hour++) {
         "SELECT COUNT(*) as booked FROM appointments
          WHERE appointment_date >= ? AND appointment_date < ?"
     );
-    $stmt->bind_param("ss", $slotStart, $slotEnd);
-    $stmt->execute();
-    $bookedCount = $stmt->get_result()->fetch_assoc()['booked'];
-    $stmt->close();
+    if ($stmt) {
+        $stmt->bind_param("ss", $slotStart, $slotEnd);
+        $stmt->execute();
+        $bookedCount = $stmt->get_result()->fetch_assoc()['booked'] ?? 0;
+        $stmt->close();
+    } else {
+        $bookedCount = 0;
+    }
 
     $availableChairs = $maxChairs - $bookedCount;
     $timeline[] = [
@@ -242,6 +247,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 /* ═══════════════════════════════
+   PAY INVOICE (POST)
+   Simulated payment processing
+   ═══════════════════════════════ */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'pay_invoice') {
+    $invoiceId = intval($_POST['invoice_id'] ?? 0);
+    $cardLast4 = substr(preg_replace('/\D/', '', $_POST['card_number'] ?? ''), -4);
+    $cardHolder = htmlspecialchars(trim($_POST['card_holder'] ?? ''));
+
+    if ($invoiceId <= 0) {
+        echo json_encode(['status' => 'error', 'message' => 'Invalid invoice']);
+        exit();
+    }
+
+    // Verify invoice belongs to this patient and is pending
+    $stmt = $conn->prepare("SELECT i.invoice_id, i.status, i.total_amount FROM invoices i WHERE i.invoice_id = ? AND i.patient_id = ?");
+    $stmt->bind_param("ii", $invoiceId, $patientId);
+    $stmt->execute();
+    $inv = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    if (!$inv) {
+        echo json_encode(['status' => 'error', 'message' => 'Invoice not found']);
+        exit();
+    }
+    if ($inv['status'] !== 'pending') {
+        echo json_encode(['status' => 'error', 'message' => 'This invoice is already ' . $inv['status']]);
+        exit();
+    }
+
+    // Simulate payment processing (in production, integrate Stripe/PayPal here)
+    $paymentMethod = "Card ending in ****$cardLast4";
+    $paidAt = date('Y-m-d H:i:s');
+
+    $stmt = $conn->prepare("UPDATE invoices SET status = 'paid', paid_at = ?, payment_method = ? WHERE invoice_id = ?");
+    $stmt->bind_param("ssi", $paidAt, $paymentMethod, $invoiceId);
+
+    if ($stmt->execute()) {
+        echo json_encode([
+            'status' => 'success', 
+            'message' => 'Payment of $' . number_format($inv['total_amount'], 2) . ' processed successfully!',
+            'paid_at' => date('M d, Y h:i A', strtotime($paidAt))
+        ]);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Payment failed. Please try again.']);
+    }
+    $stmt->close();
+    exit();
+}
+
+/* ═══════════════════════════════
    PATIENT'S APPOINTMENTS LIST
    (All past and upcoming appointments
    with doctor name and wait time)
@@ -260,28 +315,29 @@ if ($patientId) {
          WHERE a.patient_id = ? AND a.status NOT IN ('terminated', 'cancelled', 'completed')
          ORDER BY a.appointment_date DESC"
     );
-    $stmt->bind_param("i", $patientId);
-    $stmt->execute();
-    $appointmentsQuery = $stmt->get_result();
+    if ($stmt) {
+        $stmt->bind_param("i", $patientId);
+        $stmt->execute();
+        $appointmentsQuery = $stmt->get_result();
 
-    while ($appt = $appointmentsQuery->fetch_assoc()) {
-        $estimatedWait = ceil(($appt['queue_number'] / 6) * 15);
+        while ($appt = $appointmentsQuery->fetch_assoc()) {
+            $estimatedWait = ceil(($appt['queue_number'] / 6) * 15);
 
-        $appointments[] = [
-            'appointment_id' => $appt['appointment_id'],
-            'date'           => date('M d, Y h:i A', strtotime($appt['appointment_date'])),
-            'raw_date'       => $appt['appointment_date'],
-            'reason'       => $appt['reason'],
-
-            'priority'     => $appt['ai_priority'],
-            'status'       => ucfirst($appt['status']),
-            'queue_number' => $appt['queue_number'],
-            'ticket_code'  => $appt['ticket_code'] ?? 'N/A',
-            'wait_time'    => $estimatedWait,
-            'doctor'       => $appt['doctor_name'] ?? 'General'
-        ];
+            $appointments[] = [
+                'appointment_id' => $appt['appointment_id'],
+                'date'           => date('M d, Y h:i A', strtotime($appt['appointment_date'])),
+                'raw_date'       => $appt['appointment_date'],
+                'reason'       => $appt['reason'],
+                'priority'     => $appt['ai_priority'],
+                'status'       => ucfirst($appt['status']),
+                'queue_number' => $appt['queue_number'],
+                'ticket_code'  => $appt['ticket_code'] ?? 'N/A',
+                'wait_time'    => $estimatedWait,
+                'doctor'       => $appt['doctor_name'] ?? 'General'
+            ];
+        }
+        $stmt->close();
     }
-    $stmt->close();
 }
 $response['appointments'] = $appointments;
 
@@ -298,18 +354,20 @@ if ($patientId) {
          WHERE mr.patient_id = ?
          ORDER BY mr.record_date DESC"
     );
-    $stmt->bind_param("i", $patientId);
-    $stmt->execute();
-    $res = $stmt->get_result();
-    while ($row = $res->fetch_assoc()) {
-        $records[] = [
-            'date'    => date('M d, Y', strtotime($row['record_date'])),
-            'type'    => $row['record_type'],
-            'summary' => $row['summary'],
-            'doctor'  => $row['doctor_name'] ?? 'System'
-        ];
+    if ($stmt) {
+        $stmt->bind_param("i", $patientId);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        while ($row = $res->fetch_assoc()) {
+            $records[] = [
+                'date'    => date('M d, Y', strtotime($row['record_date'])),
+                'type'    => $row['record_type'],
+                'summary' => $row['summary'],
+                'doctor'  => $row['doctor_name'] ?? 'System'
+            ];
+        }
+        $stmt->close();
     }
-    $stmt->close();
 }
 $response['records'] = $records;
 
@@ -328,19 +386,21 @@ if ($patientId) {
          WHERE mr.patient_id = ?
          ORDER BY pr.prescription_id DESC"
     );
-    $stmt->bind_param("i", $patientId);
-    $stmt->execute();
-    $res = $stmt->get_result();
-    while ($row = $res->fetch_assoc()) {
-        $prescriptions[] = [
-            'medication'   => $row['medication_name'],
-            'dosage'       => $row['dosage'],
-            'frequency'    => $row['frequency'],
-            'duration'     => $row['duration'],
-            'doctor'       => $row['doctor_name'] ?? 'System'
-        ];
+    if ($stmt) {
+        $stmt->bind_param("i", $patientId);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        while ($row = $res->fetch_assoc()) {
+            $prescriptions[] = [
+                'medication'   => $row['medication_name'],
+                'dosage'       => $row['dosage'],
+                'frequency'    => $row['frequency'],
+                'duration'     => $row['duration'],
+                'doctor'       => $row['doctor_name'] ?? 'System'
+            ];
+        }
+        $stmt->close();
     }
-    $stmt->close();
 }
 $response['prescriptions'] = $prescriptions;
 
@@ -348,6 +408,17 @@ $response['prescriptions'] = $prescriptions;
 /* ═══════════════════════════════
    NOTIFICATIONS
    ═══════════════════════════════ */
+$conn->query("CREATE TABLE IF NOT EXISTS notifications (
+    notif_id INT AUTO_INCREMENT PRIMARY KEY,
+    sender VARCHAR(100),
+    topic VARCHAR(200),
+    message TEXT,
+    target VARCHAR(50) DEFAULT 'all_users',
+    target_user_id INT UNSIGNED NULL,
+    is_read TINYINT(1) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)");
+
 $notifications = [];
 $stmt = $conn->prepare(
     "SELECT notif_id, sender, topic, message, is_read, created_at 
@@ -357,21 +428,58 @@ $stmt = $conn->prepare(
         OR target_user_id = ?
      ORDER BY created_at DESC"
 );
-$stmt->bind_param("i", $userId);
-$stmt->execute();
-$res = $stmt->get_result();
-while ($row = $res->fetch_assoc()) {
-    $notifications[] = [
-        'id'      => $row['notif_id'],
-        'sender'  => $row['sender'],
-        'topic'   => $row['topic'],
-        'message' => $row['message'],
-        'is_read' => $row['is_read'],
-        'date'    => date('M d, Y h:i A', strtotime($row['created_at']))
-    ];
+if ($stmt) {
+    $stmt->bind_param("i", $userId);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) {
+        $notifications[] = [
+            'id'      => $row['notif_id'],
+            'sender'  => $row['sender'],
+            'topic'   => $row['topic'],
+            'message' => $row['message'],
+            'is_read' => $row['is_read'],
+            'date'    => date('M d, Y h:i A', strtotime($row['created_at']))
+        ];
+    }
+    $stmt->close();
 }
-$stmt->close();
 $response['notifications'] = $notifications;
+
+
+/* ═══════════════════════════════
+   BILLING / INVOICES
+   (Patient's bills created by admin)
+   ═══════════════════════════════ */
+$invoices = [];
+if ($patientId) {
+    $stmt = $conn->prepare(
+        "SELECT invoice_id, subtotal, tax_rate, tax_amount, total_amount, 
+                status, issue_date, due_date, notes
+         FROM invoices
+         WHERE patient_id = ?
+         ORDER BY issue_date DESC"
+    );
+    if ($stmt) {
+        $stmt->bind_param("i", $patientId);
+        $stmt->execute();
+        $res = $stmt->get_result();
+        while ($row = $res->fetch_assoc()) {
+            $invoices[] = [
+                'id'        => $row['invoice_id'],
+                'subtotal'  => number_format($row['subtotal'] ?: $row['total_amount'], 2),
+                'tax'       => number_format($row['tax_amount'] ?: 0, 2),
+                'total'     => number_format($row['total_amount'], 2),
+                'status'    => $row['status'],
+                'date'      => date('M d, Y', strtotime($row['issue_date'])),
+                'due_date'  => $row['due_date'] ? date('M d, Y', strtotime($row['due_date'])) : 'N/A',
+                'notes'     => $row['notes'] ?? ''
+            ];
+        }
+        $stmt->close();
+    }
+}
+$response['invoices'] = $invoices;
 
 
 /* ═══════════════════════════════

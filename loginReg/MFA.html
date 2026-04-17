@@ -3,14 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MFA Verification – MyHealth Portal</title>
+    <title>MFA Verification – MyHealth</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
     <script>
       if (localStorage.getItem('darkMode') === 'enabled') document.documentElement.classList.add('dark');
-      tailwind.config = { darkMode: 'class' };
+        tailwind.config = { 
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            200: '#c7d2fe',
+                            300: '#a5b4fc',
+                            400: '#818cf8',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            800: '#3730a3',
+                            900: '#312e81',
+                        }
+                    }
+                }
+            }
+        };
     </script>
     <style> body { font-family: 'Inter', sans-serif; } </style>
 </head>
@@ -18,7 +38,10 @@
 
     <!-- ═══ Navbar ═══ -->
     <nav class="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-700 px-6 py-4 flex items-center justify-between sticky top-0 z-50">
-        <a href="../index.html" class="text-xl font-extrabold text-indigo-600 tracking-tight">MyHealth Portal</a>
+        <a href="../index.html" class="flex items-center gap-3 cursor-pointer group">
+            <img src="../image/HealthcareNewIcon-removebg-preview.png" alt="MyHealth Logo" class="h-12 w-auto group-hover:scale-105 transition-transform" />
+            <span class="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-indigo-600 dark:from-primary-400 dark:to-indigo-400 tracking-tight">MyHealth</span>
+        </a>
         <div class="flex items-center gap-3">
             <a href="login.html" class="text-sm font-medium text-gray-500 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 px-3 py-1.5 rounded-lg transition-colors">Login</a>
             <button id="darkModeToggle" class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors">
@@ -42,7 +65,7 @@
             <!-- Card Body -->
             <div class="p-8 space-y-5 text-center">
                 <form id="mfaForm" class="space-y-4">
-                    <input type="text" id="codeInput" maxlength="6" required placeholder="000 000"
+                    <input type="text" id="codeInput" maxlength="6" required placeholder="000 000" value="111111"
                            class="w-full bg-gray-50 dark:bg-gray-700 border-2 border-gray-100 dark:border-gray-600 rounded-xl px-4 py-4 text-3xl text-center font-bold tracking-[0.5em] text-gray-800 dark:text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 dark:focus:ring-indigo-900/30 transition-all">
 
                     <div id="codeError" class="hidden bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-700 text-sm rounded-xl px-4 py-2.5">Please enter the 6-digit code</div>
@@ -83,10 +106,27 @@
                 return;
             }
 
-            const userRole = localStorage.getItem('user_role');
-            if (userRole === 'doctor')      window.location.href = '../dashboards/doctor_dashboard.html';
-            else if (userRole === 'admin')  window.location.href = '../dashboards/admin_dashboard.html';
-            else                            window.location.href = '../dashboards/patient_dashboard.html';
+            const formData = new URLSearchParams();
+            formData.append('verify_mfa', 'true');
+
+            fetch('../php/auth.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                credentials: 'same-origin',
+                body: formData.toString()
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const userRole = localStorage.getItem('user_role');
+                    if (userRole === 'doctor')      window.location.href = '../dashboards/doctor_dashboard.html';
+                    else if (userRole === 'admin')  window.location.href = '../dashboards/admin_dashboard.html';
+                    else                            window.location.href = '../dashboards/patient_dashboard.html';
+                } else {
+                    codeError.textContent = data.message || 'Verification failed. Please try again.';
+                    codeError.classList.remove('hidden');
+                }
+            });
         });
 
         document.getElementById('resendButton').addEventListener('click', function() {

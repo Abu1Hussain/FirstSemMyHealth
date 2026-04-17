@@ -132,7 +132,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->close();
         exit();
     }
-    // 4. Transfer Appointment
+    // 4. Update Presence Status
+    if (isset($_POST['action']) && $_POST['action'] === 'update_presence') {
+        $newStatus = $_POST['status'] ?? '';
+        $allowed = ['on_duty', 'in_consultation', 'on_break', 'off_shift'];
+        if (!in_array($newStatus, $allowed)) {
+            echo json_encode(['status' => 'error', 'message' => 'Invalid presence status']);
+            exit();
+        }
+        $stmt = $conn->prepare("UPDATE doctors SET presence_status = ? WHERE user_id = ?");
+        $stmt->bind_param("si", $newStatus, $userId);
+        if ($stmt->execute()) {
+            echo json_encode(['status' => 'success', 'message' => 'Presence updated to ' . $newStatus]);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Failed to update presence']);
+        }
+        $stmt->close();
+        exit();
+    }
+
+    // 5. Transfer Appointment
     if (isset($_POST['action']) && $_POST['action'] === 'transfer_appointment') {
         $apptId = $_POST['appointment_id'];
         $targetDoctorId = $_POST['target_doctor_id'];
@@ -241,26 +260,38 @@ $doctorId = null;
 $profileImage = 'default_user.png';
 
 // 4. Get the doctor's doctor_id
-$stmt = $conn->prepare("SELECT doctor_id, specialization, department, profile_image FROM doctors WHERE user_id = ?");
+$stmt = $conn->prepare("SELECT doctor_id, specialization, department, profile_image, presence_status FROM doctors WHERE user_id = ?");
 $stmt->bind_param("i", $userId);
 $stmt->execute();
 $staffResult = $stmt->get_result();
 
+$presenceStatus = 'on_duty';
 if ($staffRow = $staffResult->fetch_assoc()) {
     $doctorId = $staffRow['doctor_id'];
     $response['specialization'] = $staffRow['specialization'];
     $response['department']     = $staffRow['department'];
+    $presenceStatus = $staffRow['presence_status'] ?? 'off_shift';
     if (!empty($staffRow['profile_image'])) {
         $profileImage = $staffRow['profile_image'];
     }
 }
 $stmt->close();
 
+// Auto-set to on_duty when doctor loads dashboard (if they were off_shift)
+if ($presenceStatus === 'off_shift' && $doctorId) {
+    $stmtP = $conn->prepare("UPDATE doctors SET presence_status = 'on_duty' WHERE doctor_id = ?");
+    $stmtP->bind_param("i", $doctorId);
+    $stmtP->execute();
+    $stmtP->close();
+    $presenceStatus = 'on_duty';
+}
+
 $response['user'] = [
     'name'    => $doctorName,
     'initial' => strtoupper(substr($doctorName, 0, 1)),
     'email'   => $doctorEmail,
-    'image_url' => '../image/' . $profileImage
+    'image_url' => '../image/' . $profileImage,
+    'presence_status' => $presenceStatus
 ];
 
 

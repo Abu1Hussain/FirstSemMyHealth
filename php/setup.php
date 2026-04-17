@@ -117,8 +117,17 @@ $conn->query("CREATE TABLE IF NOT EXISTS doctors (
     profile_image  VARCHAR(255) DEFAULT 'default_user.png',
     bio            TEXT,
     capacity       INT DEFAULT 30,
+    presence_status ENUM('on_duty','in_consultation','on_break','off_shift') DEFAULT 'off_shift',
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+// --- Migration: Add presence_status column if it doesn't exist ---
+$checkCol = $conn->query("SHOW COLUMNS FROM doctors LIKE 'presence_status'");
+if ($checkCol && $checkCol->num_rows == 0) {
+    $conn->query("ALTER TABLE doctors ADD COLUMN presence_status ENUM('on_duty','in_consultation','on_break','off_shift') DEFAULT 'off_shift'");
+    echo "🔄 Migrated 'doctors' table: Added 'presence_status' column.<br>";
+}
+
 echo "📋 Table 'doctors' created.<br>";
 
 
@@ -302,6 +311,61 @@ $conn->query("CREATE TABLE IF NOT EXISTS feedback_reports (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 echo "📋 Table 'feedback_reports' created.<br>";
 
+
+/* ────────────────────────────────────────────────────
+   TABLE 13b: invoices
+   Stores billing invoices for patients.
+   Created by admins, visible to patients.
+   ──────────────────────────────────────────────────── */
+
+$conn->query("CREATE TABLE IF NOT EXISTS invoices (
+    invoice_id     INT AUTO_INCREMENT PRIMARY KEY,
+    patient_id     INT NOT NULL,
+    admin_id       INT DEFAULT NULL,
+    subtotal       DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    tax_rate       DECIMAL(5,2) NOT NULL DEFAULT 10.00,
+    tax_amount     DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    total_amount   DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    status         ENUM('pending','paid','cancelled','terminated') DEFAULT 'pending',
+    issue_date     DATETIME DEFAULT CURRENT_TIMESTAMP,
+    due_date       DATE,
+    paid_at        DATETIME DEFAULT NULL,
+    payment_method VARCHAR(50) DEFAULT NULL,
+    notes          TEXT,
+    FOREIGN KEY (patient_id) REFERENCES patients(patient_id) ON DELETE CASCADE,
+    FOREIGN KEY (admin_id) REFERENCES users(user_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+echo "📋 Table 'invoices' created.<br>";
+
+// Migration: add tax columns to existing invoices table if missing
+$colCheck = $conn->query("SHOW COLUMNS FROM invoices LIKE 'subtotal'");
+if ($colCheck && $colCheck->num_rows == 0) {
+    $conn->query("ALTER TABLE invoices ADD COLUMN subtotal DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER patient_id");
+    $conn->query("ALTER TABLE invoices ADD COLUMN tax_rate DECIMAL(5,2) NOT NULL DEFAULT 10.00 AFTER subtotal");
+    $conn->query("ALTER TABLE invoices ADD COLUMN tax_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00 AFTER tax_rate");
+    $conn->query("ALTER TABLE invoices ADD COLUMN due_date DATE AFTER issue_date");
+    echo "📋 Migration: Added tax columns to 'invoices'.<br>";
+}
+
+// Migration: add admin_id if missing
+$colCheck2 = $conn->query("SHOW COLUMNS FROM invoices LIKE 'admin_id'");
+if ($colCheck2 && $colCheck2->num_rows == 0) {
+    $conn->query("ALTER TABLE invoices ADD COLUMN admin_id INT DEFAULT NULL AFTER patient_id");
+    echo "📋 Migration: Added admin_id to 'invoices'.<br>";
+}
+
+// Migration: add paid_at & payment_method if missing
+$colCheck3 = $conn->query("SHOW COLUMNS FROM invoices LIKE 'paid_at'");
+if ($colCheck3 && $colCheck3->num_rows == 0) {
+    $conn->query("ALTER TABLE invoices ADD COLUMN paid_at DATETIME DEFAULT NULL AFTER due_date");
+    $conn->query("ALTER TABLE invoices ADD COLUMN payment_method VARCHAR(50) DEFAULT NULL AFTER paid_at");
+    echo "📋 Migration: Added payment columns to 'invoices'.<br>";
+}
+
+// Migration: update status enum to include pending/terminated
+$conn->query("ALTER TABLE invoices MODIFY COLUMN status ENUM('pending','unpaid','paid','cancelled','terminated','overdue') DEFAULT 'pending'");
+// Convert old 'unpaid' to 'pending'
+$conn->query("UPDATE invoices SET status='pending' WHERE status='unpaid'");
 
 /* ────────────────────────────────────────────────────
    TABLE 14: tickets

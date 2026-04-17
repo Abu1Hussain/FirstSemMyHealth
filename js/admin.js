@@ -9,21 +9,79 @@ let allDocumentQueue = [];
 let allDoctorsData = [];
 let allPatientsData = [];
 
+// ── UI Logic: Sidebar ──
+document.addEventListener("DOMContentLoaded", function () {
+  const sidebarToggle = document.getElementById("sidebarToggle");
+  const sidebar = document.getElementById("sidebar");
+  const mainContent = document.getElementById("mainContent");
+
+  if (sidebarToggle && sidebar && mainContent) {
+    sidebarToggle.addEventListener("click", () => {
+      if (window.innerWidth <= 768) {
+        sidebar.classList.toggle("mobile-open");
+      } else {
+        sidebar.classList.toggle("sidebar-collapsed");
+        sidebar.classList.toggle("sidebar-expanded");
+        if (sidebar.classList.contains("sidebar-collapsed")) {
+          mainContent.classList.remove("ml-64");
+          mainContent.classList.add("ml-[4.5rem]");
+        } else {
+          mainContent.classList.remove("ml-[4.5rem]");
+          mainContent.classList.add("ml-64");
+        }
+      }
+    });
+    
+    // Handle window resize cleanly
+    window.addEventListener("resize", () => {
+      if (window.innerWidth <= 768) {
+        sidebar.classList.remove("sidebar-collapsed", "sidebar-expanded");
+        mainContent.classList.remove("ml-[4.5rem]", "ml-64");
+      } else {
+        sidebar.classList.remove("mobile-open");
+        if (!sidebar.classList.contains("sidebar-collapsed")) {
+          sidebar.classList.add("sidebar-expanded");
+          mainContent.classList.add("ml-64");
+        }
+      }
+    });
+
+    // initial setup based on viewport
+    if (window.innerWidth <= 768) {
+      sidebar.classList.remove("sidebar-collapsed", "sidebar-expanded");
+      mainContent.classList.remove("ml-[4.5rem]", "ml-64");
+    }
+
+    // Close sidebar on mobile when a link is clicked
+    const sidebarLinks = sidebar.querySelectorAll(".sidebar-link");
+    sidebarLinks.forEach(link => {
+      link.addEventListener("click", () => {
+          if(window.innerWidth <= 768) {
+              sidebar.classList.remove("mobile-open");
+          }
+      });
+    });
+  }
+});
+
 // ── Helper: API Fetch ──
 async function apiFetch(action) {
   try {
-    const response = await fetch(`${API_BASE}?action=${action}`);
+    const response = await fetch(`${API_BASE}?action=${action}`, {
+      credentials: "include"
+    });
     const json = await response.json();
     if (json.status === "error") {
       if (json.message === "Unauthorized") {
+        console.warn("Session expired for action:", action);
         window.location.href = "../loginReg/login.html";
       }
-      console.error("API error:", json.message);
+      console.error("API error for", action, ":", json.message, json.debug || "");
       return null;
     }
     return json.data;
   } catch (error) {
-    console.error("Fetch error:", error);
+    console.error("Fetch error for", action, ":", error);
     return null;
   }
 }
@@ -44,6 +102,7 @@ async function loadDashboardStats() {
 
 // ── Table Rendering ──
 async function loadAllTables() {
+  try {
   // 1. Users
   const users = await apiFetch("users");
   if (users) {
@@ -167,26 +226,95 @@ async function loadAllTables() {
       )
       .join("");
   }
+  } catch(e) { console.error('Error loading tables 1-11:', e); }
 
-  // 12. Invoices (Billing)
+  // 12. Invoices (Billing) — loaded independently so earlier errors don't block it
+  try {
   const invoices = await apiFetch("billing");
-  if (invoices) {
-    document.getElementById("billingTableBody").innerHTML = invoices
-      .map((inv) => {
-        const statusClass =
-          inv.status.toLowerCase() === "paid"
-            ? "status-active"
-            : inv.status.toLowerCase() === "unpaid"
-              ? "status-pending"
-              : "bg-gray-100 text-gray-800";
-        return `<tr>
-                <td>${inv.patient}</td>
-                <td class="font-semibold">${inv.amount}</td>
-                <td><span class="status-badge ${statusClass}">${inv.status}</span></td>
-                <td>${inv.date}</td>
-            </tr>`;
-      })
-      .join("");
+  const billingBody = document.getElementById("billingTableBody");
+  if (!invoices || invoices.length === 0) {
+    if (billingBody) billingBody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-gray-400">
+      <ion-icon name="receipt-outline" style="font-size:2rem" class="block mx-auto mb-2 opacity-30"></ion-icon>
+      No invoices found. Create a bill to get started.</td></tr>`;
+  } else if (billingBody) {
+    try {
+      billingBody.innerHTML = invoices
+        .map((inv) => {
+          const statusColors = {
+            paid: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+            pending: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+            cancelled: "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400",
+            terminated: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+          };
+          const st = (inv.status || 'pending').toLowerCase();
+          const statusClass = statusColors[st] || statusColors.pending;
+
+          // Build status dropdown options
+          const statuses = ['pending', 'paid', 'cancelled', 'terminated'];
+          const optionsHtml = statuses.map(s => 
+            `<option value="${s}" ${st === s ? 'selected' : ''}>${s.charAt(0).toUpperCase() + s.slice(1)}</option>`
+          ).join('');
+
+          return `<tr>
+                  <td>${inv.patient || '—'}</td>
+                  <td class="text-gray-500 dark:text-gray-400">${inv.subtotal || '$0.00'}</td>
+                  <td class="text-amber-600 dark:text-amber-400 text-xs">${inv.tax || '$0.00'}</td>
+                  <td class="font-bold">${inv.amount || '$0.00'}</td>
+                  <td><span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${statusClass}">${inv.status || 'Pending'}</span></td>
+                  <td>${inv.date || '—'}</td>
+                  <td class="text-gray-500">${inv.due_date || 'N/A'}</td>
+                  <td>
+                    <select onchange="changeInvoiceStatus(${inv.id}, this.value)" 
+                      class="text-xs bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5 text-gray-700 dark:text-gray-300 focus:ring-indigo-500 focus:border-indigo-500 cursor-pointer">
+                      ${optionsHtml}
+                    </select>
+                  </td>
+              </tr>`;
+        })
+        .join("");
+    } catch (e) {
+      console.error("Billing render error:", e);
+      billingBody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-red-400">Error rendering invoices</td></tr>`;
+    }
+
+    // Update billing summary cards
+    let outstanding = 0, paid = 0, pendingCount = 0;
+    invoices.forEach((inv) => {
+      const amount = parseFloat((inv.amount || '0').replace(/[$,]/g, '')) || 0;
+      const st = (inv.status || '').toLowerCase();
+      if (st === 'pending') { outstanding += amount; pendingCount++; }
+      else if (st === 'paid') { paid += amount; }
+    });
+    const outEl = document.getElementById('billing-outstanding');
+    const paidEl = document.getElementById('billing-paid');
+    const pendEl = document.getElementById('billing-pending-count');
+    if (outEl) outEl.textContent = '$' + outstanding.toFixed(2);
+    if (paidEl) paidEl.textContent = '$' + paid.toFixed(2);
+    if (pendEl) pendEl.textContent = pendingCount;
+  }
+  } catch(e) { console.error('Error loading billing:', e); }
+}
+
+// ── Change Invoice Status (Admin) ──
+async function changeInvoiceStatus(invoiceId, newStatus) {
+  const formData = new FormData();
+  formData.append("invoice_id", invoiceId);
+  formData.append("status", newStatus);
+  try {
+    const res = await fetch(`${API_BASE}?action=update_invoice_status`, {
+      method: "POST",
+      body: formData,
+      credentials: "include",
+    });
+    const data = await res.json();
+    if (data.status === "success") {
+      Swal.fire({ icon: "success", title: data.message, timer: 1500, showConfirmButton: false });
+      loadAllTables();
+    } else {
+      Swal.fire("Error", data.message, "error");
+    }
+  } catch (e) {
+    Swal.fire("Error", "Network error", "error");
   }
 }
 
@@ -261,7 +389,13 @@ function renderDoctorsTable() {
     return;
   }
 
-  let html = `<table class="appt-table"><thead><tr><th>Staff</th><th>Contact</th><th>Department</th><th>Specialization</th><th>Completed</th><th>Actions</th></tr></thead><tbody>`;
+  let html = `<table class="appt-table"><thead><tr><th>Staff</th><th>Status</th><th>Contact</th><th>Department</th><th>Specialization</th><th>Completed</th><th>Actions</th></tr></thead><tbody>`;
+  const presenceMap = {
+    on_duty:         { emoji: '🩺', label: 'On Duty',         cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
+    in_consultation: { emoji: '🚪', label: 'Busy',            cls: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400' },
+    on_break:        { emoji: '☕', label: 'Break',            cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
+    off_shift:       { emoji: '🌙', label: 'Off Shift',       cls: 'bg-slate-100 text-slate-500 dark:bg-slate-900/30 dark:text-slate-400' }
+  };
   filteredDoctors.forEach((d) => {
     const initials = d.name ? d.name.charAt(0).toUpperCase() : "?";
     let avatarHtml;
@@ -275,8 +409,12 @@ function renderDoctorsTable() {
       avatarHtml = `<div style="width:40px; height:40px; border-radius:50%; background:#e0e7ff; color:#3730a3; display:flex; align-items:center; justify-content:center; font-weight:bold;">${initials}</div>`;
     }
     const safeName = (d.name || "Unknown").replace(/'/g, "\\'");
+    const pStatus = d.presence_status || 'off_shift';
+    const pConf = presenceMap[pStatus] || presenceMap.off_shift;
+    const presenceBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${pConf.cls}">${pConf.emoji} ${pConf.label}</span>`;
     html += `<tr>
             <td><div class="flex items-center gap-3">${avatarHtml}<div><div class="font-semibold text-gray-800 dark:text-gray-100">${d.name || "Unknown"}</div><div class="text-xs text-gray-500">ID: #${(d.id || 0).toString().padStart(4, "0")}</div></div></div></td>
+            <td>${presenceBadge}</td>
             <td><div class="text-xs"><div><i class="fas fa-envelope text-gray-400 w-4"></i> ${d.email || "\u2014"}</div><div class="mt-1"><i class="fas fa-phone text-gray-400 w-4"></i> ${d.phone || "\u2014"}</div></div></td>
             <td><span class="status-badge" style="background:#e0e7ff; color:#3730a3;">${d.department || "General"}</span></td>
             <td>${d.specialization || "General Medicine"}</td>
@@ -497,6 +635,21 @@ async function submitBookAppt() {
   }
 }
 
+// ── Tax Preview (live calculation) ──
+function updateTaxPreview() {
+  const subtotal = parseFloat(document.getElementById("bill-amount").value) || 0;
+  const taxRate = 0.10; // Fixed 10%
+  const tax = Math.round(subtotal * taxRate * 100) / 100;
+  const total = Math.round((subtotal + tax) * 100) / 100;
+
+  const subEl = document.getElementById("tax-preview-subtotal");
+  const taxEl = document.getElementById("tax-preview-tax");
+  const totalEl = document.getElementById("tax-preview-total");
+  if (subEl) subEl.textContent = "$" + subtotal.toFixed(2);
+  if (taxEl) taxEl.textContent = "$" + tax.toFixed(2);
+  if (totalEl) totalEl.textContent = "$" + total.toFixed(2);
+}
+
 // ── Billing Actions ──
 function openBillModal() {
   const patientSelect = document.getElementById("bill-patient");
@@ -523,12 +676,12 @@ function closeBillModal() {
 
 async function submitBill() {
   const patient = document.getElementById("bill-patient").value;
-  const amount = document.getElementById("bill-amount").value;
+  const amount = parseFloat(document.getElementById("bill-amount").value);
   const notes = document.getElementById("bill-notes").value;
   const sender = document.getElementById("bill-sender").value;
 
-  if (!patient || !amount) {
-    Swal.fire("Error", "Patient and Amount are required.", "error");
+  if (!patient || !amount || amount <= 0) {
+    Swal.fire("Error", "Patient and a valid Amount are required.", "error");
     return;
   }
 
@@ -542,12 +695,28 @@ async function submitBill() {
     const res = await fetch(`${API_BASE}?action=create_bill`, {
       method: "POST",
       body: formData,
+      credentials: "include",
     });
     const data = await res.json();
     if (data.status === "success") {
-      Swal.fire("Success", data.message, "success");
+      const bd = data.breakdown;
+      Swal.fire({
+        icon: "success",
+        title: "Bill Created!",
+        html: `<div class="text-left space-y-1 mt-2">
+          <div class="flex justify-between"><span class="text-gray-500">Subtotal:</span><span class="font-medium">$${bd.subtotal}</span></div>
+          <div class="flex justify-between"><span class="text-gray-500">Tax (10%):</span><span class="font-medium text-amber-600">$${bd.tax}</span></div>
+          <hr class="my-1 border-gray-200">
+          <div class="flex justify-between"><span class="font-bold">Total:</span><span class="font-bold text-indigo-600">$${bd.total}</span></div>
+        </div>`,
+        customClass: {
+          popup: "bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700",
+          title: "dark:text-white",
+          htmlContainer: "dark:text-gray-300",
+        },
+      });
       closeBillModal();
-      loadAllTables(); // refresh billing table
+      loadAllTables();
     } else {
       Swal.fire("Error", data.message, "error");
     }
@@ -877,19 +1046,29 @@ function deletePatient(patientId, patientName) {
       formData.append("delete_patient", "1");
       formData.append("patient_id", patientId);
       try {
-        const res = await fetch("../php/admin_api.php", {
+        const res = await fetch(`${API_BASE}`, {
           method: "POST",
           body: formData,
+          credentials: "include",
         });
-        const data = await res.json();
+        const text = await res.text();
+        console.log("Delete response:", text);
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch (e) {
+          Swal.fire("Error", "Server returned invalid response: " + text.substring(0, 200), "error");
+          return;
+        }
         if (data.status === "success") {
           Swal.fire("Deleted!", data.message, "success");
           loadAllTables();
         } else {
-          Swal.fire("Error", data.message, "error");
+          Swal.fire("Error", data.message + (data.debug ? "\n\nDebug: " + JSON.stringify(data.debug) : ""), "error");
         }
       } catch (err) {
-        Swal.fire("Error", "Network error", "error");
+        console.error("Delete error:", err);
+        Swal.fire("Error", "Network error: " + err.message, "error");
       }
     }
   });
@@ -965,4 +1144,62 @@ document.addEventListener("DOMContentLoaded", () => {
   loadDashboardStats();
   loadAllTables();
   loadCharts();
+
+  // Initialize admin presence from localStorage
+  const savedPresence = localStorage.getItem('adminPresenceStatus') || 'on_duty';
+  updateAdminPresenceUI(savedPresence);
+});
+
+/* ═══════════════════════════════════════════════════════════
+   Admin Presence System (3 states — no In Consultation)
+   ═══════════════════════════════════════════════════════════ */
+
+const ADMIN_PRESENCE_CONFIG = {
+  on_duty:   { emoji: '🩺', label: 'On Duty',   bg: 'bg-emerald-100', border: 'border-emerald-300', text: 'text-emerald-700', darkBg: 'dark:bg-emerald-900/30', darkBorder: 'dark:border-emerald-600', darkText: 'dark:text-emerald-400' },
+  on_break:  { emoji: '☕', label: 'On Break',  bg: 'bg-amber-100',   border: 'border-amber-300',   text: 'text-amber-700',   darkBg: 'dark:bg-amber-900/30',   darkBorder: 'dark:border-amber-600',   darkText: 'dark:text-amber-400' },
+  off_shift: { emoji: '🌙', label: 'Off Shift', bg: 'bg-slate-100',   border: 'border-slate-300',   text: 'text-slate-500',   darkBg: 'dark:bg-slate-900/30',   darkBorder: 'dark:border-slate-600',   darkText: 'dark:text-slate-400' }
+};
+
+function updateAdminPresenceUI(status) {
+  const config = ADMIN_PRESENCE_CONFIG[status] || ADMIN_PRESENCE_CONFIG.on_duty;
+  const btn = document.getElementById('adminPresenceToggle');
+  const emoji = document.getElementById('admin-presence-emoji');
+  const label = document.getElementById('admin-presence-label');
+  if (!btn) return;
+
+  // Remove all presence classes
+  Object.values(ADMIN_PRESENCE_CONFIG).forEach(c => {
+    btn.classList.remove(c.bg, c.border, c.text, c.darkBg, c.darkBorder, c.darkText);
+  });
+
+  // Apply new classes
+  btn.classList.add(config.bg, config.border, config.text, config.darkBg, config.darkBorder, config.darkText);
+  if (emoji) emoji.textContent = config.emoji;
+  if (label) label.textContent = config.label;
+}
+
+function setAdminPresence(status) {
+  updateAdminPresenceUI(status);
+  localStorage.setItem('adminPresenceStatus', status);
+  // Close dropdown
+  document.getElementById('adminPresenceDropdown')?.classList.add('hidden');
+  // Show toast
+  if (typeof Swal !== 'undefined') {
+    const config = ADMIN_PRESENCE_CONFIG[status];
+    Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: `${config.emoji} Status: ${config.label}`, showConfirmButton: false, timer: 2000, timerProgressBar: true });
+  }
+}
+
+function toggleAdminPresenceDropdown() {
+  const dd = document.getElementById('adminPresenceDropdown');
+  if (dd) dd.classList.toggle('hidden');
+}
+
+// Close admin presence dropdown on click outside
+document.addEventListener('click', function(e) {
+  const wrapper = document.getElementById('admin-presence-wrapper');
+  const dd = document.getElementById('adminPresenceDropdown');
+  if (wrapper && dd && !wrapper.contains(e.target)) {
+    dd.classList.add('hidden');
+  }
 });

@@ -15,6 +15,9 @@
     <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
 
     <script>
+        if (localStorage.getItem('darkMode') === 'enabled') {
+            document.documentElement.classList.add('dark');
+        }
         tailwind.config = { 
             darkMode: 'class',
             theme: {
@@ -104,10 +107,7 @@
 </head>
 <body class="bg-slate-50 dark:bg-gray-900 text-slate-800 dark:text-gray-100 transition-colors duration-300 antialiased overflow-x-hidden">
 
-    <!-- Loading Overlay -->
-    <div id="loading-overlay" class="fixed inset-0 z-[9999] flex items-center justify-center bg-white dark:bg-gray-900 transition-opacity duration-500">
-        <div class="h-16 w-16 rounded-full border-4 border-slate-200 border-t-primary-600 animate-spin"></div>
-    </div>
+
 
     <!-- Navbar -->
     <nav class="glass-nav fixed w-full z-50 top-0 transition-all duration-300 shadow-sm">
@@ -115,15 +115,14 @@
             <div class="flex justify-between h-20 items-center">
                 <!-- Logo -->
                 <div class="flex items-center gap-3 cursor-pointer group" onclick="window.scrollTo(0,0)">
-                    <div class="h-10 w-10 bg-gradient-to-br from-primary-500 to-primary-700 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/30 group-hover:scale-105 transition-transform">
-                        <ion-icon name="medkit" class="text-white text-xl"></ion-icon>
-                    </div>
-                    <span class="text-2xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-indigo-600 dark:from-primary-400 dark:to-indigo-400 tracking-tight">MyHealth</span>
+                    <img src="image/HealthcareNewIcon-removebg-preview.png" alt="MyHealth Logo" class="h-12 w-auto group-hover:scale-105 transition-transform" />
+                    <span class="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-indigo-600 dark:from-primary-400 dark:to-indigo-400 tracking-tight">MyHealth</span>
                 </div>
                 
                 <!-- Desktop Links -->
                 <div class="hidden md:flex space-x-8 items-center">
                     <a href="#features" class="text-sm font-semibold text-slate-600 hover:text-primary-600 dark:text-gray-300 dark:hover:text-primary-400 transition-colors">Features</a>
+                    <a href="#nutrition-teaser" class="text-sm font-semibold text-slate-600 hover:text-primary-600 dark:text-gray-300 dark:hover:text-primary-400 transition-colors">Smart Nutrition</a>
                     <a href="#doctors" class="text-sm font-semibold text-slate-600 hover:text-primary-600 dark:text-gray-300 dark:hover:text-primary-400 transition-colors">Our Specialists</a>
                     <a href="#why-us" class="text-sm font-semibold text-slate-600 hover:text-primary-600 dark:text-gray-300 dark:hover:text-primary-400 transition-colors">Why Choose Us</a>
                 </div>
@@ -254,6 +253,58 @@
             </div>
         </div>
     </section>
+
+    <!-- Smart Nutrition Hub Teaser Section -->
+    <section id="nutrition-teaser" class="py-24 bg-white dark:bg-gray-800/50 relative border-t border-slate-100 dark:border-gray-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16 max-w-3xl mx-auto" data-aos="fade-up">
+                <h2 class="text-emerald-600 dark:text-emerald-400 font-bold tracking-widest uppercase text-sm mb-3">Smart Nutrition Hub</h2>
+                <h3 class="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white">Eat Smarter, Live Better with AI.</h3>
+                <p class="mt-4 text-lg text-slate-600 dark:text-gray-400">Your health journey doesn't stop at the clinic. Get AI-powered meal plans and calorie tracking tailored to your medical profile—completely free.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+                <!-- Content Column 1 -->
+                <div class="feature-card-premium bg-slate-50 dark:bg-gray-800 rounded-[2rem] p-8 border border-slate-100 dark:border-gray-700 relative overflow-hidden group" data-aos="fade-up" data-aos-delay="100">
+                    <div class="feature-icon-wrapper h-16 w-16 bg-blue-100 dark:bg-blue-900/40 rounded-2xl flex items-center justify-center text-blue-600 dark:text-blue-400 text-3xl mb-6 shadow-sm">
+                        <ion-icon name="calculator-outline"></ion-icon>
+                    </div>
+                    <h4 class="text-xl font-bold text-slate-900 dark:text-white mb-3">Macro Tracking</h4>
+                    <p class="text-slate-600 dark:text-gray-400 leading-relaxed">Real-time calorie calculations based on your BMI.</p>
+                </div>
+                <!-- Content Column 2 -->
+                <div class="feature-card-premium bg-slate-50 dark:bg-gray-800 rounded-[2rem] p-8 border border-slate-100 dark:border-gray-700 relative overflow-hidden group" data-aos="fade-up" data-aos-delay="200">
+                    <div class="feature-icon-wrapper h-16 w-16 bg-emerald-100 dark:bg-emerald-900/40 rounded-2xl flex items-center justify-center text-emerald-600 dark:text-emerald-400 text-3xl mb-6 shadow-sm">
+                        <ion-icon name="restaurant-outline"></ion-icon>
+                    </div>
+                    <h4 class="text-xl font-bold text-slate-900 dark:text-white mb-3">AI Recommendations</h4>
+                    <p class="text-slate-600 dark:text-gray-400 leading-relaxed">Recipes that respect your specific medical conditions.</p>
+                </div>
+                <!-- Content Column 3 -->
+                <div class="feature-card-premium bg-slate-50 dark:bg-gray-800 rounded-[2rem] p-8 border border-slate-100 dark:border-gray-700 relative overflow-hidden group" data-aos="fade-up" data-aos-delay="300">
+                    <div class="feature-icon-wrapper h-16 w-16 bg-orange-100 dark:bg-orange-900/40 rounded-2xl flex items-center justify-center text-orange-600 dark:text-orange-400 text-3xl mb-6 shadow-sm">
+                        <ion-icon name="server-outline"></ion-icon>
+                    </div>
+                    <h4 class="text-xl font-bold text-slate-900 dark:text-white mb-3">Massive Database</h4>
+                    <p class="text-slate-600 dark:text-gray-400 leading-relaxed">Access to thousands of food items via global nutrition APIs.</p>
+                </div>
+            </div>
+            
+            <div class="text-center" data-aos="fade-up" data-aos-delay="400">
+                <button onclick="handleNutritionClick()" class="inline-flex items-center justify-center px-8 py-4 text-base font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-2xl shadow-xl shadow-emerald-600/30 transition-all hover:-translate-y-1 transform active:scale-95">
+                    Try it Now
+                    <ion-icon name="arrow-forward-outline" class="ml-2 text-xl"></ion-icon>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        function handleNutritionClick() {
+            // As requested, the Smart Nutrition Hub is a 100% free tool that does not require login.
+            window.location.href = 'nutrition.html';
+        }
+    </script>
 
     <!-- Doctors Section -->
     <section id="doctors" class="py-24 bg-slate-50 dark:bg-gray-900 relative">
@@ -387,10 +438,8 @@
                 <!-- Branding -->
                 <div class="col-span-1 md:col-span-5 lg:col-span-4">
                     <div class="flex items-center gap-3 mb-6">
-                        <div class="h-10 w-10 bg-primary-600 rounded-xl flex items-center justify-center shadow-lg">
-                            <ion-icon name="medkit" class="text-white text-xl"></ion-icon>
-                        </div>
-                        <span class="text-2xl font-bold text-slate-900 dark:text-white">MyHealth Portal</span>
+                        <img src="image/HealthcareNewIcon-removebg-preview.png" alt="MyHealth Logo" class="h-12 w-auto" />
+                        <span class="text-3xl font-bold text-slate-900 dark:text-white">MyHealth</span>
                     </div>
                     <p class="leading-relaxed mb-6">Delivering exceptional healthcare technology and seamless patient experiences since 2026. Empowering you to take charge of your wellness.</p>
                     <div class="flex space-x-4">
@@ -463,7 +512,7 @@
 
         // Theme Toggle Logic
         const themeToggleBtn = document.getElementById('themeToggle');
-        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        if (localStorage.getItem('darkMode') === 'enabled') {
             document.documentElement.classList.add('dark');
         } else {
             document.documentElement.classList.remove('dark');
@@ -472,10 +521,10 @@
         themeToggleBtn.addEventListener('click', function() {
             if (document.documentElement.classList.contains('dark')) {
                 document.documentElement.classList.remove('dark');
-                localStorage.setItem('color-theme', 'light');
+                localStorage.setItem('darkMode', 'disabled');
             } else {
                 document.documentElement.classList.add('dark');
-                localStorage.setItem('color-theme', 'dark');
+                localStorage.setItem('darkMode', 'enabled');
             }
         });
 
@@ -599,5 +648,6 @@
                 });
         });
     </script>
+    <script src="js/custom_cursor.js"></script>
 </body>
 </html>

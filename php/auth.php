@@ -126,6 +126,9 @@ if ($isRegistering) {
         if ($stmt->execute()) {
             $stmt->close();
             $_SESSION['email'] = $email;
+            $_SESSION['temp_mfa_id'] = $newUserId;
+            $_SESSION['user_role'] = 'patient';
+            $_SESSION['user_name'] = $firstName . ' ' . $lastName;
             sendResponse('success', 'Registration successful!', 'MFA.html');
         } else {
             $stmt->close();
@@ -216,7 +219,7 @@ if ($isLoggingIn) {
 
     // --- Step 4: Login successful — save user info to session ---
 
-    $_SESSION['user_id']   = $user['user_id'];
+    $_SESSION['temp_mfa_id'] = $user['user_id'];
     $_SESSION['user_role'] = $user['role'];
 
     // Get the user's display name from the appropriate profile table
@@ -255,5 +258,17 @@ if ($isLoggingIn) {
 
     $_SESSION['user_name'] = $displayName;
     sendResponse('success', 'Login successful!', 'MFA.html', $user['role']);
+}
+
+/* ══════════════════════════════════════════════════════
+   VERIFY MFA
+   ══════════════════════════════════════════════════════ */
+if (isset($_POST['verify_mfa'])) {
+    if (isset($_SESSION['temp_mfa_id'])) {
+        $_SESSION['user_id'] = $_SESSION['temp_mfa_id'];
+        unset($_SESSION['temp_mfa_id']);
+        sendResponse('success', 'Verified');
+    }
+    sendResponse('error', 'Session expired');
 }
 ?>

@@ -508,8 +508,76 @@ tr:hover td {
 }
 /* --- General Transitions --- */
 * {
-    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+    /* transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease; */
 }
 
-/* Redundant circular timer code removed */
+/* ─────────────────────────────────────────────
+   Premium Custom Mouse Effect
+───────────────────────────────────────────── */
+.cursor-dot, .cursor-outline {
+    position: fixed;
+    top: 0;
+    left: 0;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    z-index: 9999;
+    pointer-events: none;
+}
+.cursor-dot {
+    width: 8px;
+    height: 8px;
+    background-color: var(--primary-color);
+}
+.cursor-outline {
+    width: 40px;
+    height: 40px;
+    border: 2px solid rgba(79, 70, 229, 0.5);
+    transition: width 0.2s, height 0.2s, background-color 0.2s;
+}
+.dark .cursor-outline {
+    border: 2px solid rgba(129, 140, 248, 0.5);
+}
 
+/* ─────────────────────────────────────────────
+   UX Skeleton Loading State
+───────────────────────────────────────────── */
+.skeleton {
+    background: #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+}
+.skeleton::before {
+    content: "";
+    display: block;
+    position: absolute;
+    left: -150px;
+    top: 0;
+    height: 100%;
+    width: 150px;
+    background: linear-gradient(to right, transparent 0%, #f1f5f9 50%, transparent 100%);
+    animation: skeleton-shimmer 1.5s infinite;
+}
+.dark .skeleton {
+    background: #374151;
+}
+.dark .skeleton::before {
+    background: linear-gradient(to right, transparent 0%, #4b5563 50%, transparent 100%);
+}
+@keyframes skeleton-shimmer {
+    0% { left: -150px; }
+    100% { left: 100%; }
+}
+.skeleton-text { height: 16px; margin-bottom: 8px; border-radius: 4px; }
+.skeleton-text:last-child { margin-bottom: 0; width: 80%; }
+.skeleton-circle { width: 50px; height: 50px; border-radius: 50%; }
+.skeleton-rect { height: 120px; width: 100%; border-radius: 12px; }
+
+/* ── Hide Content until Loaded ── */
+.loaded-fade {
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+}
+.loaded-fade.visible {
+    opacity: 1;
+}

@@ -36,18 +36,34 @@ header('Content-Type: application/json');
 require_once __DIR__ . '/../DataBase/db_connect.php';
 
 /* ── Make sure the user is logged in AND is an admin ── */
-if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
-    echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
+$userRole = $_SESSION['user_role'] ?? $_SESSION['role'] ?? null;
+if (!isset($_SESSION['user_id']) || $userRole !== 'admin') {
+    echo json_encode([
+        'status' => 'error', 
+        'message' => 'Unauthorized',
+        'debug' => [
+            'has_user_id' => isset($_SESSION['user_id']),
+            'role_value' => $userRole,
+            'session_keys' => array_keys($_SESSION)
+        ]
+    ]);
     exit();
 }
 
 
 /* ═══════════════════════════════
-   Determine which tab the admin
-   is asking data for
+   Handle POST actions FIRST
+   (delete, create, update operations)
+   before GET action routing
    ═══════════════════════════════ */
 
-$action = $_GET['action'] ?? 'dashboard';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['action'])) {
+    // POST without ?action= (e.g. delete_patient, delete_staff, edit_staff)
+    // Skip GET action routing — fall through to POST handlers below
+    $action = '__POST_HANDLER__';
+} else {
+    $action = $_GET['action'] ?? 'dashboard';
+}
 
 
 /* ─────────────────────────────────────────────
@@ -182,7 +198,7 @@ if ($action === 'doctors') {
     $doctors = [];
     $result = $conn->query(
         "SELECT d.doctor_id as id, d.doctor_id, CONCAT(d.first_name, ' ', d.last_name) as name,
-                d.first_name, d.last_name, d.specialization,
+                d.first_name, d.last_name, d.specialization, d.presence_status,
                 COALESCE(dept.name, d.department) as department, d.phone, d.profile_image, d.capacity, u.email, d.is_active,
                 (SELECT COUNT(*) FROM appointments WHERE doctor_id = d.doctor_id AND LOWER(status) = 'completed') as records_count
          FROM doctors d
@@ -505,7 +521,7 @@ if ($action === 'feedback') {
 if ($action === 'billing') {
     $invoices = [];
     $result = $conn->query(
-        "SELECT i.invoice_id, i.total_amount, i.status, i.issue_date, 
+        "SELECT i.invoice_id, i.subtotal, i.tax_amount, i.total_amount, i.status, i.issue_date, i.due_date, i.notes,
                 CONCAT(p.first_name, ' ', p.last_name) as patient_name
          FROM invoices i
          JOIN patients p ON i.patient_id = p.patient_id
@@ -517,9 +533,13 @@ if ($action === 'billing') {
             $invoices[] = [
                 'id' => $row['invoice_id'],
                 'patient' => $row['patient_name'],
+                'subtotal' => '$' . number_format($row['subtotal'] ?: $row['total_amount'], 2),
+                'tax' => '$' . number_format($row['tax_amount'] ?: 0, 2),
                 'amount' => '$' . number_format($row['total_amount'], 2),
                 'status' => ucfirst($row['status']),
-                'date' => date('M d, Y', strtotime($row['issue_date']))
+                'date' => date('M d, Y', strtotime($row['issue_date'])),
+                'due_date' => $row['due_date'] ? date('M d, Y', strtotime($row['due_date'])) : 'N/A',
+                'notes' => $row['notes'] ?? ''
             ];
         }
     }
@@ -529,21 +549,67 @@ if ($action === 'billing') {
 
 /* ─────────────────────────────────────────────
    ACTION: create_bill
-   Creates a new invoice record
+   Creates a new invoice with hardcoded 10% tax
    ───────────────────────────────────────────── */
 
 if ($action === 'create_bill' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-    $patient_id = $_POST['patient_id'] ?? 0;
-    $amount = $_POST['amount'] ?? 0;
+    $patient_id = intval($_POST['patient_id'] ?? 0);
+    $subtotal = floatval($_POST['amount'] ?? 0);
     $notes = $_POST['notes'] ?? '';
     $sender = $_POST['sender'] ?? ''; 
     $full_notes = "Sender: $sender | " . $notes;
+    $adminId = $_SESSION['user_id'];
 
-    $stmt = $conn->prepare("INSERT INTO invoices (patient_id, total_amount, status, issue_date, notes) VALUES (?, ?, 'unpaid', NOW(), ?)");
-    $stmt->bind_param("ids", $patient_id, $amount, $full_notes);
+    // Hardcoded 10% tax — immutable
+    $taxRate = 10.00;
+    $taxAmount = round($subtotal * ($taxRate / 100), 2);
+    $totalAmount = round($subtotal + $taxAmount, 2);
+
+    // Due date: 30 days from now
+    $dueDate = date('Y-m-d', strtotime('+30 days'));
+
+    $stmt = $conn->prepare("INSERT INTO invoices (patient_id, admin_id, subtotal, tax_rate, tax_amount, total_amount, status, issue_date, due_date, notes) VALUES (?, ?, ?, ?, ?, ?, 'pending', NOW(), ?, ?)");
+    $stmt->bind_param("iiddddss", $patient_id, $adminId, $subtotal, $taxRate, $taxAmount, $totalAmount, $dueDate, $full_notes);
     
     if ($stmt->execute()) {
-        echo json_encode(['status' => 'success', 'message' => 'Bill created successfully']);
+        echo json_encode([
+            'status' => 'success', 
+            'message' => 'Bill created successfully',
+            'breakdown' => [
+                'subtotal' => number_format($subtotal, 2),
+                'tax' => number_format($taxAmount, 2),
+                'total' => number_format($totalAmount, 2)
+            ]
+        ]);
+    } else {
+        echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $stmt->error]);
+    }
+    $stmt->close();
+    exit();
+}
+
+/* ─────────────────────────────────────────────
+   ACTION: update_invoice_status
+   Admin changes an invoice's status
+   ───────────────────────────────────────────── */
+
+if ($action === 'update_invoice_status' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $invoiceId = intval($_POST['invoice_id'] ?? 0);
+    $newStatus = $_POST['status'] ?? '';
+    
+    $allowed = ['pending', 'paid', 'cancelled', 'terminated'];
+    if (!in_array($newStatus, $allowed)) {
+        echo json_encode(['status' => 'error', 'message' => 'Invalid status']);
+        exit();
+    }
+
+    $paidAt = ($newStatus === 'paid') ? date('Y-m-d H:i:s') : null;
+
+    $stmt = $conn->prepare("UPDATE invoices SET status = ?, paid_at = ? WHERE invoice_id = ?");
+    $stmt->bind_param("ssi", $newStatus, $paidAt, $invoiceId);
+    
+    if ($stmt->execute()) {
+        echo json_encode(['status' => 'success', 'message' => 'Invoice updated to ' . ucfirst($newStatus)]);
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Database error']);
     }
@@ -719,14 +785,57 @@ if (isset($_POST['update_patient'])) {
 
 if (isset($_POST['delete_patient'])) {
     $pid = intval($_POST['patient_id'] ?? 0);
-    // Get user_id first
     $result = $conn->query("SELECT user_id FROM patients WHERE patient_id=$pid");
-    $row = $result->fetch_assoc();
-    if ($row) {
+    if ($row = $result->fetch_assoc()) {
         $uid = $row['user_id'];
-        $conn->query("DELETE FROM patients WHERE patient_id=$pid");
-        $conn->query("DELETE FROM users WHERE user_id=$uid");
-        echo json_encode(['status' => 'success', 'message' => 'Patient deleted.']);
+        
+        $conn->begin_transaction();
+        try {
+            $conn->query("SET FOREIGN_KEY_CHECKS=0");
+
+            // Helper: safely delete from a table (ignores if table doesn't exist)
+            $safeDelete = function($sql) use ($conn) {
+                try { $conn->query($sql); } catch (Exception $e) { /* table may not exist */ }
+            };
+
+            // Clean up related tables (some may not exist in all installations)
+            $safeDelete("DELETE FROM tickets WHERE patient_id=$pid");
+            $safeDelete("DELETE FROM patient_vitals WHERE patient_id=$pid");
+            $safeDelete("DELETE FROM emergency_contacts WHERE patient_id=$pid");
+            $safeDelete("DELETE FROM admissions WHERE patient_id=$pid");
+            $safeDelete("DELETE FROM allergies WHERE patient_id=$pid");
+
+            $safeDelete("DELETE FROM invoice_items WHERE invoice_id IN (SELECT invoice_id FROM invoices WHERE patient_id=$pid)");
+            $safeDelete("DELETE FROM payments WHERE invoice_id IN (SELECT invoice_id FROM invoices WHERE patient_id=$pid)");
+            $safeDelete("DELETE FROM invoices WHERE patient_id=$pid");
+
+            // Core medical data (these tables definitely exist)
+            $safeDelete("DELETE FROM prescriptions WHERE record_id IN (SELECT record_id FROM medical_records WHERE patient_id=$pid)");
+            $safeDelete("DELETE FROM diagnoses WHERE record_id IN (SELECT record_id FROM medical_records WHERE patient_id=$pid)");
+            $safeDelete("DELETE FROM lab_results WHERE record_id IN (SELECT record_id FROM medical_records WHERE patient_id=$pid)");
+            $safeDelete("DELETE FROM medical_records WHERE patient_id=$pid");
+
+            $safeDelete("DELETE FROM document_queue WHERE patient_id=$pid");
+            $safeDelete("DELETE FROM appointments WHERE patient_id=$pid");
+
+            $safeDelete("DELETE FROM feedback_reports WHERE user_id=$uid");
+            $safeDelete("DELETE FROM ai_logs WHERE user_id=$uid");
+            $safeDelete("DELETE FROM audit_trail WHERE user_id=$uid");
+            $safeDelete("DELETE FROM notifications WHERE target_user_id=$uid");
+            $safeDelete("DELETE FROM system_logs WHERE user_id=$uid");
+
+            // Finally delete the patient and user records
+            $conn->query("DELETE FROM patients WHERE patient_id=$pid");
+            $conn->query("DELETE FROM users WHERE user_id=$uid");
+
+            $conn->query("SET FOREIGN_KEY_CHECKS=1");
+            $conn->commit();
+            echo json_encode(['status' => 'success', 'message' => 'Patient deleted successfully.']);
+        } catch (Exception $e) {
+            $conn->rollback();
+            $conn->query("SET FOREIGN_KEY_CHECKS=1");
+            echo json_encode(['status' => 'error', 'message' => 'Error: ' . $e->getMessage()]);
+        }
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Patient not found.']);
     }
@@ -767,12 +876,39 @@ if (isset($_POST['update_staff'])) {
 if (isset($_POST['delete_staff'])) {
     $did = intval($_POST['doctor_id'] ?? 0);
     $result = $conn->query("SELECT user_id FROM doctors WHERE doctor_id=$did");
-    $row = $result->fetch_assoc();
-    if ($row) {
+    if ($row = $result->fetch_assoc()) {
         $uid = $row['user_id'];
-        $conn->query("DELETE FROM doctors WHERE doctor_id=$did");
-        $conn->query("DELETE FROM users WHERE user_id=$uid");
-        echo json_encode(['status' => 'success', 'message' => 'Staff member deleted.']);
+        
+        mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+        $conn->begin_transaction();
+        try {
+            $conn->query("SET FOREIGN_KEY_CHECKS=0");
+
+            $conn->query("UPDATE medical_records SET doctor_id=NULL WHERE doctor_id=$did");
+            $conn->query("UPDATE prescriptions SET doctor_id=NULL WHERE doctor_id=$did");
+            $conn->query("UPDATE appointments SET doctor_id=NULL WHERE doctor_id=$did");
+            $conn->query("UPDATE admissions SET admitting_doctor_id=NULL WHERE admitting_doctor_id=$did");
+            $conn->query("UPDATE tickets SET doctor_id=NULL WHERE doctor_id=$did");
+            
+            $conn->query("DELETE FROM doctor_schedules WHERE doctor_id=$did");
+
+            $conn->query("DELETE FROM feedback_reports WHERE user_id=$uid");
+            $conn->query("DELETE FROM ai_logs WHERE user_id=$uid");
+            $conn->query("DELETE FROM audit_trail WHERE user_id=$uid");
+            $conn->query("DELETE FROM notifications WHERE target_user_id=$uid OR target=(SELECT email FROM users WHERE user_id=$uid)");
+            $conn->query("DELETE FROM system_logs WHERE user_id=$uid");
+
+            $conn->query("DELETE FROM doctors WHERE doctor_id=$did");
+            $conn->query("DELETE FROM users WHERE user_id=$uid");
+
+            $conn->query("SET FOREIGN_KEY_CHECKS=1");
+            $conn->commit();
+            echo json_encode(['status' => 'success', 'message' => 'Staff member deleted successfully.']);
+        } catch (Exception $e) {
+            $conn->rollback();
+            $conn->query("SET FOREIGN_KEY_CHECKS=1");
+            echo json_encode(['status' => 'error', 'message' => 'Error: ' . $e->getMessage()]);
+        }
     } else {
         echo json_encode(['status' => 'error', 'message' => 'Staff member not found.']);
     }

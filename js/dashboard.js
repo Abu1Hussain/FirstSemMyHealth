@@ -10,7 +10,7 @@
      - php/appointment_handler.php (booking)
    ═══════════════════════════════════════════════════════════ */
 
-const loadingOverlay = document.getElementById("loading-overlay");
+const loadingOverlay = document.getElementById("loading-overlay") || { style: {} };
 const sidebar = document.getElementById("sidebar");
 const mainContent = document.getElementById("mainContent");
 const sidebarToggle = document.getElementById("sidebarToggle");
@@ -246,63 +246,65 @@ function fetchDashboardData() {
 
       const responseData = data.data;
       console.log("Dashboard Data Loaded:", responseData); // Helpful debug log
+      /* ── Helper for safe text assignments ── */
+      function setElText(id, text) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text;
+      }
+      function setElValue(id, val) {
+        const el = document.getElementById(id);
+        if (el) el.value = val;
+      }
+
       /* ── Populate User Info ── */
-      document.getElementById("welcome-name").textContent =
-        responseData.user.name;
-      document.getElementById("header-user-name").textContent =
-        responseData.user.name;
-      document.getElementById("sidebar-user-name").textContent =
-        responseData.user.name;
-      document.getElementById("profile-display-name").textContent =
-        responseData.user.name;
+      setElText("welcome-name", responseData.user.name);
+      setElText("header-user-name", responseData.user.name);
+      setElText("sidebar-user-name", responseData.user.name);
+      setElText("profile-display-name", responseData.user.name);
 
-      document.getElementById("user-initial-header").textContent =
-        responseData.user.initial;
-      document.getElementById("user-initial-sidebar").textContent =
-        responseData.user.initial;
-      document.getElementById("user-initial-profile").textContent =
-        responseData.user.initial;
+      setElText("user-initial-header", responseData.user.initial);
+      setElText("user-initial-sidebar", responseData.user.initial);
+      setElText("user-initial-profile", responseData.user.initial);
 
-      document.getElementById("profile-name").value = responseData.user.name;
+      setElValue("profile-name", responseData.user.name);
 
       /* ── Populate Profile Email ── */
       if (responseData.user.email) {
-        document.getElementById("profile-email").value =
-          responseData.user.email;
+        setElValue("profile-email", responseData.user.email);
       }
 
       /* ── Populate Stat Cards ── */
       if (responseData.stats) {
-        document.getElementById("stat-health").textContent =
-          responseData.stats.health_status || "Good";
-        document.getElementById("stat-upcoming").textContent =
-          responseData.stats.upcoming || "0";
-        document.getElementById("stat-prescriptions").textContent =
-          responseData.stats.prescriptions || "0";
+        setElText("stat-health", responseData.stats.health_status || "Good");
+        setElText("stat-upcoming", responseData.stats.upcoming || "0");
+        setElText("stat-prescriptions", responseData.stats.prescriptions || "0");
 
         // Apply color to health status
         const healthEl = document.getElementById("stat-health");
-        if (responseData.stats.health_status === "Critical") {
-          healthEl.className =
-            "text-2xl font-bold text-red-500 dark:text-red-400";
-        } else if (responseData.stats.health_status === "Fair") {
-          healthEl.className =
-            "text-2xl font-bold text-orange-500 dark:text-orange-400";
-        } else {
-          healthEl.className =
-            "text-2xl font-bold text-green-500 dark:text-green-400";
+        if (healthEl) {
+          if (responseData.stats.health_status === "Critical") {
+            healthEl.className =
+              "text-2xl font-bold text-red-500 dark:text-red-400";
+          } else if (responseData.stats.health_status === "Fair") {
+            healthEl.className =
+              "text-2xl font-bold text-orange-500 dark:text-orange-400";
+          } else {
+            healthEl.className =
+              "text-2xl font-bold text-green-500 dark:text-green-400";
+          }
         }
       }
 
       /* ── Populate Appointments Table ── */
       var appointmentsBody = document.getElementById("appointments-list");
-      appointmentsBody.innerHTML = "";
-
-      if (responseData.appointments.length === 0) {
-        appointmentsBody.innerHTML =
-          '<tr><td colspan="6">No appointments found.</td></tr>';
-        document.getElementById("stat-upcoming").textContent = "0";
-      } else {
+      if (appointmentsBody) {
+        appointmentsBody.innerHTML = "";
+        
+        if (responseData.appointments.length === 0) {
+          appointmentsBody.innerHTML =
+            '<tr><td colspan="6">No appointments found.</td></tr>';
+          setElText("stat-upcoming", "0");
+        } else {
         var allRows = "";
         var pendingCount = 0;
         responseData.appointments.forEach(function (appointment) {
@@ -367,7 +369,7 @@ function fetchDashboardData() {
           allRows += "</td>" + "</tr>";
         });
         appointmentsBody.innerHTML = allRows;
-        document.getElementById("stat-upcoming").textContent = pendingCount;
+        setElText("stat-upcoming", pendingCount);
 
         // Add event listeners to terminate buttons
         document.querySelectorAll(".btn-terminate").forEach((btn) => {
@@ -376,6 +378,7 @@ function fetchDashboardData() {
           });
         });
       }
+    }
 
       /* ── Populate Recent Activity ── */
       const actContainer = document.getElementById("activity-container");
@@ -469,6 +472,11 @@ function fetchDashboardData() {
       /* ── Populate Notifications ── */
       if (responseData.notifications) {
           renderNotifications(responseData.notifications);
+      }
+
+      /* ── Populate Billing ── */
+      if (responseData.invoices) {
+          renderBilling(responseData.invoices);
       }
 
       /* ── Populate Doctors Grid ── */
@@ -846,7 +854,7 @@ function analyzeAndShowTimes() {
   var doctorIdInput = document.getElementById("selected-doctor-id").value;
 
   if (!appointmentDate) {
-    alert("Please fill in the date.");
+    if (typeof Swal !== 'undefined') { Swal.fire({ toast: true, position: 'top-end', icon: 'warning', title: 'Please fill in the date', showConfirmButton: false, timer: 2500 }); } else { alert("Please fill in the date."); }
     return;
   }
 
@@ -1035,7 +1043,7 @@ function confirmBooking() {
   var fileInput = document.getElementById("document");
 
   if (!selectedTime) {
-    alert("Please select a time slot.");
+    if (typeof Swal !== 'undefined') { Swal.fire({ toast: true, position: 'top-end', icon: 'warning', title: 'Please select a time slot', showConfirmButton: false, timer: 2500 }); } else { alert("Please select a time slot."); }
     return;
   }
 
@@ -1376,7 +1384,232 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 
-/* ── 9. Render Notifications ── */
+/* ── 9. Render Billing (Receipt-Card Style) ── */
+window.renderBilling = function (invoices) {
+    const cardsContainer = document.getElementById("billingPatientCards");
+    const alertBanner = document.getElementById("billing-alert-banner");
+    if (!cardsContainer) return;
+
+    // Empty state
+    if (!invoices || invoices.length === 0) {
+        if (alertBanner) alertBanner.classList.add('hidden');
+        cardsContainer.innerHTML = `
+            <div class="md:col-span-2 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 py-16 text-center">
+                <ion-icon name="receipt-outline" style="font-size: 4rem;" class="text-gray-200 dark:text-gray-700 block mx-auto mb-3"></ion-icon>
+                <p class="text-gray-400 dark:text-gray-500 text-lg font-medium">No invoices yet</p>
+                <p class="text-gray-300 dark:text-gray-600 text-sm mt-1">When your clinic issues a bill, it will appear here.</p>
+            </div>`;
+        return;
+    }
+
+    // Calculate unpaid totals for the alert banner
+    let unpaidTotal = 0, unpaidCount = 0;
+    invoices.forEach(inv => {
+        if (inv.status === 'pending') {
+            unpaidTotal += parseFloat(inv.total) || 0;
+            unpaidCount++;
+        }
+    });
+
+    // Show/hide urgent banner
+    if (alertBanner) {
+        if (unpaidCount > 0) {
+            alertBanner.classList.remove('hidden');
+            const alertTotal = document.getElementById('billing-alert-total');
+            const alertText = document.getElementById('billing-alert-text');
+            if (alertTotal) alertTotal.textContent = '$' + unpaidTotal.toFixed(2);
+            if (alertText) alertText.textContent = `You have ${unpaidCount} pending invoice${unpaidCount > 1 ? 's' : ''}. Please settle them before the due date.`;
+        } else {
+            alertBanner.classList.add('hidden');
+        }
+    }
+
+    // Sort: pending first, then others
+    const sorted = [...invoices].sort((a, b) => {
+        if (a.status === 'pending' && b.status !== 'pending') return -1;
+        if (a.status !== 'pending' && b.status === 'pending') return 1;
+        return 0;
+    });
+
+    // Build receipt cards
+    cardsContainer.innerHTML = sorted.map(inv => {
+        const isPending = inv.status === 'pending';
+        const isPaid = inv.status === 'paid';
+        const isCancelled = inv.status === 'cancelled' || inv.status === 'terminated';
+
+        // Card border color
+        const borderClass = isPending
+            ? 'border-red-200 dark:border-red-900/50 shadow-red-100/50 dark:shadow-none'
+            : isPaid
+                ? 'border-emerald-200 dark:border-emerald-900/50'
+                : 'border-gray-200 dark:border-gray-700 opacity-60';
+
+        // Status stamp
+        let stampHtml = '';
+        if (isPending) {
+            stampHtml = `<div class="absolute top-4 right-4 rotate-[-12deg] border-[3px] border-red-500 text-red-500 font-black text-sm px-3 py-1 rounded-md uppercase tracking-wider opacity-80">Unpaid</div>`;
+        } else if (isPaid) {
+            stampHtml = `<div class="absolute top-4 right-4 rotate-[-12deg] border-[3px] border-emerald-500 text-emerald-500 font-black text-sm px-3 py-1 rounded-md uppercase tracking-wider opacity-80">Paid</div>`;
+        } else {
+            stampHtml = `<div class="absolute top-4 right-4 rotate-[-12deg] border-[3px] border-gray-400 text-gray-400 font-black text-sm px-3 py-1 rounded-md uppercase tracking-wider opacity-60">${inv.status.charAt(0).toUpperCase() + inv.status.slice(1)}</div>`;
+        }
+
+        // Action button
+        let actionHtml = '';
+        if (isPending) {
+            actionHtml = `
+                <button onclick="openPaymentModal(${inv.id}, '${inv.total}')"
+                    class="w-full mt-4 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-bold py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-200 dark:shadow-none text-sm">
+                    <ion-icon name="card-outline" class="text-lg"></ion-icon>
+                    Pay Now &mdash; $${inv.total}
+                </button>`;
+        } else if (isPaid) {
+            actionHtml = `
+                <div class="mt-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl py-2.5 px-4 flex items-center justify-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm font-medium">
+                    <ion-icon name="checkmark-circle" class="text-lg"></ion-icon>
+                    Payment Completed
+                </div>`;
+        }
+
+        return `
+        <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-sm border-2 ${borderClass} overflow-hidden transition-all hover:shadow-md">
+            ${stampHtml}
+
+            <!-- Receipt Header -->
+            <div class="px-6 pt-5 pb-3">
+                <div class="flex items-center gap-3 mb-1">
+                    <div class="w-10 h-10 rounded-xl ${isPending ? 'bg-red-100 dark:bg-red-900/30' : isPaid ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-gray-100 dark:bg-gray-700'} flex items-center justify-center">
+                        <ion-icon name="${isPending ? 'time-outline' : isPaid ? 'checkmark-done-outline' : 'close-outline'}" class="text-xl ${isPending ? 'text-red-500' : isPaid ? 'text-emerald-500' : 'text-gray-400'}"></ion-icon>
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold text-gray-900 dark:text-white">Invoice #INV-${String(inv.id).padStart(4, '0')}</p>
+                        <p class="text-xs text-gray-400 dark:text-gray-500">Issued: ${inv.date}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashed Separator -->
+            <div class="px-6"><div class="border-t-2 border-dashed border-gray-200 dark:border-gray-700"></div></div>
+
+            <!-- Itemized Breakdown -->
+            <div class="px-6 py-4 space-y-2.5">
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-500 dark:text-gray-400">Subtotal</span>
+                    <span class="text-gray-700 dark:text-gray-300 font-medium">$${inv.subtotal}</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-500 dark:text-gray-400">Tax (10%)</span>
+                    <span class="text-amber-600 dark:text-amber-400 font-medium">+$${inv.tax}</span>
+                </div>
+            </div>
+
+            <!-- Dashed Separator -->
+            <div class="px-6"><div class="border-t-2 border-dashed border-gray-200 dark:border-gray-700"></div></div>
+
+            <!-- Total -->
+            <div class="px-6 py-3 flex justify-between items-center">
+                <span class="text-base font-bold text-gray-900 dark:text-white">TOTAL</span>
+                <span class="text-2xl font-black ${isPending ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'}">$${inv.total}</span>
+            </div>
+
+            <!-- Due Date -->
+            <div class="px-6 pb-2">
+                <div class="flex justify-between text-xs">
+                    <span class="text-gray-400 dark:text-gray-500">Due Date</span>
+                    <span class="${isPending ? 'text-red-500 font-semibold' : 'text-gray-500 dark:text-gray-400'}">${inv.due_date || 'N/A'}</span>
+                </div>
+            </div>
+
+            <!-- Action -->
+            <div class="px-6 pb-5">
+                ${actionHtml}
+            </div>
+        </div>`;
+    }).join('');
+};
+
+/* ── 9b. Payment Modal Helpers ── */
+window.openPaymentModal = function (invoiceId, totalStr) {
+    document.getElementById('pay-invoice-id').value = invoiceId;
+    document.getElementById('pay-invoice-label').textContent = '#INV-' + String(invoiceId).padStart(4, '0');
+    document.getElementById('pay-invoice-amount').textContent = '$' + totalStr;
+    document.getElementById('paymentForm').reset();
+    document.getElementById('pay-invoice-id').value = invoiceId;
+    document.getElementById('paymentModal').classList.remove('hidden');
+};
+
+window.closePaymentModal = function () {
+    document.getElementById('paymentModal').classList.add('hidden');
+};
+
+window.formatCardNumber = function (input) {
+    let v = input.value.replace(/\D/g, '').substring(0, 16);
+    input.value = v.replace(/(.{4})/g, '$1 ').trim();
+};
+
+window.formatExpiry = function (input) {
+    let v = input.value.replace(/\D/g, '').substring(0, 4);
+    if (v.length >= 3) v = v.substring(0, 2) + '/' + v.substring(2);
+    input.value = v;
+};
+
+window.processPayment = async function () {
+    const invoiceId = document.getElementById('pay-invoice-id').value;
+    const cardNumber = document.getElementById('pay-card-number').value;
+    const cardHolder = document.getElementById('pay-card-holder').value;
+    const expiry = document.getElementById('pay-card-expiry').value;
+    const cvv = document.getElementById('pay-card-cvv').value;
+
+    if (!cardNumber || cardNumber.replace(/\s/g, '').length < 13) {
+        Swal.fire('Error', 'Please enter a valid card number', 'error'); return;
+    }
+    if (!cardHolder.trim()) {
+        Swal.fire('Error', 'Please enter the cardholder name', 'error'); return;
+    }
+    if (!expiry || expiry.length < 5) {
+        Swal.fire('Error', 'Please enter a valid expiry date', 'error'); return;
+    }
+    if (!cvv || cvv.length < 3) {
+        Swal.fire('Error', 'Please enter a valid CVV', 'error'); return;
+    }
+
+    const payBtn = document.getElementById('payBtn');
+    const origHtml = payBtn.innerHTML;
+    payBtn.innerHTML = '<ion-icon name="hourglass-outline" class="text-lg animate-spin"></ion-icon> Processing...';
+    payBtn.disabled = true;
+
+    const formData = new FormData();
+    formData.append('action', 'pay_invoice');
+    formData.append('invoice_id', invoiceId);
+    formData.append('card_number', cardNumber);
+    formData.append('card_holder', cardHolder);
+
+    try {
+        const res = await fetch('../php/dashboard_api.php', {
+            method: 'POST', body: formData, credentials: 'include'
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+            closePaymentModal();
+            Swal.fire({
+                icon: 'success', title: 'Payment Successful!',
+                html: `<p class="text-gray-600">${data.message}</p>`,
+                confirmButtonColor: '#6366f1'
+            });
+            if (typeof fetchDashboardData === 'function') fetchDashboardData();
+            else location.reload();
+        } else {
+            Swal.fire('Payment Failed', data.message, 'error');
+        }
+    } catch (e) {
+        Swal.fire('Error', 'Network error. Please try again.', 'error');
+    } finally {
+        payBtn.innerHTML = origHtml;
+        payBtn.disabled = false;
+    }
+};
+
+/* ── 10. Render Notifications ── */
 window.renderNotifications = function (notifications) {
     const tableBody = document.getElementById("notifications-table-body");
     if (!tableBody) return;
