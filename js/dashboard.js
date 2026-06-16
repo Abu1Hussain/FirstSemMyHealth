@@ -1,5 +1,5 @@
-/* ═══════════════════════════════════════════════════════════
-   Patient Dashboard – Main Script
+/* ===========================================================
+   Patient Dashboard - Main Script
    Handles: data loading, navigation, doctor modal,
             AI triage, appointment booking, and timeline.
 
@@ -8,7 +8,7 @@
      - Ai/ai_triage.php        (symptom analysis)
      - Ai/ai_scheduler.php     (availability timeline)
      - php/appointment_handler.php (booking)
-   ═══════════════════════════════════════════════════════════ */
+   =========================================================== */
 
 const loadingOverlay = document.getElementById("loading-overlay") || { style: {} };
 const sidebar = document.getElementById("sidebar");
@@ -23,24 +23,41 @@ let allDoctors = [];
 let showAllDoctors = false;
 let activityTimerInterval = null;
 
-/* ── 1. Load Dashboard Data on Page Ready ── */
+/* -- 1. Load Dashboard Data on Page Ready -- */
 
 fetchDashboardData();
 loadAvailabilityTimeline();
 
-/* ── 2. UI Logic: Sidebar & Dark Mode ── */
+/* -- 2. UI Logic: Sidebar & Dark Mode -- */
 if (sidebarToggle) {
+  const mobileOverlay = document.getElementById("mobile-overlay");
+  
   sidebarToggle.addEventListener("click", () => {
-    sidebar.classList.toggle("sidebar-collapsed");
-    sidebar.classList.toggle("sidebar-expanded");
-    if (sidebar.classList.contains("sidebar-collapsed")) {
-      mainContent.classList.remove("ml-64");
-      mainContent.classList.add("ml-[4.5rem]");
+    if (window.innerWidth < 768) {
+      // Mobile behavior
+      sidebar.classList.toggle("-translate-x-full");
+      if (mobileOverlay) mobileOverlay.classList.toggle("hidden");
     } else {
-      mainContent.classList.remove("ml-[4.5rem]");
-      mainContent.classList.add("ml-64");
+      // Desktop behavior
+      sidebar.classList.toggle("sidebar-collapsed");
+      sidebar.classList.toggle("sidebar-expanded");
+      if (sidebar.classList.contains("sidebar-collapsed")) {
+        mainContent.classList.remove("md:ml-64");
+        mainContent.classList.add("md:ml-[4.5rem]");
+      } else {
+        mainContent.classList.remove("md:ml-[4.5rem]");
+        mainContent.classList.add("md:ml-64");
+      }
     }
   });
+
+  // Close sidebar on overlay click
+  if (mobileOverlay) {
+    mobileOverlay.addEventListener("click", () => {
+      sidebar.classList.add("-translate-x-full");
+      mobileOverlay.classList.add("hidden");
+    });
+  }
 }
 
 const applyDarkMode = (isDark) => {
@@ -130,13 +147,138 @@ document
     });
   });
 
-/* ── 3. Appointment Booking Form ── */
-const btnAnalyze = document.getElementById("btn-analyze");
-if (btnAnalyze) {
-  btnAnalyze.addEventListener("click", function () {
-    analyzeAndShowTimes();
-  });
-}
+/* -- 3. Appointment Booking Form -- */
+/* -- Shift Status Checker & 10-Min Lockout & Early Access -- */
+window.getCurrentActiveShift = function() {
+    let now = new Date();
+    let hours = now.getHours();
+    let minutes = now.getMinutes();
+    
+    // Shift Handover: 12:50 - 13:00 triggers Shift 2 early
+    if (hours === 12 && minutes >= 50) return 2;
+    if (hours < 13) return 1;
+    return 2;
+};
+
+window.checkShiftStatus = function() {
+    let now = new Date();
+    let hours = now.getHours();
+    let minutes = now.getMinutes();
+
+    let shiftClosing = false;
+    // Clinic closes at 17:00, so lockout at 16:50
+    if (hours === 16 && minutes >= 50) shiftClosing = true; 
+    if (hours >= 17 || hours < 9) shiftClosing = true;
+
+    const triageContainer = document.getElementById('triage-buttons');
+    const quickApptBtn = document.getElementById('btn-quick-appointment');
+
+    if (shiftClosing) {
+        if (quickApptBtn) {
+            quickApptBtn.disabled = true;
+            quickApptBtn.classList.add('opacity-50', 'cursor-not-allowed', 'bg-gray-400');
+            quickApptBtn.innerHTML = '⚠️ Shift Closing';
+        }
+        if (triageContainer) {
+            triageContainer.classList.add('hidden');
+        }
+    } else {
+        if (quickApptBtn) {
+            quickApptBtn.disabled = false;
+            quickApptBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-gray-400');
+            quickApptBtn.innerHTML = '⚡ Quick Appointment (Book Now)';
+        }
+    }
+};
+setInterval(window.checkShiftStatus, 30000);
+document.addEventListener("DOMContentLoaded", window.checkShiftStatus);
+
+/* -- 3. Quick Appointment Auto-Ticket Form -- */
+window.handleTriageBooking = function(priority) {
+    let currentShift = window.getCurrentActiveShift();
+    let genMedDocs = allDoctors.filter(d => d.specialization && d.specialization.includes('General Medicine') && !d.is_full && d.shift === currentShift);
+    if (genMedDocs.length === 0) genMedDocs = allDoctors.filter(d => !d.is_full && d.shift === currentShift);
+    
+    let randomDoc = genMedDocs[Math.floor(Math.random() * genMedDocs.length)];
+    if (!randomDoc) {
+        if(typeof Swal !== 'undefined') Swal.fire('Unavailable', 'No available doctors at the moment.', 'warning');
+        return;
+    }
+    
+    if(typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Generating Ticket...',
+            text: `Finding closest slot for ${randomDoc.name}...`,
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+        });
+    }
+
+    let today = new Date().toISOString().split('T')[0];
+    fetch(`../Ai/ai_scheduler.php?date=${today}&doctor_id=${randomDoc.id}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.status !== "success" || !data.timeline) throw new Error("Failed to load availability");
+            
+            let now = new Date();
+            let currentHour = now.getHours();
+            let availableSlot = data.timeline.find(slot => {
+                let slotHour = parseInt(slot.time_24h.split(':')[0]);
+                return slot.chairs_left > 0 && slotHour >= currentHour;
+            });
+
+            if (!availableSlot) {
+                availableSlot = data.timeline.find(slot => slot.chairs_left > 0);
+            }
+
+            if (!availableSlot) throw new Error("Doctor is fully booked today.");
+
+            var formData = new FormData();
+            formData.append("take_ticket", "1");
+            formData.append("selected_time", availableSlot.time_24h);
+            formData.append("doctor_id", randomDoc.id);
+
+            return fetch("../php/appointment_handler.php", {
+                method: "POST",
+                body: formData
+            });
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === "success") {
+                if(typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Ticket Generated!',
+                        text: `Ticket #${data.ticket_number} assigned.`,
+                        icon: 'success',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                }
+                
+                const container = document.getElementById('active-ticket-container');
+                if (container) {
+                    container.classList.remove('hidden');
+                    if (document.getElementById('active-ticket-number')) document.getElementById('active-ticket-number').textContent = data.ticket_number;
+                    if (document.getElementById('active-ticket-date')) document.getElementById('active-ticket-date').textContent = "Today";
+                    if (document.getElementById('active-ticket-time')) document.getElementById('active-ticket-time').textContent = availableSlot.hour || availableSlot.time_24h;
+                    if (document.getElementById('active-ticket-doctor')) document.getElementById('active-ticket-doctor').textContent = randomDoc.name;
+                }
+                
+                if (typeof fetchDashboardData === "function") fetchDashboardData();
+                if (typeof loadAvailabilityTimeline === "function") loadAvailabilityTimeline();
+
+                document.getElementById('triage-buttons').classList.add('hidden');
+                document.getElementById('btn-quick-appointment').classList.remove('hidden');
+            } else {
+                throw new Error(data.message || "Failed to generate ticket.");
+            }
+        })
+        .catch(err => {
+            console.error("Triage Error:", err);
+            if(typeof Swal !== 'undefined') Swal.fire('Error', err.message, 'error');
+        });
+};
 
 const btnConfirm = document.getElementById("btn-confirm-book");
 if (btnConfirm) {
@@ -220,11 +362,11 @@ if (btnUpdateProfile) {
 
 
 
-/* ─────────────────────────────────────────────
+/* ---------------------------------------------
      fetchDashboardData()
      Pulls user info, stats, doctors, appointments,
      and timeline from the API.
-     ───────────────────────────────────────────── */
+     --------------------------------------------- */
 function fetchDashboardData() {
   fetch("../php/dashboard_api.php")
     .then(function (response) {
@@ -237,7 +379,7 @@ function fetchDashboardData() {
         return;
       }
 
-      /* ── Extract actual data from wrapper ── */
+      /* -- Extract actual data from wrapper -- */
       if (data.status !== "success") {
         console.error("API returned error:", data.message);
         loadingOverlay.style.display = "none";
@@ -246,7 +388,7 @@ function fetchDashboardData() {
 
       const responseData = data.data;
       console.log("Dashboard Data Loaded:", responseData); // Helpful debug log
-      /* ── Helper for safe text assignments ── */
+      /* -- Helper for safe text assignments -- */
       function setElText(id, text) {
         const el = document.getElementById(id);
         if (el) el.textContent = text;
@@ -256,7 +398,7 @@ function fetchDashboardData() {
         if (el) el.value = val;
       }
 
-      /* ── Populate User Info ── */
+      /* -- Populate User Info -- */
       setElText("welcome-name", responseData.user.name);
       setElText("header-user-name", responseData.user.name);
       setElText("sidebar-user-name", responseData.user.name);
@@ -268,12 +410,12 @@ function fetchDashboardData() {
 
       setElValue("profile-name", responseData.user.name);
 
-      /* ── Populate Profile Email ── */
+      /* -- Populate Profile Email -- */
       if (responseData.user.email) {
         setElValue("profile-email", responseData.user.email);
       }
 
-      /* ── Populate Stat Cards ── */
+      /* -- Populate Stat Cards -- */
       if (responseData.stats) {
         setElText("stat-health", responseData.stats.health_status || "Good");
         setElText("stat-upcoming", responseData.stats.upcoming || "0");
@@ -295,7 +437,7 @@ function fetchDashboardData() {
         }
       }
 
-      /* ── Populate Appointments Table ── */
+      /* -- Populate Appointments Table -- */
       var appointmentsBody = document.getElementById("appointments-list");
       if (appointmentsBody) {
         appointmentsBody.innerHTML = "";
@@ -380,7 +522,7 @@ function fetchDashboardData() {
       }
     }
 
-      /* ── Populate Recent Activity ── */
+      /* -- Populate Recent Activity -- */
       const actContainer = document.getElementById("activity-container");
       if (actContainer) {
         let activityHtml = "";
@@ -469,62 +611,43 @@ function fetchDashboardData() {
         actContainer.innerHTML = activityHtml;
       }
 
-      /* ── Populate Notifications ── */
+      /* -- Populate Notifications -- */
       if (responseData.notifications) {
           renderNotifications(responseData.notifications);
       }
 
-      /* ── Populate Billing ── */
+      /* -- Populate Billing -- */
       if (responseData.invoices) {
           renderBilling(responseData.invoices);
       }
 
-      /* ── Populate Doctors Grid ── */
-      const doctorsContainer = document.getElementById("doctors-list");
-      if (doctorsContainer && responseData.doctors) {
+      /* -- Populate Future Doctors Grid -- */
+      if (responseData.doctors) {
           allDoctors = responseData.doctors;
           renderDoctorsGrid();
-          
-          // Show toggle button if more than 5 doctors
-          const toggleCont = document.getElementById("doctors-toggle-container");
-          if (toggleCont) {
-              if (allDoctors.length > 5) {
-                  toggleCont.classList.remove("hidden");
-              } else {
-                  toggleCont.classList.add("hidden");
+      }
+
+      /* -- Show Active Ticket (if any) -- */
+      if (responseData.appointments && responseData.appointments.length > 0) {
+          const activeAppt = responseData.appointments.find(a => 
+              a.status.toLowerCase() !== "terminated" &&
+              a.status.toLowerCase() !== "cancelled" &&
+              a.status.toLowerCase() !== "completed"
+          );
+          if (activeAppt) {
+              const ticketCont = document.getElementById("active-ticket-container");
+              if (ticketCont) {
+                  document.getElementById("active-ticket-number").textContent = activeAppt.ticket_code || "#--";
+                  document.getElementById("active-ticket-date").textContent = activeAppt.date || "--";
+                  document.getElementById("active-ticket-time").textContent = activeAppt.wait_time ? "~" + activeAppt.wait_time + " min wait" : "--";
+                  document.getElementById("active-ticket-doctor").textContent = activeAppt.doctor || "General Practitioner";
+                  ticketCont.classList.remove("hidden");
               }
           }
       }
 
-      /* ── Populate Availability Filter ── */
-      var doctorFilter = document.getElementById(
-          "availability-doctor-filter",
-      );
-      if (doctorFilter) {
-          // Keep the "All Doctors" option
-          doctorFilter.innerHTML = '<option value="">All Doctors</option>';
-          var ticketDocSelect = document.getElementById("ticket-doctor-select");
-          if (ticketDocSelect)
-              ticketDocSelect.innerHTML =
-                  '<option value="">Next Available Doctor</option>';
 
-          responseData.doctors.forEach(function (doctor) {
-              var option = document.createElement("option");
-              option.value = doctor.id;
-              option.textContent =
-                  doctor.name + " (" + (doctor.specialization || "General") + ")";
-              doctorFilter.appendChild(option);
-
-              // Also populate ticket doctor select
-              if (ticketDocSelect) {
-                  var tOption = option.cloneNode(true);
-                  ticketDocSelect.appendChild(tOption);
-              }
-          });
-      }
-
-
-      /* ── Render Medical Records ── */
+      /* -- Render Medical Records -- */
       var recordsBody = document.getElementById("records-list");
       if (recordsBody && responseData.records) {
         recordsBody.innerHTML = responseData.records.length
@@ -542,7 +665,7 @@ function fetchDashboardData() {
           : '<tr><td colspan="4" class="py-12 text-center text-gray-500">No records found.</td></tr>';
       }
 
-      /* ── Render Prescriptions ── */
+      /* -- Render Prescriptions -- */
       var prescriptionsBody = document.getElementById("prescriptions-list");
       if (prescriptionsBody && responseData.prescriptions) {
         prescriptionsBody.innerHTML = responseData.prescriptions.length
@@ -561,12 +684,12 @@ function fetchDashboardData() {
           : '<tr><td colspan="5" class="py-12 text-center text-gray-500">No prescriptions found.</td></tr>';
       }
 
-      /* ── Populate Profile Form ── */
+      /* -- Populate Profile Form -- */
       // Assuming we add a phone field to the API response later, or use empty for now
       // data.user doesn't have phone in previous API code, let's assume we might need to add it to API
       // or just use what we have. API sends name, email.
 
-      /* ── Hide Loading Overlay ── */
+      /* -- Hide Loading Overlay -- */
       loadingOverlay.style.display = "none";
     })
     .catch(function (error) {
@@ -576,32 +699,152 @@ function fetchDashboardData() {
 }
 
 /**
- * Renders the doctors grid based on the 'showAllDoctors' flag.
+ * Renders the doctors grid for Future Schedule selection.
  */
 function renderDoctorsGrid() {
-    const list = document.getElementById("doctors-list");
+    const list = document.getElementById("future-doctors-grid");
     if (!list) return;
     list.innerHTML = "";
     
-    // Slice doctors if needed
-    const doctorsToShow = showAllDoctors ? allDoctors : allDoctors.slice(0, 5);
-    
-    doctorsToShow.forEach(function(doctor) {
+    allDoctors.forEach(function(doctor) {
         const card = document.createElement("div");
-        card.className = "doctor-card-mini group animate-fade-in";
+        let fullClass = doctor.is_full ? "grayscale opacity-60 pointer-events-none" : "hover:border-blue-500 cursor-pointer";
+        let badgeHtml = doctor.is_full ? `<div class="absolute inset-0 bg-black bg-opacity-40 rounded-full flex items-center justify-center"><span class="text-[7px] font-bold text-white bg-red-600 px-1 py-0.5 rounded uppercase transform -rotate-12 shadow-sm">Fully Booked</span></div>` : "";
+
+        card.className = `doctor-card-mini group animate-fade-in border-2 border-transparent rounded-xl p-2 bg-gray-50 dark:bg-gray-700 transition-all text-center ${fullClass}`;
+        let gender = (doctor.image_url && doctor.image_url.includes('Female')) ? 'Female' : 'Male';
         card.innerHTML = `
-            <div class="relative mb-3 overflow-hidden rounded-xl">
+            <div class="relative mb-2 overflow-hidden rounded-full w-12 h-12 mx-auto">
                 <img src="${doctor.image_url}" 
-                     class="w-full h-32 object-cover transform group-hover:scale-110 transition-transform duration-500"
+                     class="w-full h-full object-cover"
                      onerror="this.src='../image/default_user.png'">
+                ${badgeHtml}
             </div>
-            <div class="font-bold text-sm text-gray-900 dark:text-white truncate group-hover:text-blue-600 transition-colors">${doctor.name}</div>
-            <div class="text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider mt-1">${doctor.specialization || 'General'}</div>
+            <div class="font-bold text-xs text-gray-900 dark:text-white truncate">${doctor.name}</div>
+            <div class="text-[9px] text-gray-500 font-semibold uppercase tracking-wider">${gender}</div>
+            <div class="text-[9px] text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wider mt-0.5">${doctor.specialization || 'General'}</div>
         `;
-        card.onclick = () => openDoctorModal(doctor);
+        
+        if (!doctor.is_full) {
+            card.onclick = () => {
+                // Remove selection from others
+                list.querySelectorAll('.doctor-card-mini').forEach(c => {
+                    c.classList.remove('border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/20');
+                    c.classList.add('border-transparent');
+                });
+                // Add selection to this
+                card.classList.remove('border-transparent');
+                card.classList.add('border-blue-500', 'bg-blue-50', 'dark:bg-blue-900/20');
+                
+                // Set values
+                document.getElementById("selected-doctor-id").value = doctor.id;
+                document.getElementById("display-doc-img").src = doctor.image_url || '../image/default_user.png';
+                document.getElementById("display-doc-name").textContent = doctor.name;
+                document.getElementById("selected-doctor-display").classList.remove("hidden");
+                document.getElementById("selected-doctor-display").classList.add("flex");
+                
+                // Real-time slot update
+                let currentDate = document.getElementById("appointment-date");
+                if (currentDate && currentDate.value) {
+                    loadBookingSlots(currentDate.value, doctor.id);
+                }
+            };
+        }
         list.appendChild(card);
     });
 }
+
+// 7-Day Date Grid Replacement
+document.addEventListener("DOMContentLoaded", function() {
+    function generateDates() {
+        const grid = document.getElementById("date-grid");
+        if (!grid) return;
+        grid.innerHTML = "";
+        const today = new Date();
+        const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        
+        for (let i = 0; i < 7; i++) {
+            let d = new Date(today);
+            d.setDate(today.getDate() + i);
+            let dayName = i === 0 ? "Today" : days[d.getDay()];
+            let dateNum = d.getDate();
+            let monthName = months[d.getMonth()];
+            let fullDate = d.toISOString().split("T")[0];
+            
+            let btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "date-square-btn flex flex-col items-center justify-center py-3 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-blue-500 bg-white dark:bg-gray-800 transition-all cursor-pointer";
+            btn.dataset.date = fullDate;
+            
+            btn.innerHTML = `
+                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">${dayName}</span>
+                <span class="text-lg font-black text-gray-900 dark:text-white my-1">${dateNum}</span>
+                <span class="text-[10px] font-bold text-gray-500">${monthName}</span>
+            `;
+            
+            btn.onclick = function() {
+                document.querySelectorAll(".date-square-btn").forEach(b => {
+                    b.classList.remove("border-blue-500", "bg-blue-50", "dark:bg-blue-900/20");
+                    b.classList.add("border-gray-200", "dark:border-gray-700", "bg-white", "dark:bg-gray-800");
+                });
+                this.classList.remove("border-gray-200", "dark:border-gray-700", "bg-white", "dark:bg-gray-800");
+                this.classList.add("border-blue-500", "bg-blue-50", "dark:bg-blue-900/20");
+                
+                let dateInput = document.getElementById("appointment-date");
+                if (dateInput) {
+                    dateInput.value = this.dataset.date;
+                    dateInput.dispatchEvent(new Event('change'));
+                }
+            };
+            
+            grid.appendChild(btn);
+        }
+    }
+    
+    generateDates();
+
+    const dateInput = document.getElementById("appointment-date");
+    if (dateInput) {
+        dateInput.addEventListener("change", function(e) {
+            const date = e.target.value;
+            if(!date) return;
+            fetch("../Ai/ai_scheduler.php?date=" + date)
+              .then(res => res.json())
+              .then(data => {
+                  if(data.doctors) {
+                      allDoctors = data.doctors;
+                      
+                      // Capacity Exhaustion Visual Effect for Date Grid
+                      // Mark date as "Sold Out" if all doctors are full
+                      let allFull = data.doctors.length > 0 && data.doctors.every(d => d.is_full);
+                      let activeBtn = document.querySelector(`.date-square-btn[data-date='${date}']`);
+                      if (allFull && activeBtn) {
+                          activeBtn.classList.add("opacity-50", "pointer-events-none", "grayscale");
+                          activeBtn.innerHTML += `<div class="absolute bg-red-600 text-white text-[8px] font-bold px-1 py-0.5 rounded uppercase mt-8 transform rotate-12">Full</div>`;
+                      }
+
+                      renderDoctorsGrid();
+                      // Check if currently selected doctor is now full
+                      let selectedId = document.getElementById("selected-doctor-id").value;
+                      if(selectedId) {
+                          let doc = allDoctors.find(d => d.id == selectedId);
+                          if(doc && doc.is_full) {
+                              document.getElementById("selected-doctor-id").value = "";
+                              document.getElementById("selected-doctor-display").classList.add("hidden");
+                              document.getElementById("selected-doctor-display").classList.remove("flex");
+                              if(typeof Swal !== 'undefined') Swal.fire({toast:true, position:'top-end', icon:'warning', title:'Selected doctor is fully booked on this date.', showConfirmButton:false, timer:3000});
+                          }
+                      }
+                  }
+                  
+                  // Auto-load slots
+                  let selectedId = document.getElementById("selected-doctor-id").value;
+                  loadBookingSlots(date, selectedId);
+              });
+        });
+    }
+});
 
 /**
  * Updates the circular countdown timers in the activity container.
@@ -665,12 +908,12 @@ function updateActivityTimers() {
 
 
 
-/* ─────────────────────────────────────────────
+/* ---------------------------------------------
      loadAvailabilityTimeline(doctorId)
      Calls the AI Scheduler to get today's hourly
      chair availability and renders the timeline.
      Connected to: 📊 Today's Availability
-     ───────────────────────────────────────────── */
+     --------------------------------------------- */
 function loadAvailabilityTimeline(doctorId = "") {
   var today = new Date().toISOString().split("T")[0];
   var url = "../Ai/ai_scheduler.php?date=" + today;
@@ -693,7 +936,9 @@ function loadAvailabilityTimeline(doctorId = "") {
       var timelineHtml = "";
 
       data.timeline.forEach(function (slot) {
-        var isFull = slot.chairs_left === 0;
+        // Slot chairs are determined by ai_scheduler now (4 per active GP), we can use the server's response.
+        // We do not override it here unless we have to.
+        var isFull = slot.chairs_left <= 0;
         var badgeClass = isFull
           ? "badge-full"
           : slot.status === "Almost Full"
@@ -705,16 +950,17 @@ function loadAvailabilityTimeline(doctorId = "") {
           : "cursor: pointer;";
         var clickHandler = isFull
           ? `Swal.fire('Slot Full', 'Please choose another time.', 'info')`
-          : `selectTimeFromTimeline('${slot.time_24h}', '${slot.hour}', this)`;
+          : `overrideTodayManualSelection('${slot.time_24h}', '${slot.hour}', this)`;
 
         timelineHtml += `
-            <div class="timeline-hour flex flex-col items-center justify-center min-w-[120px] p-4 border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:border-blue-500 transition-all ${isFull ? "opacity-60" : ""}" 
+            <div class="timeline-hour flex flex-col items-center justify-center min-w-[120px] p-4 border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:border-blue-500 transition-all ${isFull ? "opacity-60 grayscale" : ""} relative" 
                  style="${clickableStyle}" onclick="${clickHandler}">
-                <div class="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2">${slot.hour}</div>
+                <div class="text-xs font-bold text-gray-500 dark:text-gray-400 mb-2 ${isFull ? 'line-through' : ''}">${slot.hour}</div>
                 <div class="badge ${badgeClass} text-[10px] w-full flex justify-center py-1">
                     <span class="mr-1">${chairIcon}</span>
                     <span>${slot.chairs_left} Left</span>
                 </div>
+                ${isFull ? '<div class="absolute top-1 right-1 bg-red-600 text-white text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider">FULL</div>' : ''}
             </div>`;
       });
 
@@ -725,7 +971,7 @@ function loadAvailabilityTimeline(doctorId = "") {
     });
 }
 
-/* ── Filter Availability by Doctor ── */
+/* -- Filter Availability by Doctor -- */
 var doctorFilter = document.getElementById("availability-doctor-filter");
 if (doctorFilter) {
   doctorFilter.addEventListener("change", function () {
@@ -733,68 +979,10 @@ if (doctorFilter) {
   });
 }
 
-  /* ── Take a Ticket Functionality ── */
-  var btnTakeTicket = document.getElementById("btn-take-ticket");
-  if (btnTakeTicket) {
-    btnTakeTicket.addEventListener("click", function () {
-      Swal.fire({
-          title: 'Immediate Ticket',
-          text: "Are you sure you want to take a ticket for immediate service?",
-          icon: 'question',
-          showCancelButton: true,
-          confirmButtonColor: '#3b82f6',
-          cancelButtonColor: '#9ca3af',
-          confirmButtonText: 'Yes, get ticket'
-      }).then((result) => {
-          if (result.isConfirmed) {
-              var doctorId = document.getElementById("ticket-doctor-select").value;
-              var selectedTime = document.getElementById("selected-time-slot").value;
-              
-              var formData = new FormData();
-              formData.append("take_ticket", "1");
-              if (doctorId) formData.append("doctor_id", doctorId);
-              if (selectedTime) formData.append("selected_time", selectedTime);
-
-              fetch("../php/appointment_handler.php", {
-                method: "POST",
-                body: formData,
-              })
-                .then(function (response) {
-                  return response.json();
-                })
-                .then(function (data) {
-                  if (data.status === "success") {
-                    const ticketRes = document.getElementById("ticket-result");
-                    document.getElementById("ticket-number").textContent = "#" + data.ticket_number;
-                    ticketRes.classList.remove("hidden");
-                    ticketRes.style.display = "block";
-
-                    Swal.fire({
-                        title: 'Ticket Issued!',
-                        text: 'Your walk-in ticket #' + data.ticket_number + ' is ready.',
-                        icon: 'success',
-                        confirmButtonColor: '#3b82f6'
-                    });
-
-                    // Refresh data
-                    fetchDashboardData();
-                    loadAvailabilityTimeline(doctorId);
-                  } else {
-                    Swal.fire('Error', data.message, 'error');
-                  }
-                })
-                .catch(function (error) {
-                  console.error("Error taking ticket:", error);
-                  Swal.fire('Error', "Failed to take a ticket. Please try again.", 'error');
-                });
-          }
-      });
-    });
-  }
-  /* ─────────────────────────────────────────────
+  /* ---------------------------------------------
      Doctor Profile Modal
      Shows doctor details and lets users book.
-     ───────────────────────────────────────────── */
+     --------------------------------------------- */
 window.closeDoctorModal = function () {
   document.getElementById("doctor-modal").classList.add("hidden");
 };
@@ -814,7 +1002,7 @@ function openDoctorModal(doctor) {
   if (typeof AOS !== "undefined") AOS.refreshHard();
 }
 
-/* ── "Book Appointment" inside modal ── */
+/* -- "Book Appointment" inside modal -- */
 document.getElementById("btn-book-doc").onclick = function () {
   if (!selectedDoctor) return;
 
@@ -836,7 +1024,7 @@ document.getElementById("btn-book-doc").onclick = function () {
   window.closeDoctorModal();
 };
 
-/* ── "Change" doctor link ── */
+/* -- "Change" doctor link -- */
 document.getElementById("change-doc-btn").onclick = function () {
   document.getElementById("selected-doctor-id").value = "";
   document.getElementById("selected-doctor-display").classList.add("hidden");
@@ -844,109 +1032,17 @@ document.getElementById("change-doc-btn").onclick = function () {
   selectedDoctor = null;
 };
 
-/* ─────────────────────────────────────────────
-     analyzeAndShowTimes()
-     Step 1: AI Triage -> Step 2: Show Time Slots
-     ───────────────────────────────────────────── */
-function analyzeAndShowTimes() {
-  var reasonText = document.getElementById("reason").value.trim();
-  var appointmentDate = document.getElementById("appointment-date").value;
-  var doctorIdInput = document.getElementById("selected-doctor-id").value;
-
-  if (!appointmentDate) {
-    if (typeof Swal !== 'undefined') { Swal.fire({ toast: true, position: 'top-end', icon: 'warning', title: 'Please fill in the date', showConfirmButton: false, timer: 2500 }); } else { alert("Please fill in the date."); }
-    return;
-  }
-
-  const aiLoading = document.getElementById("ai-loading");
-  const aiResultPanel = document.getElementById("ai-result-panel");
-  const timeSlotSection = document.getElementById("time-slot-section");
-  const btnAnalyze = document.getElementById("btn-analyze");
-
-  /* ── If no reason given, skip AI and show defaults ── */
-  if (!reasonText) {
-    aiLoading.classList.add("hidden");
-    // Show panel with "None" defaults
-    document.getElementById("ai-priority").textContent = "None";
-    document.getElementById("ai-priority").className = "text-lg font-bold text-gray-400";
-    document.getElementById("ai-specialty").textContent = "None";
-    document.getElementById("ai-suggestion").closest("div.p-4").classList.add("hidden");
-    document.getElementById("ai-matching-doctors").classList.add("hidden");
-    aiResultPanel.classList.remove("hidden");
-    timeSlotSection.classList.remove("hidden");
-    loadBookingSlots(appointmentDate, doctorIdInput);
-    return;
-  }
-
-  // Show the AI loading spinner
-  aiLoading.classList.remove("hidden");
-  aiResultPanel.classList.add("hidden");
-  timeSlotSection.classList.add("hidden");
-  btnAnalyze.disabled = true;
-  btnAnalyze.innerHTML = "⏳ Analyzing...";
-  btnAnalyze.classList.add("opacity-50", "cursor-not-allowed");
-
-  /* ── Step 1: Call AI Triage ── */
-  fetch("../Ai/ai_triage.php", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      reason: reasonText,
-      date: appointmentDate,
-      doctor_id: doctorIdInput || null,
-    }),
-  })
-    .then(function (response) {
-      return response.json();
-    })
-    .then(function (aiData) {
-      aiLoading.classList.add("hidden");
-      btnAnalyze.disabled = false;
-      btnAnalyze.innerHTML = "➡️ Next";
-      btnAnalyze.classList.remove("opacity-50", "cursor-not-allowed");
-
-      if (aiData.status === "success" && aiData.triage) {
-        displayAiResults(aiData);
-        // Step 2: Load available slots with the newly assigned doctor from AI
-        var updatedDoctorId = document.getElementById("selected-doctor-id").value;
-        loadBookingSlots(appointmentDate, updatedDoctorId);
-      } else {
-        loadBookingSlots(appointmentDate, doctorIdInput);
-      }
-    })
-    .catch(function (error) {
-      console.error("AI triage error:", error);
-      aiLoading.style.display = "none";
-      btnAnalyze.disabled = false;
-      btnAnalyze.innerHTML = "➡️ Next";
-      btnAnalyze.classList.remove("opacity-50", "cursor-not-allowed");
-
-      // Fallback: still show time slots
-      loadBookingSlots(appointmentDate, doctorIdInput);
-    });
-}
-
-/* ─────────────────────────────────────────────
+/* -- AI Booking logic removed per refactor -- */
+/* ---------------------------------------------
      loadBookingSlots(date, doctorId)
      Fetches available hours from AI Scheduler
      and renders selectable buttons.
-     ───────────────────────────────────────────── */
+     --------------------------------------------- */
 function loadBookingSlots(date, doctorId) {
   var url = "../Ai/ai_scheduler.php?date=" + date;
   if (doctorId) url += "&doctor_id=" + doctorId;
 
-  // Show doctor name above time slots
-  var docDisplay = document.getElementById("slot-doctor-display");
-  var docNameEl  = document.getElementById("slot-doctor-name");
-  if (docDisplay && docNameEl) {
-    if (selectedDoctor && selectedDoctor.name) {
-      docNameEl.textContent = selectedDoctor.name;
-    } else {
-      docNameEl.textContent = "Any Available Doctor";
-    }
-    docDisplay.classList.remove("hidden");
-    docDisplay.classList.add("flex");
-  }
+
 
   fetch(url)
     .then(function (res) {
@@ -977,28 +1073,22 @@ function loadBookingSlots(date, doctorId) {
 
         var btn = document.createElement("button");
         btn.type = "button";
-        btn.className = "btn-slot"; // We need to add CSS for this potentially
-        btn.style.cssText =
-          "padding:10px; border:1px solid #ddd; background:white; color:black; border-radius:5px; cursor:pointer;";
+        btn.className = "btn-slot px-4 py-3 border border-gray-200 bg-white text-gray-900 rounded-xl cursor-pointer font-medium text-sm transition-all hover:border-blue-500";
+
         btn.textContent = slot.hour;
 
         if (slot.chairs_left === 0) {
           btn.disabled = true;
-          btn.style.opacity = "0.5";
-          btn.style.background = "#eee";
+          btn.className += " opacity-50 line-through cursor-not-allowed";
           btn.textContent += " (Full)";
         } else {
           btn.onclick = function () {
             // Deselect others
             document.querySelectorAll(".btn-slot").forEach((b) => {
-              b.style.background = "white";
-              b.style.color = "black";
-              b.style.borderColor = "#ddd";
+              b.classList.remove("slot-selected");
             });
             // Select this
-            btn.style.background = "#4caf50";
-            btn.style.color = "white";
-            btn.style.borderColor = "#4caf50";
+            btn.classList.add("slot-selected");
 
             // Convert "09:00 AM" to "09:00:00" for DB
             var timeParts = timeStr.split(" "); // ["09:00", "AM"]
@@ -1031,12 +1121,11 @@ function loadBookingSlots(date, doctorId) {
     });
 }
 
-/* ─────────────────────────────────────────────
+/* ---------------------------------------------
      confirmBooking()
      Final step: submit everything
-     ───────────────────────────────────────────── */
+     --------------------------------------------- */
 function confirmBooking() {
-  var reasonText = document.getElementById("reason").value;
   var appointmentDate = document.getElementById("appointment-date").value;
   var doctorIdInput = document.getElementById("selected-doctor-id").value;
   var selectedTime = document.getElementById("selected-time-slot").value;
@@ -1048,7 +1137,7 @@ function confirmBooking() {
   }
 
   bookAppointment(
-    reasonText,
+    "", // reasonText removed
     appointmentDate,
     doctorIdInput,
     fileInput,
@@ -1056,109 +1145,13 @@ function confirmBooking() {
   );
 }
 
-/* ─────────────────────────────────────────────
-     displayAiResults(aiData)
-     Shows the AI triage analysis in the result panel.
-     ───────────────────────────────────────────── */
-function displayAiResults(aiData) {
-  var triageInfo = aiData.triage;
-  var resultPanel = document.getElementById("ai-result-panel");
+/* -- AI Display Logic removed per refactor -- */
 
-  // Fill in the priority, suggestion, specialty
-  document.getElementById("ai-priority").textContent = triageInfo.priority;
-  document.getElementById("ai-suggestion").textContent = triageInfo.suggestion;
-  document.getElementById("ai-specialty").textContent =
-    triageInfo.recommended_specialty;
-
-  // Color the priority text based on level
-  var priorityElement = document.getElementById("ai-priority");
-  priorityElement.className = "text-lg font-bold"; // Reset classes
-  if (triageInfo.priority === "Fast/Hard" || triageInfo.priority === "Highly Important") {
-    priorityElement.classList.add("text-red-600", "dark:text-red-400");
-  } else if (triageInfo.priority === "Medium" || triageInfo.priority === "Important") {
-    priorityElement.classList.add("text-orange-500", "dark:text-orange-400");
-  } else {
-    priorityElement.classList.add("text-green-600", "dark:text-green-400");
-  }
-
-  // Show matching doctors if available
-  var matchingDoctorsSection = document.getElementById("ai-matching-doctors");
-  var doctorsListContainer = document.getElementById("ai-doctors-list");
-
-  if (aiData.matching_doctors && aiData.matching_doctors.length > 0) {
-    matchingDoctorsSection.style.display = "block";
-    doctorsListContainer.innerHTML = "";
-
-    aiData.matching_doctors.forEach(function (doctor, index) {
-      var doctorBtn = document.createElement("button");
-      doctorBtn.type = "button";
-      doctorBtn.className = "recommend-doc-btn flex items-center gap-2 px-4 py-2.5 rounded-full border border-gray-200 bg-white dark:bg-gray-800 dark:border-gray-700 text-gray-900 dark:text-gray-100 hover:border-blue-500 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 text-sm font-medium";
-      doctorBtn.innerHTML =
-        "👨‍⚕️ <span><strong>" +
-        doctor.name +
-        "</strong> <small class='opacity-70 font-normal'>(" +
-        doctor.specialization +
-        ")</small></span>";
-
-      // Clicking a recommended doctor selects them
-      doctorBtn.onclick = function () {
-        // Deselect all other recommendation buttons
-        document.querySelectorAll(".recommend-doc-btn").forEach(btn => {
-            btn.classList.remove("bg-blue-600", "text-white", "border-blue-600", "shadow-blue-200");
-            btn.classList.add("bg-white", "dark:bg-gray-800", "text-gray-900", "dark:text-gray-100", "border-gray-200", "dark:border-gray-700");
-        });
-
-        // Select this button
-        doctorBtn.classList.remove("bg-white", "dark:bg-gray-800", "text-gray-900", "dark:text-gray-100", "border-gray-200", "dark:border-gray-700");
-        doctorBtn.classList.add("bg-blue-600", "text-white", "border-blue-600", "shadow-lg", "shadow-blue-200", "dark:shadow-blue-900/40");
-
-        document.getElementById("selected-doctor-id").value = doctor.id;
-        document.getElementById("display-doc-name").textContent = doctor.name;
-        document.getElementById("selected-doctor-display").style.display = "flex";
-        
-        if (doctor.image_url) {
-          document.getElementById("display-doc-img").src = doctor.image_url;
-        }
-
-        // Store the selected doctor profile object
-        if (typeof allDoctors !== 'undefined') {
-            const docObj = allDoctors.find(d => parseInt(d.id) === parseInt(doctor.id));
-            if (docObj) {
-                selectedDoctor = docObj;
-            }
-        }
-      };
-
-      doctorsListContainer.appendChild(doctorBtn);
-
-      // Auto-select the first doctor in the list
-      if (index === 0) {
-          doctorBtn.click();
-      }
-    });
-  } else {
-    matchingDoctorsSection.style.display = "none";
-  }
-
-  // Store recommended slot globally so loadBookingSlots can auto-click it
-  window.aiRecommendedSlot = aiData.triage.recommended_slot;
-
-  // Show the panel
-  resultPanel.classList.remove("hidden");
-  resultPanel.style.display = "block"; // Keep for compatibility if needed
-
-  // Ensure the time slot section is also visible
-  document.getElementById("time-slot-section").classList.remove("hidden");
-
-  // Add success animation/scroll
-  resultPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
-}
-
-/* ─────────────────────────────────────────────
+/* ---------------------------------------------
      bookAppointment()
      Sends the booking form to the server and
      shows success / error feedback.
-     ───────────────────────────────────────────── */
+     --------------------------------------------- */
 function bookAppointment(
   reasonText,
   appointmentDate,
@@ -1179,7 +1172,7 @@ function bookAppointment(
     formData.append("doctor_id", doctorIdInput);
   }
 
-  if (fileInput.files.length > 0) {
+  if (fileInput && fileInput.files && fileInput.files.length > 0) {
     formData.append("document", fileInput.files[0]);
   }
 
@@ -1195,13 +1188,15 @@ function bookAppointment(
       var btnConfirm = document.getElementById("btn-confirm-book");
       var btnAnalyze = document.getElementById("btn-analyze");
 
-      messageDiv.style.display = "block";
+      if (messageDiv) messageDiv.style.display = "block";
       if (btnConfirm) btnConfirm.style.display = "none"; // Hide confirm button
 
       // Reset Analyze Button
-      btnAnalyze.disabled = false;
-      btnAnalyze.textContent = "🔍 Analyze Symptoms & Find Time";
-      btnAnalyze.classList.remove("opacity-50", "cursor-not-allowed");
+      if (btnAnalyze) {
+        btnAnalyze.disabled = false;
+        btnAnalyze.textContent = "🔍 Analyze Symptoms & Find Time";
+        btnAnalyze.classList.remove("opacity-50", "cursor-not-allowed");
+      }
 
         if (result.status === "success") {
           Swal.fire({
@@ -1218,13 +1213,20 @@ function bookAppointment(
 
           // Reset the form and refresh data
           document.getElementById("appointmentForm").reset();
-          document.getElementById("ai-result-panel").classList.add("hidden");
-          document
-            .getElementById("selected-doctor-display")
-            .classList.add("hidden");
-          document
-            .getElementById("selected-doctor-display")
-            .classList.remove("flex");
+          const aiPanel = document.getElementById("ai-result-panel");
+          if (aiPanel) aiPanel.classList.add("hidden");
+          
+          const selDocDisplay = document.getElementById("selected-doctor-display");
+          if (selDocDisplay) {
+            selDocDisplay.classList.add("hidden");
+            selDocDisplay.classList.remove("flex");
+          }
+          
+          const timeSlotSection = document.getElementById("time-slot-section");
+          if (timeSlotSection) {
+            timeSlotSection.classList.add("hidden");
+          }
+
           fetchDashboardData();
           loadAvailabilityTimeline();
         } else {
@@ -1244,9 +1246,11 @@ function bookAppointment(
     .catch(function (error) {
       console.error("Booking error:", error);
       var btnAnalyze = document.getElementById("btn-analyze");
-      btnAnalyze.disabled = false;
-      btnAnalyze.textContent = "🔍 Analyze Symptoms & Find Time";
-      btnAnalyze.classList.remove("opacity-50", "cursor-not-allowed");
+      if (btnAnalyze) {
+        btnAnalyze.disabled = false;
+        btnAnalyze.textContent = "🔍 Analyze Symptoms & Find Time";
+        btnAnalyze.classList.remove("opacity-50", "cursor-not-allowed");
+      }
       Swal.fire({
         title: 'Error',
         text: 'Submission failed. Please try again.',
@@ -1262,7 +1266,7 @@ function bookAppointment(
 }
 
 
-  /* ── 5. Terminate (Cancel) Appointment ── */
+  /* -- 5. Terminate (Cancel) Appointment -- */
   window.terminateAppointment = function (apptId) {
     Swal.fire({
         title: 'Cancel Appointment?',
@@ -1305,9 +1309,8 @@ function bookAppointment(
     });
   };
 
-/* ── 6. Select Time from Timeline ── */
-window.selectTimeFromTimeline = function (time24h, hourStr, element) {
-  // 0. Visual highlighting in timeline
+/* -- 6. Select Time from Timeline -- */
+window.overrideTodayManualSelection = function (time24h, hourStr, element) {
   if (element) {
     document.querySelectorAll(".timeline-hour").forEach(el => {
         el.classList.remove("border-blue-600", "ring-2", "ring-blue-100", "dark:ring-blue-900/40");
@@ -1317,32 +1320,77 @@ window.selectTimeFromTimeline = function (time24h, hourStr, element) {
     element.style.borderColor = "#2563eb";
   }
 
-  // 1. Set the hidden time slot 24h value
   var timeSlotField = document.getElementById("selected-time-slot");
-  if (timeSlotField) {
-    timeSlotField.value = time24h;
-  }
+  if (timeSlotField) timeSlotField.value = time24h;
 
-  // 2. Update UI to show what time they're aiming for
-  var msgDiv = document.getElementById("appt-message");
-  if (msgDiv) {
-    msgDiv.style.display = "block";
-    msgDiv.style.background = "#e3f2fd";
-    msgDiv.style.color = "#1565c0";
-    msgDiv.innerHTML =
-      "<strong>Time Selected: " +
-      hourStr +
-      "</strong><br>Your ticket will be issued for this time period.";
-  }
+  // Derive shift from the SELECTED TIME SLOT, not the wall clock
+  let slotHour = parseInt(time24h.split(':')[0]);
+  let slotShift = (slotHour < 13) ? 1 : 2;
 
-  // 3. Show the confirmation button if they click from timeline
-  var confirmBtn = document.getElementById("btn-take-ticket");
-  if (confirmBtn) {
-    confirmBtn.style.display = "block";
+  let selectedShiftDocs = allDoctors.filter(d => {
+      let docId = parseInt(d.id);
+      let docShift = docId <= 5 ? 1 : 2;
+      return docShift === slotShift;
+  });
+  
+  let docsHtml = selectedShiftDocs.map(doc => {
+      let gender = (doc.image_url && doc.image_url.includes('Female')) ? 'FEMALE' : 'MALE';
+      return `
+      <div onclick="confirmManualWalkin('${doc.id}', '${time24h}', '${hourStr}')" class="doc-select-card cursor-pointer flex items-center p-4 border border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all bg-white">
+          <img src="${doc.image_url}" class="w-12 h-12 rounded-full object-cover mr-4 border-2 border-gray-200" onerror="this.src='../image/default_user.png'">
+          <div>
+              <p class="doc-name font-bold text-gray-900">${doc.name}</p>
+              <p class="doc-gender text-xs font-semibold text-indigo-500 uppercase tracking-wider">${gender}</p>
+              <p class="doc-spec text-xs text-gray-500">${doc.specialization}</p>
+          </div>
+      </div>`;
+  }).join('');
+
+  if(typeof Swal !== 'undefined') {
+      Swal.fire({
+          title: 'Select Doctor for ' + hourStr,
+          html: `<div class="space-y-3 mt-4 text-left max-h-64 overflow-y-auto">${docsHtml}</div>`,
+          showConfirmButton: false,
+          showCancelButton: true,
+          cancelButtonText: 'Cancel',
+          customClass: {
+              popup: 'swal2-popup',
+              title: 'swal2-title',
+              htmlContainer: 'swal2-html-container',
+              cancelButton: 'swal2-cancel'
+          }
+      });
   }
 };
 
-/* ── 7. Tab Switching Logic ── */
+window.confirmManualWalkin = function(doctorId, time24h, hourStr) {
+    if(typeof Swal !== 'undefined') Swal.close();
+    var formData = new FormData();
+    formData.append("take_ticket", "1");
+    formData.append("selected_time", time24h);
+    formData.append("doctor_id", doctorId);
+
+    fetch("../php/appointment_handler.php", {
+      method: "POST",
+      body: formData,
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === "success") {
+          if(typeof Swal !== 'undefined') Swal.fire({ title: 'Ticket Issued!', text: 'Your ticket #' + data.ticket_number + ' is ready.', icon: 'success', confirmButtonColor: '#3b82f6' });
+          fetchDashboardData();
+          loadAvailabilityTimeline();
+        } else {
+          if(typeof Swal !== 'undefined') Swal.fire('Error', data.message, 'error');
+        }
+      })
+      .catch(error => {
+        console.error("Error taking ticket:", error);
+        if(typeof Swal !== 'undefined') Swal.fire('Error', "Failed to take a ticket. Please try again.", 'error');
+      });
+};
+
+/* -- 7. Tab Switching Logic -- */
 window.switchAppointmentTab = function(tab) {
     const todayContent = document.getElementById("appointments-today-content");
     const futureContent = document.getElementById("appointments-future-content");
@@ -1372,7 +1420,7 @@ window.switchAppointmentTab = function(tab) {
     if (typeof AOS !== "undefined") AOS.refreshHard();
 };
 
-/* ── 8. Make Selected Doctor Name Clickable ── */
+/* -- 8. Make Selected Doctor Name Clickable -- */
 document.addEventListener("DOMContentLoaded", function() {
     const displayDocName = document.getElementById("display-doc-name");
     if (displayDocName) {
@@ -1384,7 +1432,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 
-/* ── 9. Render Billing (Receipt-Card Style) ── */
+/* -- 9. Render Billing (Receipt-Card Style) -- */
 window.renderBilling = function (invoices) {
     const cardsContainer = document.getElementById("billingPatientCards");
     const alertBanner = document.getElementById("billing-alert-banner");
@@ -1405,8 +1453,9 @@ window.renderBilling = function (invoices) {
     // Calculate unpaid totals for the alert banner
     let unpaidTotal = 0, unpaidCount = 0;
     invoices.forEach(inv => {
-        if (inv.status === 'pending') {
-            unpaidTotal += parseFloat(inv.total) || 0;
+        if (inv.status === 'pending' || inv.status === 'unpaid' || inv.status === 'overdue') {
+            const numVal = parseFloat(inv.total.toString().replace(/,/g, ''));
+            unpaidTotal += isNaN(numVal) ? 0 : numVal;
             unpaidCount++;
         }
     });
@@ -1417,8 +1466,8 @@ window.renderBilling = function (invoices) {
             alertBanner.classList.remove('hidden');
             const alertTotal = document.getElementById('billing-alert-total');
             const alertText = document.getElementById('billing-alert-text');
-            if (alertTotal) alertTotal.textContent = '$' + unpaidTotal.toFixed(2);
-            if (alertText) alertText.textContent = `You have ${unpaidCount} pending invoice${unpaidCount > 1 ? 's' : ''}. Please settle them before the due date.`;
+            if (alertTotal) alertTotal.textContent = '$' + unpaidTotal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            if (alertText) alertText.textContent = `You have ${unpaidCount} unpaid invoice${unpaidCount > 1 ? 's' : ''}. Please settle them before the due date.`;
         } else {
             alertBanner.classList.add('hidden');
         }
@@ -1528,13 +1577,20 @@ window.renderBilling = function (invoices) {
     }).join('');
 };
 
-/* ── 9b. Payment Modal Helpers ── */
+/* -- 9b. Payment Modal Helpers -- */
 window.openPaymentModal = function (invoiceId, totalStr) {
     document.getElementById('pay-invoice-id').value = invoiceId;
     document.getElementById('pay-invoice-label').textContent = '#INV-' + String(invoiceId).padStart(4, '0');
     document.getElementById('pay-invoice-amount').textContent = '$' + totalStr;
     document.getElementById('paymentForm').reset();
     document.getElementById('pay-invoice-id').value = invoiceId;
+    
+    // Auto-fill dummy card info for fast simulation
+    document.getElementById('pay-card-number').value = '4111 1111 1111 1111';
+    document.getElementById('pay-card-holder').value = 'Test Patient';
+    document.getElementById('pay-card-expiry').value = '12/26';
+    document.getElementById('pay-card-cvv').value = '123';
+    
     document.getElementById('paymentModal').classList.remove('hidden');
 };
 
@@ -1609,7 +1665,7 @@ window.processPayment = async function () {
     }
 };
 
-/* ── 10. Render Notifications ── */
+/* -- 10. Render Notifications -- */
 window.renderNotifications = function (notifications) {
     const tableBody = document.getElementById("notifications-table-body");
     if (!tableBody) return;
@@ -1624,7 +1680,7 @@ window.renderNotifications = function (notifications) {
         if (notif.is_read == 0) unreadCount++;
         const date = notif.date || 'N/A';
         const topic = notif.topic || 'General';
-        const msgPreview = notif.message.length > 60 ? notif.message.substring(0, 60) + '…' : notif.message;
+        const msgPreview = notif.message.length > 60 ? notif.message.substring(0, 60) + '...' : notif.message;
         const readBold = notif.is_read == 0 ? 'font-bold' : '';
         const unreadBg = notif.is_read == 0 ? 'bg-blue-50/50 dark:bg-blue-900/10' : '';
         const unreadBadge = notif.is_read == 0 ? '<span class="notif-new-badge ml-2 px-1.5 py-0.5 bg-blue-600 text-white text-[10px] rounded-full uppercase tracking-tighter">New</span>' : '';
@@ -1699,7 +1755,7 @@ function updateNotifBadges(unreadCount) {
     }
 }
 
-// Handle View button click — opens modal, marks as read, and instantly updates the UI row
+// Handle View button click - opens modal, marks as read, and instantly updates the UI row
 window.handleViewNotification = function(notif) {
     const modal = document.getElementById("notif-modal");
     if (!modal) return;
@@ -1744,7 +1800,7 @@ window.handleViewNotification = function(notif) {
     }
 }
 
-/* ── 10. Notification Modal Helpers ── */
+/* -- 10. Notification Modal Helpers -- */
 window.closeNotifModal = function() {
     const modal = document.getElementById("notif-modal");
     if (modal) modal.classList.add("hidden");
@@ -1769,7 +1825,7 @@ window.markNotificationAsRead = function(notifId) {
     .catch(error => console.error("Error marking notification read:", error));
 }
 
-/* ── 11. Secure Logout ── */
+/* -- 11. Secure Logout -- */
 window.handleLogout = function () {
   Swal.fire({
     title: "Confirm Logout",
@@ -1779,9 +1835,156 @@ window.handleLogout = function () {
     confirmButtonColor: "#3b82f6",
     cancelButtonColor: "#9ca3af",
     confirmButtonText: "Yes, logout",
-  }).then((result) => {
-    if (result.isConfirmed) {
-      window.location.href = "../php/logout.php";
-    }
   });
 };
+
+/* -- 12. Full Calendar Modal Logic -- */
+let currentCalendarYear = new Date().getFullYear();
+let currentCalendarMonth = new Date().getMonth();
+
+window.openCalendarModal = function() {
+    const today = new Date();
+    currentCalendarYear = today.getFullYear();
+    currentCalendarMonth = today.getMonth();
+    renderCalendar();
+    document.getElementById("calendar-modal").classList.remove("hidden");
+};
+
+window.closeCalendarModal = function() {
+    document.getElementById("calendar-modal").classList.add("hidden");
+};
+
+window.changeCalendarYear = function(offset) {
+    currentCalendarYear += offset;
+    renderCalendar();
+};
+
+window.changeCalendarMonth = function(offset) {
+    currentCalendarMonth += offset;
+    if (currentCalendarMonth > 11) {
+        currentCalendarMonth = 0;
+        currentCalendarYear++;
+    } else if (currentCalendarMonth < 0) {
+        currentCalendarMonth = 11;
+        currentCalendarYear--;
+    }
+    renderCalendar();
+};
+
+function renderCalendar() {
+    document.getElementById("calendar-year-display").textContent = currentCalendarYear;
+    
+    // Render Month 1
+    renderMonthGrid("calendar-month-1-grid", "calendar-month-1-name", currentCalendarYear, currentCalendarMonth);
+    
+    // Render Month 2
+    let nextMonth = currentCalendarMonth + 1;
+    let nextYear = currentCalendarYear;
+    if (nextMonth > 11) {
+        nextMonth = 0;
+        nextYear++;
+    }
+    renderMonthGrid("calendar-month-2-grid", "calendar-month-2-name", nextYear, nextMonth);
+}
+
+function renderMonthGrid(gridId, nameId, year, month) {
+    const grid = document.getElementById(gridId);
+    const nameEl = document.getElementById(nameId);
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    
+    if(!grid || !nameEl) return;
+    
+    nameEl.textContent = months[month];
+    grid.innerHTML = "";
+    
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const today = new Date();
+    
+    for (let i = 0; i < firstDay; i++) {
+        grid.appendChild(document.createElement("div"));
+    }
+    
+    for (let i = 1; i <= daysInMonth; i++) {
+        const dateObj = new Date(year, month, i);
+        // Correctly format to local YYYY-MM-DD
+        const y = dateObj.getFullYear();
+        const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const d = String(dateObj.getDate()).padStart(2, '0');
+        const dateStr = `${y}-${m}-${d}`;
+        
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.textContent = i;
+        btn.className = "p-2 rounded-xl text-sm font-bold transition-all border border-transparent";
+        
+        if (dateObj.setHours(0,0,0,0) < today.setHours(0,0,0,0)) {
+            btn.className += " text-gray-300 dark:text-gray-600 cursor-not-allowed";
+            btn.disabled = true;
+        } else {
+            btn.className += " text-gray-700 dark:text-gray-200 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/30 dark:hover:text-blue-400";
+            btn.onclick = function() {
+                selectDateFromCalendar(dateStr, new Date(year, month, i));
+            };
+        }
+        
+        grid.appendChild(btn);
+    }
+}
+
+function selectDateFromCalendar(dateStr, dateObj) {
+    closeCalendarModal();
+    
+    const dateInput = document.getElementById("appointment-date");
+    if (dateInput) {
+        dateInput.value = dateStr;
+        dateInput.dispatchEvent(new Event('change'));
+    }
+    
+    const grid = document.getElementById("date-grid");
+    if (!grid) return;
+    
+    document.querySelectorAll(".date-square-btn").forEach(b => {
+        b.classList.remove("border-blue-500", "bg-blue-50", "dark:bg-blue-900/20");
+        b.classList.add("border-gray-200", "dark:border-gray-700", "bg-white", "dark:bg-gray-800");
+    });
+    
+    let existingBtn = document.querySelector(`.date-square-btn[data-date="${dateStr}"]`);
+    if (existingBtn) {
+        existingBtn.classList.remove("border-gray-200", "dark:border-gray-700", "bg-white", "dark:bg-gray-800");
+        existingBtn.classList.add("border-blue-500", "bg-blue-50", "dark:bg-blue-900/20");
+    } else {
+        let btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "date-square-btn flex flex-col items-center justify-center py-3 rounded-xl border border-blue-500 bg-blue-50 dark:bg-blue-900/20 transition-all cursor-pointer";
+        btn.dataset.date = dateStr;
+        
+        const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        
+        btn.innerHTML = `
+            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">${days[dateObj.getDay()]}</span>
+            <span class="text-lg font-black text-gray-900 dark:text-white my-1">${dateObj.getDate()}</span>
+            <span class="text-[10px] font-bold text-gray-500">${months[dateObj.getMonth()]}</span>
+        `;
+        
+        btn.onclick = function() {
+            document.querySelectorAll(".date-square-btn").forEach(b => {
+                b.classList.remove("border-blue-500", "bg-blue-50", "dark:bg-blue-900/20");
+                b.classList.add("border-gray-200", "dark:border-gray-700", "bg-white", "dark:bg-gray-800");
+            });
+            this.classList.remove("border-gray-200", "dark:border-gray-700", "bg-white", "dark:bg-gray-800");
+            this.classList.add("border-blue-500", "bg-blue-50", "dark:bg-blue-900/20");
+            
+            if (dateInput) {
+                dateInput.value = this.dataset.date;
+                dateInput.dispatchEvent(new Event('change'));
+            }
+        };
+        
+        if (grid.children.length >= 7) {
+            grid.removeChild(grid.lastChild);
+        }
+        grid.appendChild(btn);
+    }
+}

@@ -10,7 +10,7 @@
  *
  * Returns JSON with each doctor's:
  *   - first_name, last_name (display name)
- *   - specialization (e.g. "Cardiology")
+ *   - specialization (e.g. "General Medicine")
  *   - department
  *   - profile_image (filename in the /image/ folder)
  *   - bio (short description)

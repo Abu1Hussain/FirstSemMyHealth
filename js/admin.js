@@ -9,7 +9,7 @@ let allDocumentQueue = [];
 let allDoctorsData = [];
 let allPatientsData = [];
 
-// ── UI Logic: Sidebar ──
+// -- UI Logic: Sidebar --
 document.addEventListener("DOMContentLoaded", function () {
   const sidebarToggle = document.getElementById("sidebarToggle");
   const sidebar = document.getElementById("sidebar");
@@ -64,7 +64,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 
-// ── Helper: API Fetch ──
+// -- Helper: API Fetch --
 async function apiFetch(action) {
   try {
     const response = await fetch(`${API_BASE}?action=${action}`, {
@@ -86,7 +86,7 @@ async function apiFetch(action) {
   }
 }
 
-// ── Dashboard Stats ──
+// -- Dashboard Stats --
 async function loadDashboardStats() {
   const data = await apiFetch("dashboard");
   if (!data) return;
@@ -100,7 +100,7 @@ async function loadDashboardStats() {
     data.total_appointments || "0";
 }
 
-// ── Table Rendering ──
+// -- Table Rendering --
 async function loadAllTables() {
   try {
   // 1. Users
@@ -228,7 +228,7 @@ async function loadAllTables() {
   }
   } catch(e) { console.error('Error loading tables 1-11:', e); }
 
-  // 12. Invoices (Billing) — loaded independently so earlier errors don't block it
+  // 12. Invoices (Billing) - loaded independently so earlier errors don't block it
   try {
   const invoices = await apiFetch("billing");
   const billingBody = document.getElementById("billingTableBody");
@@ -256,12 +256,12 @@ async function loadAllTables() {
           ).join('');
 
           return `<tr>
-                  <td>${inv.patient || '—'}</td>
+                  <td>${inv.patient || '-'}</td>
                   <td class="text-gray-500 dark:text-gray-400">${inv.subtotal || '$0.00'}</td>
                   <td class="text-amber-600 dark:text-amber-400 text-xs">${inv.tax || '$0.00'}</td>
                   <td class="font-bold">${inv.amount || '$0.00'}</td>
                   <td><span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${statusClass}">${inv.status || 'Pending'}</span></td>
-                  <td>${inv.date || '—'}</td>
+                  <td>${inv.date || '-'}</td>
                   <td class="text-gray-500">${inv.due_date || 'N/A'}</td>
                   <td>
                     <select onchange="changeInvoiceStatus(${inv.id}, this.value)" 
@@ -295,7 +295,7 @@ async function loadAllTables() {
   } catch(e) { console.error('Error loading billing:', e); }
 }
 
-// ── Change Invoice Status (Admin) ──
+// -- Change Invoice Status (Admin) --
 async function changeInvoiceStatus(invoiceId, newStatus) {
   const formData = new FormData();
   formData.append("invoice_id", invoiceId);
@@ -318,7 +318,7 @@ async function changeInvoiceStatus(invoiceId, newStatus) {
   }
 }
 
-// ── Specific Table Filters & Rendering ──
+// -- Specific Table Filters & Rendering --
 
 function renderPatientsTable() {
   const tableBody = document.getElementById("patientsTableBody");
@@ -493,7 +493,7 @@ function setupYearFilter() {
     uniqueYears.map((y) => `<option value="${y}">${y}</option>`).join("");
 }
 
-// ── Admin Actions ──
+// -- Admin Actions --
 
 function terminateAppointment(apptId) {
   Swal.fire({
@@ -635,7 +635,7 @@ async function submitBookAppt() {
   }
 }
 
-// ── Tax Preview (live calculation) ──
+// -- Tax Preview (live calculation) --
 function updateTaxPreview() {
   const subtotal = parseFloat(document.getElementById("bill-amount").value) || 0;
   const taxRate = 0.10; // Fixed 10%
@@ -650,7 +650,7 @@ function updateTaxPreview() {
   if (totalEl) totalEl.textContent = "$" + total.toFixed(2);
 }
 
-// ── Billing Actions ──
+// -- Billing Actions --
 function openBillModal() {
   const patientSelect = document.getElementById("bill-patient");
   if (patientSelect && patientSelect.options.length <= 1) {
@@ -725,7 +725,7 @@ async function submitBill() {
   }
 }
 
-// ── Staff Actions ──
+// -- Staff Actions --
 function openStaffModal() {
   document.getElementById("createStaffForm").reset();
   document.getElementById("edit-staff-id").value = "";
@@ -800,7 +800,7 @@ async function submitStaff() {
   }
 }
 
-// ── Notifications ──
+// -- Notifications --
 function toggleOtherEmail(selectElement) {
   const otherEmailContainer = document.getElementById("other-email-container");
   if (selectElement.value === "other") {
@@ -858,7 +858,7 @@ async function sendNotification() {
   }
 }
 
-// ── Charts ──
+// -- Charts --
 async function loadCharts() {
   const data = await apiFetch("chart_data");
   if (!data) return;
@@ -931,7 +931,7 @@ async function loadCharts() {
   });
 }
 
-// ── Patient CRUD ──
+// -- Patient CRUD --
 function openPatientModal(patientId = null) {
   document.getElementById("patientForm").reset();
   document.getElementById("edit-patient-id").value = "";
@@ -1074,7 +1074,7 @@ function deletePatient(patientId, patientName) {
   });
 }
 
-// ── Staff CRUD ──
+// -- Staff CRUD --
 function editStaff(doctorId) {
   const d = allDoctorsData.find((doc) => doc.doctor_id == doctorId);
   if (!d) return;
@@ -1139,7 +1139,7 @@ function deleteStaff(doctorId, doctorName) {
   });
 }
 
-// ── Initialization ──
+// -- Initialization --
 document.addEventListener("DOMContentLoaded", () => {
   loadDashboardStats();
   loadAllTables();
@@ -1150,9 +1150,9 @@ document.addEventListener("DOMContentLoaded", () => {
   updateAdminPresenceUI(savedPresence);
 });
 
-/* ═══════════════════════════════════════════════════════════
-   Admin Presence System (3 states — no In Consultation)
-   ═══════════════════════════════════════════════════════════ */
+/* ===========================================================
+   Admin Presence System (3 states - no In Consultation)
+   =========================================================== */
 
 const ADMIN_PRESENCE_CONFIG = {
   on_duty:   { emoji: '🩺', label: 'On Duty',   bg: 'bg-emerald-100', border: 'border-emerald-300', text: 'text-emerald-700', darkBg: 'dark:bg-emerald-900/30', darkBorder: 'dark:border-emerald-600', darkText: 'dark:text-emerald-400' },

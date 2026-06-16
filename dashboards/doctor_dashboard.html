@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyHealth – Doctor Dashboard</title>
+    <title>MyHealth - Doctor Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -43,7 +43,7 @@
     <style>
         body { font-family: 'Inter', sans-serif; }
 
-        /* ── Scrollbar ── */
+        /* -- Scrollbar -- */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
         ::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
@@ -52,7 +52,7 @@
         .dark ::-webkit-scrollbar-thumb { background: #4a5568; }
         .dark ::-webkit-scrollbar-thumb:hover { background: #718096; }
 
-        /* ── Sidebar ── */
+        /* -- Sidebar -- */
         .sidebar { transition: width 0.3s ease-in-out; overflow-x: hidden; scrollbar-width: none; -ms-overflow-style: none; }
         .sidebar::-webkit-scrollbar { display: none; }
         .sidebar-collapsed { width: 4.5rem; }
@@ -65,11 +65,11 @@
         .sidebar-expanded .profile-info { display: inline; }
         .sidebar-expanded .sidebar-logo-text { display: block; }
 
-        /* ── Section Visibility ── */
+        /* -- Section Visibility -- */
         .content-section { display: none; }
         .content-section.active { display: block; }
 
-        /* ── Loading Overlay ── */
+        /* -- Loading Overlay -- */
         #loading-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(255,255,255,0.85); z-index: 9999;
@@ -84,7 +84,7 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ── Patient Detail Modal ── */
+        /* -- Patient Detail Modal -- */
         .pd-modal {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             z-index: 2500; display: flex; justify-content: center; align-items: center;
@@ -137,14 +137,14 @@
         .pd-value { display: block; font-size: 14px; color: #1a237e; font-weight: 500; }
         .dark .pd-value { color: #93c5fd; }
 
-        /* ── Timer Modal ── */
+        /* -- Timer Modal -- */
         #timer-modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.85); z-index: 3000;
             display: none; justify-content: center; align-items: center;
         }
 
-        /* ── DataTable dark mode ── */
+        /* -- DataTable dark mode -- */
         .dark .dataTables_wrapper { color: #d1d5db; }
         .dark .dataTables_wrapper input,
         .dark .dataTables_wrapper select { background: #374151; color: #f9fafb; border-color: #4b5563; }
@@ -155,7 +155,7 @@
         .dark .dataTables_wrapper .dataTables_paginate .paginate_button { color: #d1d5db !important; }
         .dark .dataTables_wrapper .dataTables_paginate .paginate_button.current { background: #3b82f6 !important; color: #fff !important; border-color: #3b82f6 !important; }
 
-        /* ── Appointment category table styles ── */
+        /* -- Appointment category table styles -- */
         .appt-table { width: 100%; border-collapse: collapse; font-size: 14px; }
         .appt-table thead tr { background: #f9fafb; }
         .dark .appt-table thead tr { background: #374151; }
@@ -177,7 +177,7 @@
         .dark .badge-blue   { background: #1e40af; color: #bfdbfe; }
         .dark .badge-gray   { background: #374151; color: #d1d5db; }
 
-        /* ── Today's schedule card ── */
+        /* -- Today's schedule card -- */
         .schedule-item { display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: 12px; transition: background 0.15s; }
         .schedule-item:hover { background: #f3f4f6; }
         .dark .schedule-item:hover { background: #374151; }
@@ -192,9 +192,9 @@
 
 
     
-    <!-- ══════════════════════════════════════
+    <!-- ======================================
          GLOBAL TOP HEADER
-    ══════════════════════════════════════ -->
+    ====================================== -->
     <header class="h-20 w-full flex-shrink-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md shadow-sm border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-6 z-50">
         <div class="flex items-center gap-4">
             <a href="../index.html" class="flex items-center gap-3 cursor-pointer group pr-4 md:border-r border-gray-200 dark:border-gray-700">
@@ -268,9 +268,9 @@
     </header>
 
     <div class="flex flex-1 overflow-hidden relative">
-<!-- ══════════════════════════════════════
+<!-- ======================================
          SIDEBAR
-    ══════════════════════════════════════ -->
+    ====================================== -->
     <aside id="sidebar" class="sidebar sidebar-expanded bg-white dark:bg-gray-800 shadow-xl flex flex-col space-y-2 border-r border-gray-200 dark:border-gray-700 absolute inset-y-0 left-0 z-30 overflow-y-auto">
         <!-- Nav Links -->
         <nav class="flex-grow px-2 space-y-1 pt-2">
@@ -310,7 +310,7 @@
                 <img id="sidebar-doc-img" src="../image/default_user.png" alt="Doctor Avatar" class="h-10 w-10 rounded-full object-cover" style="display:none;">
                 <div id="sidebar-initial-avatar" class="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-lg">?</div>
                 <div class="profile-info ml-3">
-                    <p id="sidebar-doc-name" class="text-sm font-medium text-gray-800 dark:text-white">Loading…</p>
+                    <p id="sidebar-doc-name" class="text-sm font-medium text-gray-800 dark:text-white">Loading...</p>
                     <p class="text-xs text-gray-500 dark:text-gray-400">Doctor</p>
                 </div>
             </div>
@@ -321,9 +321,9 @@
         </div>
     </aside>
 
-    <!-- ══════════════════════════════════════
+    <!-- ======================================
          MAIN CONTENT
-    ══════════════════════════════════════ -->
+    ====================================== -->
     <div id="mainContent" class="flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out ml-64 h-full">
 
         
@@ -331,9 +331,9 @@
         <!-- Content Body -->
         <main class="flex-1 overflow-x-hidden overflow-y-auto p-6 space-y-6">
 
-            <!-- ═══════════════════════════════
+            <!-- ===============================
                  VIEW: DASHBOARD
-            ═══════════════════════════════ -->
+            =============================== -->
             <div id="view-dashboard" class="content-section" data-aos="fade-up">
                 <h1 class="text-3xl font-semibold text-gray-800 dark:text-white mb-6">Dashboard</h1>
 
@@ -471,9 +471,9 @@
                 </div> <!-- End grid -->
             </div> <!-- End view-dashboard -->
 
-            <!-- ═══════════════════════════════
+            <!-- ===============================
                  VIEW: NOTIFICATIONS
-            ═══════════════════════════════ -->
+            =============================== -->
             <div id="view-notifications" class="content-section hidden space-y-8 animate-fade-in-up" data-aos="fade-up">
                 <div class="flex items-center justify-between mb-6">
                     <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Your Notifications</h2>
@@ -499,9 +499,9 @@
                 </div>
             </div>
 
-            <!-- ═══════════════════════════════
+            <!-- ===============================
                  VIEW: PATIENT MANAGEMENT
-            ═══════════════════════════════ -->
+            =============================== -->
             <div id="view-patients" class="content-section hidden" data-aos="fade-up">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                     <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Patient Management</h1>
@@ -545,9 +545,9 @@
 
 
 
-            <!-- ═══════════════════════════════
+            <!-- ===============================
                  VIEW: PRESCRIPTIONS / PHARMACY
-            ═══════════════════════════════ -->
+            =============================== -->
             <div id="view-prescriptions" class="content-section hidden" data-aos="fade-up">
                 <h1 class="text-3xl font-semibold text-gray-800 dark:text-white mb-6">💊 Manage Prescriptions</h1>
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
@@ -579,9 +579,9 @@
             </div>
 
 
-            <!-- ═══════════════════════════════
+            <!-- ===============================
                  VIEW: MEDICAL RECORDS
-            ═══════════════════════════════ -->
+            =============================== -->
             <div id="view-records" class="content-section hidden" data-aos="fade-up">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                     <h1 class="text-3xl font-semibold text-gray-800 dark:text-white">📋 Medical Records</h1>
@@ -606,9 +606,9 @@
 
 
 
-            <!-- ═══════════════════════════════
+            <!-- ===============================
                  VIEW: MY PROFILE
-            ═══════════════════════════════ -->
+            =============================== -->
             <div id="view-profile" class="content-section space-y-6" data-aos="fade-up">
                 <h1 class="text-3xl font-bold text-gray-900 dark:text-white">My Profile</h1>
                 <div class="max-w-xl mx-auto">
@@ -655,9 +655,9 @@
         </main>
     </div><!-- /mainContent -->
 
-    <!-- ══════════════════════════════════════
+    <!-- ======================================
          PATIENT DETAIL MODAL
-    ══════════════════════════════════════ -->
+    ====================================== -->
     <div id="patient-detail-modal" class="pd-modal" style="display:none;">
         <div class="pd-modal-overlay" onclick="closePatientModal()"></div>
         <div class="pd-modal-content">
@@ -667,7 +667,7 @@
                     <div class="pd-avatar" id="pd-avatar">?</div>
                     <div>
                         <h2 id="pd-name" class="text-xl font-bold text-gray-900 dark:text-white m-0">Patient Name</h2>
-                        <p id="pd-cpr" class="text-sm text-gray-500 dark:text-gray-400 mt-1">CPR: —</p>
+                        <p id="pd-cpr" class="text-sm text-gray-500 dark:text-gray-400 mt-1">CPR: -</p>
                     </div>
                 </div>
                 <!-- Global Consultation Timer -->
@@ -687,13 +687,13 @@
             <!-- Tab: Info -->
             <div id="modal-tab-info" class="modal-tab-content">
                 <div class="pd-grid">
-                    <div class="pd-item"><span class="pd-label">📧 Email</span><span class="pd-value" id="pd-email">—</span></div>
-                    <div class="pd-item"><span class="pd-label">📞 Phone</span><span class="pd-value" id="pd-phone">—</span></div>
-                    <div class="pd-item"><span class="pd-label">🎂 Date of Birth</span><span class="pd-value" id="pd-dob">—</span></div>
-                    <div class="pd-item"><span class="pd-label">⚧ Gender</span><span class="pd-value" id="pd-gender">—</span></div>
-                    <div class="pd-item"><span class="pd-label">🩸 Blood Type</span><span class="pd-value" id="pd-blood">—</span></div>
-                    <div class="pd-item"><span class="pd-label">📋 Appt Type</span><span class="pd-value" id="pd-appt-type">—</span></div>
-                    <div class="pd-item col-span-2"><span class="pd-label">📝 Reason</span><span class="pd-value" id="pd-reason">—</span></div>
+                    <div class="pd-item"><span class="pd-label">📧 Email</span><span class="pd-value" id="pd-email">-</span></div>
+                    <div class="pd-item"><span class="pd-label">📞 Phone</span><span class="pd-value" id="pd-phone">-</span></div>
+                    <div class="pd-item"><span class="pd-label">🎂 Date of Birth</span><span class="pd-value" id="pd-dob">-</span></div>
+                    <div class="pd-item"><span class="pd-label">⚧ Gender</span><span class="pd-value" id="pd-gender">-</span></div>
+                    <div class="pd-item"><span class="pd-label">🩸 Blood Type</span><span class="pd-value" id="pd-blood">-</span></div>
+                    <div class="pd-item"><span class="pd-label">📋 Appt Type</span><span class="pd-value" id="pd-appt-type">-</span></div>
+                    <div class="pd-item col-span-2"><span class="pd-label">📝 Reason</span><span class="pd-value" id="pd-reason">-</span></div>
                 </div>
             </div>
 
@@ -870,9 +870,9 @@
         </div>
     </div>
 
-    <!-- ══════════════════════════════════════
+    <!-- ======================================
          TIMER MODAL
-    ══════════════════════════════════════ -->
+    ====================================== -->
     <div id="timer-modal">
         <div style="background:#fff; padding:40px; border-radius:20px; text-align:center; width:90%; max-width:400px; position:relative;" class="dark:bg-gray-800">
             <h2 style="margin-bottom:20px; color:#2c3e50;" class="text-gray-800 dark:text-white font-bold text-2xl">Patient Consultation</h2>
@@ -917,7 +917,7 @@
         </div>
     </div>
 
-    <!-- ── NOTIFICATION MODAL ── -->
+    <!-- -- NOTIFICATION MODAL -- -->
     <div id="notif-modal" class="fixed inset-0 z-[2000] overflow-hidden hidden">
         <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" onclick="closeNotifModal()"></div>
         <div class="absolute inset-0 flex items-center justify-center p-4 py-12">
@@ -967,7 +967,7 @@
         </div>
     </div>
     
-    <!-- ══ Scripts ══ -->
+    <!-- == Scripts == -->
     <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
@@ -976,7 +976,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 
-    <!-- ── TELEMEDICINE MODAL (WebRTC) ── -->
+    <!-- -- TELEMEDICINE MODAL (WebRTC) -- -->
     <div id="telemed-modal" class="fixed inset-0 z-[3000] overflow-hidden hidden bg-gray-950/95 backdrop-blur-xl flex items-center justify-center">
         <!-- Ambient glow background -->
         <div class="absolute inset-0 overflow-hidden pointer-events-none">
@@ -1118,7 +1118,7 @@
       if (telemedModal) vcObserver.observe(telemedModal, { attributes: true, attributeFilter: ['class'] });
     </script>
 
-    <!-- ── PHONE CALL MODAL ── -->
+    <!-- -- PHONE CALL MODAL -- -->
     <div id="phone-call-modal" class="fixed inset-0 z-[3000] overflow-hidden hidden bg-gray-900/95 backdrop-blur-md flex items-center justify-center">
         <div class="relative w-full max-w-md p-6">
             <button onclick="endPhoneCall()" class="absolute top-2 right-2 z-10 m-4 p-3 bg-red-600/80 rounded-full text-white hover:bg-red-700 shadow-xl transition-transform hover:scale-110">

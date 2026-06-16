@@ -60,11 +60,64 @@ if ($doctorQuery) {
 
         $doctor['image_url']        = '../image/' . $doctor['profile_image'];
         $doctor['booked_today']     = $bookedCount;
-        $doctor['available_chairs'] = max(0, $doctor['capacity'] - $bookedCount);
-        $doctor['is_full']          = ($bookedCount >= $doctor['capacity']);
+        $doctor['available_chairs'] = max(0, 16 - $bookedCount); // 16 daily capacity
+        $doctor['is_full']          = ($bookedCount >= 16);
         $doctors[] = $doctor;
     }
 }
+
+// Ensure the 2-shift roster guarantees at least 1 Male and 1 Female General Medicine doctor per shift
+// Ensure the 2-shift roster guarantees exactly 5 doctors per shift (no overlap).
+// First Shift Roster (Shift 1): Doctors 1 to 5. (09:00 to 13:00)
+// Second Shift Roster (Shift 2): Doctors 6 to 10. (13:00 to 17:00)
+foreach ($doctors as &$doc) {
+    $did = (int)$doc['id'];
+    $shiftNum = ($did <= 5) ? 1 : 2;
+    $shiftName = ($shiftNum === 1) ? 'Morning Shift (09:00 - 13:00)' : 'Evening Shift (13:00 - 17:00)';
+    
+    // Determine active shift based on current time (with 10-min early access offset)
+    $currentHour = (int)date('H');
+    $currentMinute = (int)date('i');
+    $activeShift = ($currentHour < 13) ? 1 : 2;
+    if ($currentHour == 12 && $currentMinute >= 50) {
+        $activeShift = 2;
+    }
+    
+    $dutyStatus = "";
+    if ($shiftNum === $activeShift) {
+        $dutyStatus = "(On-Duty)";
+    } else {
+        $dutyStatus = ($shiftNum > $activeShift) ? "(Available Later)" : "(Off-Duty)";
+    }
+    
+    // Assign explicit specialties
+    if ($did === 1) {
+        $doc['specialization'] = "General Medicine";
+    } elseif ($did === 2) {
+        $doc['specialization'] = "General Medicine";
+    } elseif ($did === 3) {
+        $doc['specialization'] = "Dentistry";
+    } elseif ($did === 4) {
+        $doc['specialization'] = "ENT Specialist";
+    } elseif ($did === 5) {
+        $doc['specialization'] = "Ophthalmology";
+    } elseif ($did === 6) {
+        $doc['specialization'] = "General Medicine";
+    } elseif ($did === 7) {
+        $doc['specialization'] = "General Medicine";
+    } elseif ($did === 8) {
+        $doc['specialization'] = "Dentistry";
+    } elseif ($did === 9) {
+        $doc['specialization'] = "ENT Specialist";
+    } elseif ($did === 10) {
+        $doc['specialization'] = "Ophthalmology";
+    } else {
+        $doc['specialization'] = $doc['specialization'];
+    }
+    
+    $doc['shift'] = $shiftNum;
+}
+unset($doc);
 
 
 /* ─────────────────────────────────────────────────────
@@ -93,13 +146,17 @@ for ($hour = $startHour; $hour < $endHour; $hour++) {
     $result      = $conn->query($countSql);
     $bookedCount = $result ? $result->fetch_assoc()['booked'] : 0;
 
-    // Determine max chairs for this slot
-    $maxChairs = 4; // Default clinic-wide capacity (logical max per hour)
+    // Determine active doctors in this hour's shift
+    $currentShift = ($hour < 13) ? 1 : 2;
+    
+    // STRICT 4-CHAIR LIMIT per time slot — no multiplication
+    $maxChairs = 4;
+    
     if ($doctorId) {
-        // Use the specific doctor's capacity
-        $capQuery = $conn->query("SELECT capacity FROM doctors WHERE doctor_id = '$doctorId'");
-        if ($capQuery && $capRow = $capQuery->fetch_assoc()) {
-            $maxChairs = $capRow['capacity'];
+        $did = (int)$doctorId;
+        $docShift = ($did <= 5) ? 1 : 2;
+        if ($docShift !== $currentShift) {
+            continue; // Skip rendering this slot entirely for the doctor's off-shift hours
         }
     }
 

@@ -1,9 +1,9 @@
-/* ═══════════════════════════════════════════════════════════
-   auth.js – Shared script for all authentication pages
+/* ===========================================================
+   auth.js - Shared script for all authentication pages
    Handles: Dark Mode (init + toggle), Password visibility
-   ═══════════════════════════════════════════════════════════ */
+   =========================================================== */
 
-/* ── Dark Mode ── */
+/* -- Dark Mode -- */
 (function () {
   const isDark = localStorage.getItem("darkMode") === "enabled";
   if (isDark) document.documentElement.classList.add("dark");
@@ -37,7 +37,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  /* ── Password Visibility Toggles ── */
+  /* -- Password Visibility Toggles -- */
   document.querySelectorAll(".toggle-password").forEach(function (btn) {
     btn.addEventListener("click", function () {
       const targetId = this.dataset.target;

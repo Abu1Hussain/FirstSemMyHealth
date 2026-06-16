@@ -469,29 +469,29 @@ echo "👤 Patient: patient@AM.com / pass1234<br>";
  */
 
 $doctorsList = [
-    // Doctor 1: Ahmed Al-Din (Male) → uses doc2(Male).jpg
-    [
-        'firstName'      => 'Ahmed',
-        'lastName'       => 'Al-Din',
-        'email'          => 'doctor1@example.test',
-        'phone'          => '+97310000001',
-        'image'          => 'doc2(Male).jpg',
-        'specialization' => 'General Medicine',
-        'department'     => 'General',
-        'bio'            => 'Expert in general medicine with 15 years of experience in primary care.',
-        'capacity'       => 5
-    ],
-    // Doctor 2: Fatima Khalid (Female) → uses doc1(Female).jpg
+    // Doctor 1: Fatima Khalid (Female) → uses doc1(Female).jpg
     [
         'firstName'      => 'Fatima',
         'lastName'       => 'Khalid',
+        'email'          => 'doctor1@example.test',
+        'phone'          => '+97310000001',
+        'image'          => 'doc1(Female).jpg',
+        'specialization' => 'General Medicine',
+        'department'     => 'General Medicine',
+        'bio'            => 'Expert in general medicine with 15 years of experience in primary care.',
+        'capacity'       => 5
+    ],
+    // Doctor 2: Ahmed Al-Din (Male) → uses doc2(Male).jpg
+    [
+        'firstName'      => 'Ahmed',
+        'lastName'       => 'Al-Din',
         'email'          => 'doctor2@example.test',
         'phone'          => '+97310000002',
-        'image'          => 'doc1(Female).jpg',
-        'specialization' => 'Pediatrics',
-        'department'     => 'Pediatrics',
-        'bio'            => 'Loves children and specializes in early development and child health.',
-        'capacity'       => 4
+        'image'          => 'doc2(Male).jpg',
+        'specialization' => 'General Medicine',
+        'department'     => 'General Medicine',
+        'bio'            => 'Specialist in general medicine and family health.',
+        'capacity'       => 5
     ],
     // Doctor 3: Mohamed Yousif (Male) → uses doc3(Male).jpg
     [
@@ -500,10 +500,10 @@ $doctorsList = [
         'email'          => 'doctor3@example.test',
         'phone'          => '+97310000003',
         'image'          => 'doc3(Male).jpg',
-        'specialization' => 'Cardiology',
-        'department'     => 'Cardiology',
-        'bio'            => 'Cardiologist focused on heart health, prevention, and treatment.',
-        'capacity'       => 3
+        'specialization' => 'Dentistry',
+        'department'     => 'Dentistry',
+        'bio'            => 'Experienced dentist providing comprehensive dental care.',
+        'capacity'       => 5
     ],
     // Doctor 4: Sara Hassan (Female) → uses doc4(Female).jpg
     [
@@ -512,10 +512,10 @@ $doctorsList = [
         'email'          => 'doctor4@example.test',
         'phone'          => '+97310000004',
         'image'          => 'doc4(Female).jpg',
-        'specialization' => 'Dermatology',
-        'department'     => 'Dermatology',
-        'bio'            => 'Specialist in skin care, cosmetic treatments, and dermatological disorders.',
-        'capacity'       => 3
+        'specialization' => 'ENT (Ear, Nose, and Throat) Specialist',
+        'department'     => 'ENT',
+        'bio'            => 'ENT specialist with expertise in ear, nose, and throat treatments.',
+        'capacity'       => 5
     ],
     // Doctor 5: Omar Saleh (Male) → uses doc5(Male).jpg
     [
@@ -524,34 +524,34 @@ $doctorsList = [
         'email'          => 'doctor5@example.test',
         'phone'          => '+97310000005',
         'image'          => 'doc5(Male).jpg',
-        'specialization' => 'Orthopedics',
-        'department'     => 'Orthopedics',
-        'bio'            => 'Specialist in bones, joints, and sports injuries.',
-        'capacity'       => 4
+        'specialization' => 'Ophthalmology',
+        'department'     => 'Ophthalmology',
+        'bio'            => 'Eye care specialist focused on vision correction and eye disease treatment.',
+        'capacity'       => 5
     ],
-    // Doctor 6: Huda Nasser (Female) → uses doc7(Female).jpg
-    [
-        'firstName'      => 'Huda',
-        'lastName'       => 'Nasser',
-        'email'          => 'doctor6@example.test',
-        'phone'          => '+97310000006',
-        'image'          => 'doc7(Female).jpg',
-        'specialization' => 'Gynecology',
-        'department'     => 'Gynecology',
-        'bio'            => 'Specialist in women\'s health and reproductive medicine.',
-        'capacity'       => 4
-    ],
-    // Doctor 7: Khalid Abbas (Male) → uses doc6(Male).jpg
+    // Doctor 6: Khalid Abbas (Male) → uses doc6(Male).jpg
     [
         'firstName'      => 'Khalid',
         'lastName'       => 'Abbas',
+        'email'          => 'doctor6@example.test',
+        'phone'          => '+97310000006',
+        'image'          => 'doc6(Male).jpg',
+        'specialization' => 'General Medicine',
+        'department'     => 'General Medicine',
+        'bio'            => 'General Medicine expert with a focus on comprehensive adult care.',
+        'capacity'       => 5
+    ],
+    // Doctor 7: Huda Nasser (Female) → uses doc7(Female).jpg
+    [
+        'firstName'      => 'Huda',
+        'lastName'       => 'Nasser',
         'email'          => 'doctor7@example.test',
         'phone'          => '+97310000007',
-        'image'          => 'doc6(Male).jpg',
-        'specialization' => 'Neurology',
-        'department'     => 'Neurology',
-        'bio'            => 'Focused on brain and nervous system disorders with advanced diagnostic skills.',
-        'capacity'       => 2
+        'image'          => 'doc7(Female).jpg',
+        'specialization' => 'General Medicine',
+        'department'     => 'General Medicine',
+        'bio'            => 'Dedicated general practitioner serving all ages.',
+        'capacity'       => 5
     ],
     // Doctor 8: Lina Mahmood (Female) → uses doc8(Female).jpg
     [
@@ -560,10 +560,10 @@ $doctorsList = [
         'email'          => 'doctor8@example.test',
         'phone'          => '+97310000008',
         'image'          => 'doc8(Female).jpg',
-        'specialization' => 'Endocrinology',
-        'department'     => 'Endocrinology',
-        'bio'            => 'Expert in hormonal disorders, diabetes management, and thyroid conditions.',
-        'capacity'       => 3
+        'specialization' => 'Dentistry',
+        'department'     => 'Dentistry',
+        'bio'            => 'Expert in cosmetic and restorative dentistry.',
+        'capacity'       => 5
     ],
     // Doctor 9: Yousef Ibrahim (Male) → uses doc9(Male).jpg
     [
@@ -572,7 +572,7 @@ $doctorsList = [
         'email'          => 'doctor9@example.test',
         'phone'          => '+97310000009',
         'image'          => 'doc9(Male).jpg',
-        'specialization' => 'ENT',
+        'specialization' => 'ENT (Ear, Nose, and Throat) Specialist',
         'department'     => 'ENT',
         'bio'            => 'Ear, nose, and throat specialist with expertise in surgical and non-surgical treatments.',
         'capacity'       => 5
@@ -587,7 +587,7 @@ $doctorsList = [
         'specialization' => 'Ophthalmology',
         'department'     => 'Ophthalmology',
         'bio'            => 'Eye care specialist focused on vision correction and eye disease treatment.',
-        'capacity'       => 4
+        'capacity'       => 5
     ]
 ];
 

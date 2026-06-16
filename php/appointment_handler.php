@@ -112,9 +112,14 @@ if (isset($_POST['take_ticket'])) {
          VALUES (?, ?, ?, 'Walk-in', 'pending', 'Walk-in Ticket', 'Normal', ?, ?, ?)"
     );
 
-    $dIdVal = $doctorIdVal ? $doctorIdVal : 1;
-    $aiSugDummy = 'Walk-in automated ticket.';
-    // Parameters: patient_id (i), doctor_id (i), appointment_date (s), ai_suggestion (s), queue_number (i), created_by (i)
+    // GP Auto-Assignment
+    $stmtGP = $conn->prepare("SELECT doctor_id FROM doctors WHERE specialization LIKE '%General%' OR department LIKE '%General%' LIMIT 1");
+    $stmtGP->execute();
+    $gpResult = $stmtGP->get_result();
+    $dIdVal = ($gpResult && $gpResult->num_rows > 0) ? $gpResult->fetch_assoc()['doctor_id'] : 1;
+    $stmtGP->close();
+
+    $aiSugDummy = 'Walk-in automated ticket (Auto-assigned GP).';
     $stmt->bind_param("iisssi", $patientId, $dIdVal, $slotStart, $aiSugDummy, $newQueueNumber, $userId);
 
 
@@ -236,12 +241,12 @@ Return ONLY valid JSON without any markdown formatting like ```json. Example: {\
     $requestDate = $_POST['date'] ?? date('Y-m-d');
     $doctorId    = $_POST['doctor_id'] ?? 1;
     $doctorName  = "General Doctor";
-    $capacity    = 4;  // Default chairs per hour (logical max)
+    $capacity    = 2;  // Strict 2-chair/hour limit per doctor
 
     if ($doctorId) {
-        // Look up the selected doctor's name and capacity
+        // Look up the selected doctor's name
         $stmt = $conn->prepare(
-            "SELECT CONCAT(first_name, ' ', last_name) as name, capacity
+            "SELECT CONCAT(first_name, ' ', last_name) as name
              FROM doctors
              WHERE doctor_id = ?"
         );
@@ -249,7 +254,6 @@ Return ONLY valid JSON without any markdown formatting like ```json. Example: {\
         $stmt->execute();
         if ($doctorData = $stmt->get_result()->fetch_assoc()) {
             $doctorName = $doctorData['name'];
-            $capacity   = $doctorData['capacity'];
         }
         $stmt->close();
     }

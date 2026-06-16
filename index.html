@@ -554,8 +554,8 @@
                     if (loadingMessage) loadingMessage.remove();
 
                     if (data.status === "success" && data.doctors && data.doctors.length > 0) {
-                        // Display maximum 5 doctors for homepage preview
-                        const maxDoctors = Math.min(5, data.doctors.length);
+                        // Display maximum 10 doctors for homepage preview
+                        const maxDoctors = Math.min(10, data.doctors.length);
                         
                         for (let i = 0; i < maxDoctors; i++) {
                             const doctor = data.doctors[i];
@@ -601,12 +601,19 @@
                             let spec = doctor.specialization;
                             if (spec && spec.length > 25) spec = spec.substring(0, 22) + "...";
 
+                            let gender = (imgSrc && imgSrc.includes('Female')) ? 'Female' : 'Male';
+
+                            const genderEl = document.createElement("p");
+                            genderEl.className = "text-xs text-indigo-500 font-bold uppercase tracking-wider mb-2";
+                            genderEl.textContent = gender;
+
                             const specEl = document.createElement("p");
                             specEl.className = "text-sm text-slate-500 dark:text-gray-400 font-medium mb-4";
                             specEl.textContent = spec;
                             
                             innerDiv.appendChild(imgWrapper);
                             innerDiv.appendChild(nameEl);
+                            innerDiv.appendChild(genderEl);
                             innerDiv.appendChild(specEl);
                             card.appendChild(innerDiv);
 
@@ -619,6 +626,27 @@
                             
                             badgeWrapper.appendChild(specBadge);
                             card.appendChild(badgeWrapper);
+
+                            // Hover Overlay for Rich Data
+                            const overlay = document.createElement("div");
+                            overlay.className = "absolute inset-0 bg-slate-900/95 rounded-3xl p-6 flex flex-col justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 text-left backdrop-blur-sm";
+
+                            // Mock Rich Data
+                            const exp = (i % 3 === 0) ? "15+ Years" : "8+ Years";
+                            const track = (i % 2 === 0) ? "10,000+ Patients" : "5,000+ Patients";
+                            const edu = "MD, Top-Tier University";
+
+                            overlay.innerHTML = `
+                                <h5 class="text-white font-bold text-lg mb-4 border-b border-white/20 pb-2">Profile Details</h5>
+                                <div class="space-y-3 text-sm text-gray-200">
+                                    <p><strong class="text-primary-300">Education:</strong> ${edu}</p>
+                                    <p><strong class="text-primary-300">Experience:</strong> ${exp}</p>
+                                    <p><strong class="text-primary-300">Track Record:</strong> ${track}</p>
+                                    <p><strong class="text-primary-300">Highlights:</strong> Board Certified Specialist</p>
+                                </div>
+                                <a href="loginReg/login.html" class="mt-6 w-full py-2 bg-primary-600 hover:bg-primary-500 text-white font-bold rounded-xl transition-colors text-center block">Book Now</a>
+                            `;
+                            card.appendChild(overlay);
 
                             cardWrapper.appendChild(card);
                             doctorsGrid.appendChild(cardWrapper);

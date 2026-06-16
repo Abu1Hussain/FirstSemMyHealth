@@ -25,22 +25,28 @@ $password   = getenv('DB_PASS') !== false ? getenv('DB_PASS') : "";            /
 $dbname     = getenv('DB_NAME') ?: "medical_center";  // The primary database for this project
 
 /* ── Connect to MySQL and select the database ── */
-$conn = new mysqli($servername, $username, $password, $dbname);
+try {
+    // Suppress warnings with @ to catch the exception/error cleanly
+    @$conn = new mysqli($servername, $username, $password, $dbname);
 
-/* ── Check if the connection was successful ── */
-if ($conn->connect_error) {
+    /* ── Check if the connection was successful ── */
+    if ($conn->connect_error) {
+        throw new Exception("Database connection failed: " . $conn->connect_error);
+    }
+
+    /* ── Set character encoding to UTF-8 ── */
+    // This makes sure special characters (like Arabic names) display correctly
+    $conn->set_charset("utf8mb4");
+} catch (Exception $e) {
     /*
-     * If the connection fails, stop everything and show the error.
-     * Common reasons for failure:
-     *   - MySQL/XAMPP is not running
-     *   - Wrong username or password
-     *   - The 'medical_center' database has not been created yet
-     *     (run setup.php first to create it)
+     * If the connection fails, stop everything and output a clean JSON error.
+     * This ensures the frontend doesn't break due to raw HTML errors.
      */
-    die("Database connection failed: " . $conn->connect_error);
+    header('Content-Type: application/json');
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Database connection error: ' . $e->getMessage()
+    ]);
+    exit();
 }
-
-/* ── Set character encoding to UTF-8 ── */
-// This makes sure special characters (like Arabic names) display correctly
-$conn->set_charset("utf8mb4");
 ?>

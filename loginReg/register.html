@@ -188,7 +188,11 @@
                             apiError.classList.remove('hidden');
                         }
                     })
-                    .catch(() => { apiError.textContent = 'Connection error.'; apiError.classList.remove('hidden'); });
+                    .catch((err) => { 
+                        console.error('Fetch error:', err);
+                        apiError.textContent = 'Connection error. Please make sure XAMPP Apache is running and you are accessing the site via http://localhost.'; 
+                        apiError.classList.remove('hidden'); 
+                    });
             }
         });
     </script>

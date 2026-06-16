@@ -7,7 +7,7 @@
 (function () {
   "use strict";
 
-  /* ── Config ── */
+  /* -- Config -- */
   const GEMINI_API_KEY = "AIzaSyDhLYX0y12fw4Sri1YDIUfLTP8iXX-7f_s";
   const GEMINI_TEXT_MODEL = "gemini-2.5-flash";
 
@@ -19,7 +19,7 @@
   const USE_SERVER_PROXY = true;
   const SERVER_PROXY_URL = "../Ai/ai_chat.php";
 
-  /* ── Helpers: load external scripts ── */
+  /* -- Helpers: load external scripts -- */
   function loadScript(src) {
     return new Promise((resolve, reject) => {
       if (document.querySelector(`script[src="${src}"]`)) return resolve();
@@ -32,7 +32,7 @@
     });
   }
 
-  /* ── Boot ── */
+  /* -- Boot -- */
   async function boot() {
     // Load React + ReactDOM via CDN
     await loadScript(
@@ -52,7 +52,7 @@
     const RD = window.ReactDOM;
     const h = R.createElement;
 
-    /* ── SVG Icons as components ── */
+    /* -- SVG Icons as components -- */
     const BotIcon = () =>
       h(
         "svg",
@@ -199,7 +199,7 @@
         h("rect", { x: 6, y: 6, width: 12, height: 12, rx: 2 })
       );
 
-    /* ── Handle AI Action Triggers ── */
+    /* -- Handle AI Action Triggers -- */
     function handleAIAction(action) {
       if (!action) return;
       if (action.type === 'navigate' && action.target) {
@@ -229,7 +229,7 @@
       }
     }
 
-    /* ── Server-Side Proxy API Call ── */
+    /* -- Server-Side Proxy API Call -- */
     async function sendToServerProxy(messages) {
       const res = await fetch(SERVER_PROXY_URL, {
         method: "POST",
@@ -247,7 +247,7 @@
       return "I'm sorry, I couldn't process that right now.";
     }
 
-    /* ── Direct Gemini API Call (Fallback) ── */
+    /* -- Direct Gemini API Call (Fallback) -- */
     async function sendToGeminiFallback(messages) {
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_TEXT_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
       const contents = messages.map((m) => ({
@@ -270,7 +270,7 @@
       );
     }
 
-    /* ── Unified Send Function ── */
+    /* -- Unified Send Function -- */
     async function sendToGemini(messages) {
       if (USE_SERVER_PROXY) {
         try {
@@ -283,7 +283,7 @@
       return await sendToGeminiFallback(messages);
     }
 
-    /* ── Inject Widget CSS ── */
+    /* -- Inject Widget CSS -- */
     const styleEl = document.createElement("style");
     styleEl.textContent = `
       #ai-widget-root * { box-sizing: border-box; }
@@ -302,11 +302,10 @@
       .ai-chat-scroll::-webkit-scrollbar { width:6px; }
       .ai-chat-scroll::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:10px; }
       .ai-chat-scroll::-webkit-scrollbar-track { background:transparent; }
-      .ai-voice-ring { animation: ai-ring-pulse 1.5s infinite; }
     `;
     document.head.appendChild(styleEl);
 
-    /* ── Main Widget Component ── */
+    /* -- Main Widget Component -- */
     function AIWidget() {
       const [fabVisible, setFabVisible] = R.useState(true);
       const [fabHiding, setFabHiding] = R.useState(false);
@@ -319,7 +318,6 @@
         window.openAIWidget = () => setModalOpen(true);
         return () => { delete window.openAIWidget; };
       }, []);
-      const [activeTab, setActiveTab] = R.useState("text"); // text | voice
       const [messages, setMessages] = R.useState([
         {
           role: "model",
@@ -328,11 +326,9 @@
       ]);
       const [input, setInput] = R.useState("");
       const [loading, setLoading] = R.useState(false);
-      const [voiceActive, setVoiceActive] = R.useState(false);
-      const [voiceTranscript, setVoiceTranscript] = R.useState("");
       const chatRef = R.useRef(null);
 
-      // Dark mode detection — re-check on every render
+      // Dark mode detection - re-check on every render
       const isDark = document.documentElement.classList.contains("dark");
 
       // Also listen for class changes on <html>
@@ -362,7 +358,7 @@
         };
       }, [modalOpen]);
 
-      /* ── FAB hide/show toggle ── */
+      /* -- FAB hide/show toggle -- */
       function hideFab() {
         setFabHiding(true);
         setTimeout(() => {
@@ -381,7 +377,7 @@
         }, 300);
       }
 
-      /* ── Text chat send ── */
+      /* -- Text chat send -- */
       async function sendMessage() {
         if (!input.trim() || loading) return;
         const userMsg = { role: "user", text: input.trim() };
@@ -411,79 +407,7 @@
         }
       }
 
-      /* ── Voice (browser SpeechRecognition) ── */
-      function toggleVoice() {
-        if (voiceActive) {
-          setVoiceActive(false);
-          if (window._aiSpeechRec) {
-            window._aiSpeechRec.stop();
-          }
-          return;
-        }
-        const SpeechRecognition =
-          window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) {
-          setVoiceTranscript("Voice recognition is not supported in this browser.");
-          return;
-        }
-        const rec = new SpeechRecognition();
-        rec.continuous = true;
-        rec.interimResults = true;
-        rec.lang = "en-US";
-        window._aiSpeechRec = rec;
-
-        rec.onresult = (event) => {
-          let transcript = "";
-          for (let i = 0; i < event.results.length; i++) {
-            transcript += event.results[i][0].transcript;
-          }
-          setVoiceTranscript(transcript);
-        };
-
-        rec.onend = () => {
-          setVoiceActive(false);
-          // Send the transcript as a message
-          if (window._aiLastTranscript) {
-            const userMsg = { role: "user", text: window._aiLastTranscript };
-            setMessages((prev) => [...prev, userMsg]);
-            setLoading(true);
-            sendToGemini([...messages, userMsg]).then((reply) => {
-              setMessages((prev) => [...prev, { role: "model", text: reply }]);
-              setLoading(false);
-              // Speak the reply
-              if ("speechSynthesis" in window) {
-                const u = new SpeechSynthesisUtterance(reply);
-                u.rate = 1;
-                u.pitch = 1;
-                window.speechSynthesis.speak(u);
-              }
-            });
-            window._aiLastTranscript = "";
-          }
-        };
-
-        rec.onerror = () => {
-          setVoiceActive(false);
-          setVoiceTranscript("Could not access microphone.");
-        };
-
-        setVoiceActive(true);
-        setVoiceTranscript("Listening...");
-        rec.start();
-
-        // Track transcript
-        const origOnResult = rec.onresult;
-        rec.onresult = (event) => {
-          let transcript = "";
-          for (let i = 0; i < event.results.length; i++) {
-            transcript += event.results[i][0].transcript;
-          }
-          window._aiLastTranscript = transcript;
-          setVoiceTranscript(transcript);
-        };
-      }
-
-      /* ── Render: Floating Action Button ── */
+      /* -- Render: Floating Action Button -- */
       const fab =
         fabVisible &&
         h(
@@ -577,7 +501,7 @@
           )
         );
 
-      /* ── Render: Slide-in tab ── */
+      /* -- Render: Slide-in tab -- */
       const tab =
         tabVisible &&
         h(
@@ -607,7 +531,7 @@
           h(ChevronLeftIcon, null)
         );
 
-      /* ── Render: Modal ── */
+      /* -- Render: Modal -- */
       const modal =
         modalOpen &&
         h(
@@ -632,7 +556,7 @@
               backdropFilter: "blur(4px)",
             },
           }),
-          // Widget container — smaller height, X inside header
+          // Widget container - smaller height, X inside header
           h(
             "div",
             {
@@ -760,78 +684,10 @@
                 h(XIcon, { size: 16 })
               )
             ),
-            // Tabs
-            h(
-              "div",
-              {
-                style: {
-                  display: "flex",
-                  background: isDark ? "#111827" : "#f8fafc",
-                  borderBottom: isDark ? "1px solid #374151" : "1px solid #e2e8f0",
-                  flexShrink: 0,
-                },
-              },
-              h(
-                "button",
-                {
-                  onClick: () => setActiveTab("text"),
-                  style: {
-                    flex: 1,
-                    padding: "10px 0",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 6,
-                    fontSize: 13,
-                    fontWeight: 600,
-                    border: "none",
-                    cursor: "pointer",
-                    background: activeTab === "text" ? (isDark ? "#1f2937" : "#fff") : "transparent",
-                    color: activeTab === "text" ? "#3b82f6" : (isDark ? "#9ca3af" : "#64748b"),
-                    borderBottom:
-                      activeTab === "text"
-                        ? "2px solid #3b82f6"
-                        : "2px solid transparent",
-                    transition: "all .2s",
-                  },
-                },
-                h(MsgIcon, null),
-                "Text Chat"
-              ),
-              h(
-                "button",
-                {
-                  onClick: () => setActiveTab("voice"),
-                  style: {
-                    flex: 1,
-                    padding: "10px 0",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 6,
-                    fontSize: 13,
-                    fontWeight: 600,
-                    border: "none",
-                    cursor: "pointer",
-                    background: activeTab === "voice" ? (isDark ? "#1f2937" : "#fff") : "transparent",
-                    color: activeTab === "voice" ? "#3b82f6" : (isDark ? "#9ca3af" : "#64748b"),
-                    borderBottom:
-                      activeTab === "voice"
-                        ? "2px solid #3b82f6"
-                        : "2px solid transparent",
-                    transition: "all .2s",
-                  },
-                },
-                h(MicIcon, null),
-                "Voice Call"
-              )
-            ),
             // Content area
-            activeTab === "text"
-              ? // TEXT CHAT
-                h(
-                  R.Fragment,
-                  null,
+            h(
+              R.Fragment,
+              null,
                   // Messages
                   h(
                     "div",
@@ -971,129 +827,14 @@
                     )
                   )
                 )
-              : // VOICE CALL
-                h(
-                  "div",
-                  {
-                    style: {
-                      flex: 1,
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      padding: 32,
-                      gap: 24,
-                    },
-                  },
-                  // Transcript
-                  voiceTranscript &&
-                    h(
-                      "div",
-                      {
-                        style: {
-                          width: "100%",
-                          maxHeight: 120,
-                          overflowY: "auto",
-                          padding: "12px 16px",
-                          background: isDark ? "#374151" : "#f1f5f9",
-                          borderRadius: 12,
-                          fontSize: 14,
-                          color: isDark ? "#d1d5db" : "#334155",
-                          textAlign: "center",
-                          lineHeight: 1.5,
-                        },
-                      },
-                      voiceTranscript
-                    ),
-                  // Mic button with rings
-                  h(
-                    "div",
-                    {
-                      style: { position: "relative" },
-                    },
-                    voiceActive &&
-                      h("div", {
-                        style: {
-                          position: "absolute",
-                          inset: -16,
-                          borderRadius: "50%",
-                          border: "3px solid rgba(59,130,246,.3)",
-                          animation: "ai-pulse 1.5s ease infinite",
-                        },
-                      }),
-                    voiceActive &&
-                      h("div", {
-                        style: {
-                          position: "absolute",
-                          inset: -8,
-                          borderRadius: "50%",
-                          border: "2px solid rgba(59,130,246,.2)",
-                          animation: "ai-pulse 1.5s ease .3s infinite",
-                        },
-                      }),
-                    h(
-                      "button",
-                      {
-                        onClick: toggleVoice,
-                        className: voiceActive ? "ai-voice-ring" : "",
-                        style: {
-                          width: 100,
-                          height: 100,
-                          borderRadius: "50%",
-                          background: voiceActive
-                            ? "linear-gradient(135deg, #dc2626, #ef4444)"
-                            : "linear-gradient(135deg, #2563eb, #3b82f6)",
-                          color: "#fff",
-                          border: "none",
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          boxShadow: voiceActive
-                            ? "0 8px 32px rgba(220,38,38,.4)"
-                            : "0 8px 32px rgba(37,99,235,.4)",
-                          transition: "all .3s",
-                        },
-                      },
-                      voiceActive
-                        ? h(StopIcon, null)
-                        : h(MicLargeIcon, null)
-                    )
-                  ),
-                  h(
-                    "p",
-                    {
-                      style: {
-                        fontSize: 14,
-                        color: isDark ? "#9ca3af" : "#64748b",
-                        fontWeight: 500,
-                        textAlign: "center",
-                      },
-                    },
-                    voiceActive
-                      ? "Listening... Tap to stop"
-                      : "Tap the microphone to start talking"
-                  ),
-                  h(
-                    "p",
-                    {
-                      style: {
-                        fontSize: 11,
-                        color: isDark ? "#6b7280" : "#94a3b8",
-                        textAlign: "center",
-                        maxWidth: 260,
-                      },
-                    },
-                    "Voice recognition uses your browser's built-in speech engine. The AI will respond with text and speech."
-                  )
-                )
+
           )
         );
 
       return h(R.Fragment, null, fab, tab, modal);
     }
 
-    /* ── Mount ── */
+    /* -- Mount -- */
     RD.createRoot(root).render(h(AIWidget, null));
   }
 

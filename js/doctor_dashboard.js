@@ -1,8 +1,8 @@
-/* ═══════════════════════════════════════════════════════════
-   Doctor Dashboard – Main Script
+/* ===========================================================
+   Doctor Dashboard - Main Script
    Handles: data loading, sidebar navigation,
             and populating the doctor-specific stats.
-   ═══════════════════════════════════════════════════════════ */
+   =========================================================== */
 
 document.addEventListener("DOMContentLoaded", function () {
   // 1. Initialize AOS (Animate On Scroll) immediately
@@ -34,7 +34,7 @@ document.addEventListener("DOMContentLoaded", function () {
     fetchDoctorData();
   }, 30000);
 
-  /* ── UI Logic: Sidebar & Dark Mode ── */
+  /* -- UI Logic: Sidebar & Dark Mode -- */
   if (sidebarToggle) {
     sidebarToggle.addEventListener("click", () => {
       sidebar.classList.toggle("sidebar-collapsed");
@@ -141,11 +141,11 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   };
 
-  /* ─────────────────────────────────────────────
+  /* ---------------------------------------------
      fetchDoctorData()
      Pulls the doctor's profile info and statistics
      from the server API.
-     ───────────────────────────────────────────── */
+     --------------------------------------------- */
   function fetchDoctorData() {
     fetch("../php/doctor_api.php")
       .then((response) => response.json())
@@ -155,10 +155,10 @@ document.addEventListener("DOMContentLoaded", function () {
           return;
         }
 
-        /* ── Extract actual data from wrapper ── */
+        /* -- Extract actual data from wrapper -- */
         var responseData = data.data || data;
 
-        /* ── Populate Doctor Info ── */
+        /* -- Populate Doctor Info -- */
         // Main Welcome Header
         const welcomeName = document.getElementById("user-name");
         if (welcomeName && responseData.user)
@@ -222,24 +222,24 @@ document.addEventListener("DOMContentLoaded", function () {
           }
         }
 
-        /* ── Initialize Presence Status ── */
+        /* -- Initialize Presence Status -- */
         if (responseData.user && responseData.user.presence_status) {
           window.updatePresenceUI(responseData.user.presence_status);
         }
 
-        /* ── Populate Profile Email & Specialization ── */
+        /* -- Populate Profile Email & Specialization -- */
         const emailInput = document.getElementById("profile-email");
         if (emailInput)
           emailInput.value =
             responseData.user && responseData.user.email
               ? responseData.user.email
-              : "—";
+              : "-";
 
         const specInput = document.getElementById("profile-specialization");
         if (specInput)
           specInput.value = responseData.specialization || "General Medicine";
 
-        /* ── Populate Stat Cards ── */
+        /* -- Populate Stat Cards -- */
         const stats = responseData.stats || {
           total_patients: 0,
           today_appointments: 0,
@@ -254,34 +254,34 @@ document.addEventListener("DOMContentLoaded", function () {
         const rStat = document.getElementById("stat-pending");
         if (rStat) rStat.textContent = stats.pending_reviews;
 
-        /* ── Initialize Visuals ── */
+        /* -- Initialize Visuals -- */
         initCharts();
 
-        /* ── Render Patients List (Today) ── */
+        /* -- Render Patients List (Today) -- */
         renderPatientsList(responseData.patients_today || []);
 
-        /* ── Render Notifications ── */
+        /* -- Render Notifications -- */
         if (responseData.notifications) {
             renderNotifications(responseData.notifications);
         }
 
-        /* ── Render Full Patient Directory ── */
+        /* -- Render Full Patient Directory -- */
         renderAllPatientsList(responseData.all_patients || []);
 
-        /* ── Render Doctors Directory Table ── */
+        /* -- Render Doctors Directory Table -- */
         renderDoctorsTable(responseData.all_staff || []);
 
-        /* ── Render Activity Logs ── */
+        /* -- Render Activity Logs -- */
         renderActivityLogs(responseData.all_appointments || { today: [] });
 
-        /* ── Render Individual Appointment History ── */
+        /* -- Render Individual Appointment History -- */
         if (responseData.all_appointments) {
           renderAllAppointments(responseData.all_appointments);
         } else {
           renderAllAppointments({ past: [], today: [], upcoming: [] });
         }
 
-        /* ── Render Global Records & Prescriptions ── */
+        /* -- Render Global Records & Prescriptions -- */
         renderAllRecords(responseData.all_records || []);
         renderAllPrescriptions(responseData.all_prescriptions || []);
 
@@ -334,18 +334,18 @@ document.addEventListener("DOMContentLoaded", function () {
         <tr>
           <td><span class="text-xs font-mono">#P${(p.patient_id || 0).toString().padStart(4, "0")}</span></td>
           <td><div class="font-bold">${pName}</div></td>
-          <td><div class="text-xs font-mono">${p.cpr || "—"}</div></td>
+          <td><div class="text-xs font-mono">${p.cpr || "-"}</div></td>
           <td>
-            <div class="text-xs">${p.email || "—"}</div>
-            <div class="text-[10px] text-gray-400 font-bold">${p.phone || "—"}</div>
+            <div class="text-xs">${p.email || "-"}</div>
+            <div class="text-[10px] text-gray-400 font-bold">${p.phone || "-"}</div>
           </td>
           <td>
             <div class="flex items-center gap-1">
-               <span class="badge ${p.gender === "male" ? "badge-blue" : "badge-red"} capitalize">${p.gender || "—"}</span>
-               <span class="text-[10px] text-gray-400">${p.date_of_birth || "—"}</span>
+               <span class="badge ${p.gender === "male" ? "badge-blue" : "badge-red"} capitalize">${p.gender || "-"}</span>
+               <span class="text-[10px] text-gray-400">${p.date_of_birth || "-"}</span>
             </div>
           </td>
-          <td><span class="font-bold text-red-600">${p.blood_type || "—"}</span></td>
+          <td><span class="font-bold text-red-600">${p.blood_type || "-"}</span></td>
           <td>
             <button onclick="showPatientDetail('${safeData}')" class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all">
                 <ion-icon name="eye-outline"></ion-icon>
@@ -431,7 +431,7 @@ document.addEventListener("DOMContentLoaded", function () {
       '<table class="appt-table"><thead><tr><th>Date</th><th>Patient</th><th>Doctor</th><th>Type</th><th>Summary</th></tr></thead><tbody>';
     records.forEach((r) => {
       const d = new Date(r.record_date).toLocaleDateString();
-      const docName = r.doctor_name ? `Dr. ${r.doctor_name}` : "—";
+      const docName = r.doctor_name ? `Dr. ${r.doctor_name}` : "-";
       html += `<tr>
             <td>${d}</td>
             <td><strong>${r.patient_name}</strong></td>
@@ -444,11 +444,11 @@ document.addEventListener("DOMContentLoaded", function () {
     listContainer.innerHTML = html;
   }
 
-  /* ─────────────────────────────────────────────
+  /* ---------------------------------------------
      renderDoctorsTable(staff)
      Renders a premium searchable doctors directory table
      with photo, contact, specialization and record count.
-     ───────────────────────────────────────────── */
+     --------------------------------------------- */
   var allDoctorsData = [];
 
   window.renderDoctorsTable = function (doctors) {
@@ -510,8 +510,8 @@ document.addEventListener("DOMContentLoaded", function () {
           </td>
           <td>
             <div style="font-size:0.85rem;" class="text-gray-600 dark:text-gray-300">
-              <div><ion-icon name="mail-outline"></ion-icon> ${d.email || "—"}</div>
-              <div style="margin-top:4px;"><ion-icon name="call-outline"></ion-icon> ${d.phone || "—"}</div>
+              <div><ion-icon name="mail-outline"></ion-icon> ${d.email || "-"}</div>
+              <div style="margin-top:4px;"><ion-icon name="call-outline"></ion-icon> ${d.phone || "-"}</div>
             </div>
           </td>
           <td>
@@ -563,10 +563,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 
-  /* ─────────────────────────────────────────────
+  /* ---------------------------------------------
      renderAllAppointments(appointments)
      Renders the full historical appointment directory
-     ───────────────────────────────────────────── */
+     --------------------------------------------- */
   function renderAllAppointments(appointments) {
     // Simply to ensure no crash occurs and map data to any future historical tables if needed.
     // If there's an #appointments-full-list container anywhere, we'd render it here.
@@ -598,10 +598,10 @@ document.addEventListener("DOMContentLoaded", function () {
     listContainer.innerHTML = html;
   };
 
-  /* ─────────────────────────────────────────────
+  /* ---------------------------------------------
      switchModalTab(tabName)
      Toggles between Info, History, and Add Record.
-     ───────────────────────────────────────────── */
+     --------------------------------------------- */
   window.switchModalTab = function (tabName) {
     // Hide all contents
     document
@@ -620,10 +620,10 @@ document.addEventListener("DOMContentLoaded", function () {
     activeBtn.classList.add("border-blue-600", "text-blue-600");
   };
 
-  /* ─────────────────────────────────────────────
+  /* ---------------------------------------------
      fetchPatientHistory(patientId)
      Pulls past records and meds for the patient.
-     ───────────────────────────────────────────── */
+     --------------------------------------------- */
   function fetchPatientHistory(patientId) {
     const list = document.getElementById("pd-history-list");
     list.innerHTML =
@@ -673,10 +673,10 @@ document.addEventListener("DOMContentLoaded", function () {
       });
   }
 
-  /* ─────────────────────────────────────────────
+  /* ---------------------------------------------
      showPatientDetail(encodedData)
      Opens the patient detail modal with full info.
-     ───────────────────────────────────────────── */
+     --------------------------------------------- */
   window.showPatientDetail = function (encodedData) {
     const appt = JSON.parse(decodeURIComponent(encodedData));
     const pId = appt.patient_id;
@@ -725,17 +725,17 @@ document.addEventListener("DOMContentLoaded", function () {
       appt.patient_name || "Unknown";
     document.getElementById("pd-avatar").textContent = (appt.patient_name ||
       "?")[0].toUpperCase();
-    document.getElementById("pd-cpr").textContent = "CPR: " + (appt.cpr || "—");
-    document.getElementById("pd-email").textContent = appt.email || "—";
-    document.getElementById("pd-phone").textContent = appt.phone || "—";
-    document.getElementById("pd-dob").textContent = appt.date_of_birth || "—";
+    document.getElementById("pd-cpr").textContent = "CPR: " + (appt.cpr || "-");
+    document.getElementById("pd-email").textContent = appt.email || "-";
+    document.getElementById("pd-phone").textContent = appt.phone || "-";
+    document.getElementById("pd-dob").textContent = appt.date_of_birth || "-";
     document.getElementById("pd-gender").textContent = appt.gender
       ? appt.gender.charAt(0).toUpperCase() + appt.gender.slice(1)
-      : "—";
-    document.getElementById("pd-blood").textContent = appt.blood_type || "—";
+      : "-";
+    document.getElementById("pd-blood").textContent = appt.blood_type || "-";
     document.getElementById("pd-appt-type").textContent =
-      appt.appointment_type || "—";
-    document.getElementById("pd-reason").textContent = appt.reason || "—";
+      appt.appointment_type || "-";
+    document.getElementById("pd-reason").textContent = appt.reason || "-";
 
     const p = appt.ai_priority || "Normal";
     let pText = "🟢 " + p;
@@ -749,7 +749,7 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("patient-detail-modal").style.display = "flex";
   };
 
-  /* ── Prescription Field Toggle ── */
+  /* -- Prescription Field Toggle -- */
   document
     .getElementById("add-prescription-toggle")
     ?.addEventListener("change", function (e) {
@@ -758,10 +758,10 @@ document.addEventListener("DOMContentLoaded", function () {
       else fields.classList.add("hidden");
     });
 
-  /* ─────────────────────────────────────────────
+  /* ---------------------------------------------
      renderNotifications(notifications)
      Renders notifications in a table format and updates badges.
-     ───────────────────────────────────────────── */
+     --------------------------------------------- */
   window.renderNotifications = function (notifications) {
     const tableBody = document.getElementById("notifications-table-body");
     if (!tableBody) return;
@@ -877,7 +877,7 @@ document.addEventListener("DOMContentLoaded", function () {
     })
     .catch(err => console.error("Error marking as read:", err));
   };
-  /* ── Submit Clinical Form ── */
+  /* -- Submit Clinical Form -- */
   document
     .getElementById("clinical-action-form")
     ?.addEventListener("submit", function (e) {
@@ -960,17 +960,17 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     });
 
-  /* ─────────────────────────────────────────────
+  /* ---------------------------------------------
      closePatientModal()
      Closes the patient detail modal.
-     ───────────────────────────────────────────── */
+     --------------------------------------------- */
   window.closePatientModal = function () {
     document.getElementById("patient-detail-modal").style.display = "none";
   };
 
-  /* ─────────────────────────────────────────────
+  /* ---------------------------------------------
      Global Timer & Transfer Logic for Modal
-     ───────────────────────────────────────────── */
+     --------------------------------------------- */
   window.activeConsultation = {
     appointmentId: null,
     startTime: null,
@@ -1067,11 +1067,11 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   };
 
-  /* ─────────────────────────────────────────────
+  /* ---------------------------------------------
      renderPatientsList(patients)
      Renders the list of today's patients with
      patient details, CPR, phone, and action buttons.
-     ───────────────────────────────────────────── */
+     --------------------------------------------- */
   function renderPatientsList(patients) {
     const listContainer = document.getElementById("patients-list-container");
     const scheduleContainer = document.getElementById("today-schedule");
@@ -1086,7 +1086,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (!listContainer) return; // Exit if the main container is missing to prevent crashes
 
-    // ── Build List Table for the main Patients View ──
+    // -- Build List Table for the main Patients View --
     let tableHtml =
       '<table class="appt-table"><thead><tr>' +
       "<th>Time</th>" +
@@ -1096,7 +1096,7 @@ document.addEventListener("DOMContentLoaded", function () {
       "<th>Reason</th>" +
       "<th>Action</th></tr></thead><tbody>";
 
-    // ── Build Widget HTML for the Dashboard View ──
+    // -- Build Widget HTML for the Dashboard View --
     let widgetHtml = '<div class="space-y-4">';
 
     patients.forEach((patient) => {
@@ -1146,8 +1146,8 @@ document.addEventListener("DOMContentLoaded", function () {
       tableHtml += `<tr>
             <td><div class="font-medium">${time}</div></td>
             <td><strong>${patient.patient_name}</strong></td>
-            <td>${patient.cpr || "—"}</td>
-            <td>${patient.phone || "—"}</td>
+            <td>${patient.cpr || "-"}</td>
+            <td>${patient.phone || "-"}</td>
             <td><div class="text-xs max-w-[150px] truncate">${patient.reason}</div></td>
             <td>${actionBtn}</td>
         </tr>`;
@@ -1179,9 +1179,9 @@ document.addEventListener("DOMContentLoaded", function () {
     if (scheduleContainer) scheduleContainer.innerHTML = widgetHtml;
   }
 
-  /* ─────────────────────────────────────────────
+  /* ---------------------------------------------
      Search Medical Records Filter
-     ───────────────────────────────────────────── */
+     --------------------------------------------- */
   const recordSearchInput = document.querySelector("#view-records input[type='text']");
   if (recordSearchInput) {
       recordSearchInput.addEventListener("keyup", function (e) {
@@ -1199,9 +1199,9 @@ document.addEventListener("DOMContentLoaded", function () {
       });
   }
 
-  /* ─────────────────────────────────────────────
+  /* ---------------------------------------------
      Timer Logic
-     ───────────────────────────────────────────── */
+     --------------------------------------------- */
   let timerInterval;
   let currentAppointmentId = null;
 
@@ -1411,9 +1411,9 @@ document.addEventListener("DOMContentLoaded", function () {
       });
   };
 
-  /* ─────────────────────────────────────────────
+  /* ---------------------------------------------
      Visuals: Charts & Calendar
-     ───────────────────────────────────────────── */
+     --------------------------------------------- */
   function getChartColors() {
     const isDark = document.documentElement.classList.contains("dark");
     return {
@@ -1484,11 +1484,10 @@ document.addEventListener("DOMContentLoaded", function () {
       type: "doughnut",
       data: {
         labels: [
-          "Cardiology",
-          "Neurology",
-          "Pediatrics",
-          "Oncology",
-          "Orthopedics",
+          "General Medicine",
+          "Dentistry",
+          "ENT",
+          "Ophthalmology",
         ],
         datasets: [
           {
@@ -1596,7 +1595,7 @@ document.addEventListener("DOMContentLoaded", function () {
       });
     });
 
-  /* ── 1. Load Doctor Data on Page Ready ── */
+  /* -- 1. Load Doctor Data on Page Ready -- */
   fetchDoctorData();
 
   // Initialize Section from Hash or Default
@@ -1611,7 +1610,7 @@ document.addEventListener("DOMContentLoaded", function () {
   syncViewWithHash();
 });
 
-/* ── Secure Logout ── */
+/* -- Secure Logout -- */
 window.handleLogout = function () {
   if (typeof Swal !== "undefined") {
     Swal.fire({
@@ -1634,9 +1633,9 @@ window.handleLogout = function () {
   }
 };
 
-/* ═══════════════════════════════════════════════════════════
+/* ===========================================================
    Doctor Presence System
-   ═══════════════════════════════════════════════════════════ */
+   =========================================================== */
 
 const PRESENCE_CONFIG = {
   on_duty:          { emoji: '🩺', label: 'On Duty',          bg: 'bg-emerald-100', border: 'border-emerald-300', text: 'text-emerald-700', darkBg: 'dark:bg-emerald-900/30', darkBorder: 'dark:border-emerald-600', darkText: 'dark:text-emerald-400' },

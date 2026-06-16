@@ -42,9 +42,9 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 
-// ─────────────────────────────────────────────
+// ---------------------------------------------
 // Premium Toast Notifications System
-// ─────────────────────────────────────────────
+// ---------------------------------------------
 if (typeof Swal !== 'undefined') {
     window.Toast = Swal.mixin({
         toast: true,
