@@ -75,12 +75,29 @@ $response['user'] = [
    ═══════════════════════════════ */
 
 $patientId = null;
-$stmt = $conn->prepare("SELECT patient_id FROM patients WHERE user_id = ?");
+$stmt = $conn->prepare("SELECT * FROM patients WHERE user_id = ?");
 $stmt->bind_param("i", $userId);
 $stmt->execute();
 $patientResult = $stmt->get_result();
 if ($patientRow = $patientResult->fetch_assoc()) {
     $patientId = $patientRow['patient_id'];
+    $response['profile'] = [
+        'first_name' => $patientRow['first_name'],
+        'last_name' => $patientRow['last_name'],
+        'cpr' => $patientRow['cpr'],
+        'date_of_birth' => $patientRow['date_of_birth'],
+        'gender' => $patientRow['gender'],
+        'phone' => $patientRow['phone'],
+        'email' => $patientRow['email'] ?? $userEmail,
+        'address' => $patientRow['address'],
+        'blood_type' => $patientRow['blood_type'],
+        'emergency_contact_name' => $patientRow['emergency_contact_name'],
+        'emergency_contact_relation' => $patientRow['emergency_contact_relation'],
+        'emergency_contact_phone' => $patientRow['emergency_contact_phone'],
+        'allergies' => $patientRow['allergies'],
+        'chronic_conditions' => $patientRow['chronic_conditions'],
+        'preferences' => $patientRow['preferences'] ? json_decode($patientRow['preferences'], true) : null
+    ];
 }
 $stmt->close();
 
@@ -347,7 +364,7 @@ if ($patientId) {
         "SELECT a.*, 
                 CONCAT(ms.first_name, ' ', ms.last_name) as doctor_name,
                 t.ticket_code,
-                p.cpr, p.blood_type, CONCAT(p.first_name, ' ', p.last_name) as patient_name
+                p.cpr, p.blood_type, p.gender, p.date_of_birth, CONCAT(p.first_name, ' ', p.last_name) as patient_name
          FROM appointments a
          LEFT JOIN doctors ms ON a.doctor_id = ms.doctor_id
          LEFT JOIN tickets t ON a.appointment_id = t.appointment_id
@@ -377,6 +394,8 @@ if ($patientId) {
                 'cpr'          => $appt['cpr'] ?? 'N/A',
                 'blood_type'   => $appt['blood_type'] ?? 'N/A',
                 'patient_name' => $appt['patient_name'] ?? 'N/A',
+                'gender'       => $appt['gender'] ?? 'Other',
+                'date_of_birth' => $appt['date_of_birth'] ?? null,
                 'created_at'   => $appt['created_at'] ?? $appt['appointment_date']
             ];
         }

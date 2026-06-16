@@ -28,6 +28,145 @@ let activeTickets = [];
 let activeTicketIndex = 0;
 let ticketCarouselInterval = null;
 
+/* -- Demographic Icon Utility -- */
+window.calculateAge = function(dobString) {
+    if (!dobString || typeof dobString !== 'string') return NaN;
+    let dob;
+    if (dobString.includes('/')) {
+        const parts = dobString.split('/');
+        if (parts.length === 3) {
+            dob = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+        } else return NaN;
+    } else if (dobString.includes('-')) {
+        dob = new Date(dobString);
+    } else return NaN;
+    
+    if (isNaN(dob.getTime())) return NaN;
+
+    const today = new Date();
+    let numAge = today.getFullYear() - dob.getFullYear();
+    const monthDiff = today.getMonth() - dob.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+        numAge--;
+    }
+    return numAge;
+};
+
+/**
+ * Returns an object with { icon, label, color } based on strict age brackets and gender.
+ */
+window.getDemographicIcon = function(age, gender) {
+    let numAge;
+    if (typeof age === 'number') {
+        numAge = age;
+    } else {
+        numAge = window.calculateAge(age);
+        if (isNaN(numAge)) {
+            numAge = parseInt(age, 10);
+        }
+    }
+    if (isNaN(numAge) || numAge < 0) numAge = 30; // fallback
+
+    const isMale = !gender || gender.toLowerCase() === 'male' || gender.toLowerCase() === 'other';
+
+    // INFANT: < 3
+    if (numAge < 3) {
+        return {
+            icon: isMale ? 'fa-solid fa-baby text-blue-500' : 'fa-solid fa-baby text-pink-500',
+            label: 'Infant',
+            colorLight: isMale ? '#3b82f6' : '#ec4899',
+            colorDark: isMale ? '#60a5fa' : '#f472b6'
+        };
+    }
+    // CHILD: 3 - 12
+    if (numAge >= 3 && numAge < 13) {
+        return {
+            icon: isMale ? 'fa-solid fa-child' : 'fa-solid fa-child-dress',
+            label: isMale ? 'Boy' : 'Girl',
+            colorLight: isMale ? '#3b82f6' : '#ec4899',
+            colorDark: isMale ? '#60a5fa' : '#f472b6'
+        };
+    }
+    // YOUNG ADULT: 13 - 24
+    if (numAge >= 13 && numAge < 25) {
+        return {
+            icon: 'fa-solid fa-user-graduate',
+            label: isMale ? 'Young Adult Male' : 'Young Adult Female',
+            colorLight: isMale ? '#6366f1' : '#a855f7',
+            colorDark: isMale ? '#818cf8' : '#c084fc'
+        };
+    }
+    // ADULT: 25 - 64
+    if (numAge >= 25 && numAge < 65) {
+        return {
+            icon: isMale ? 'fa-solid fa-person' : 'fa-solid fa-person-dress',
+            label: isMale ? 'Man' : 'Woman',
+            colorLight: isMale ? '#0ea5e9' : '#f43f5e',
+            colorDark: isMale ? '#38bdf8' : '#fb7185'
+        };
+    }
+    // SENIOR: 65+
+    return {
+        icon: 'fa-solid fa-person-cane',
+        label: isMale ? 'Senior Man' : 'Senior Woman',
+        colorLight: isMale ? '#78716c' : '#a8a29e',
+        colorDark: isMale ? '#a8a29e' : '#d6d3d1'
+    };
+};
+
+window.updateGlobalAvatars = function(overrideDob = null, overrideGender = null) {
+    let dob = overrideDob;
+    let gender = overrideGender;
+    
+    if (dob === null || gender === null) {
+        const dobInput = document.getElementById('prof-dob');
+        const genderInput = document.getElementById('prof-gender');
+        if (dobInput) dob = dobInput.value;
+        if (genderInput) gender = genderInput.value;
+    }
+    
+    if (dob === null || gender === null) return;
+    
+    const demo = window.getDemographicIcon(dob, gender);
+    const isDark = document.documentElement.classList.contains('dark');
+    const demoColor = isDark ? demo.colorDark : demo.colorLight;
+    
+    // Primary Profile Display Card
+    const avatarContainer = document.getElementById("profile-dynamic-avatar");
+    const demoLabel = document.getElementById("profile-display-demo");
+    if (avatarContainer && demoLabel) {
+        avatarContainer.innerHTML = `<i class="${demo.icon}" style="color: ${demoColor};"></i>`;
+        avatarContainer.style.backgroundColor = `${demoColor}20`;
+        avatarContainer.style.borderColor = `${demoColor}40`;
+        
+        let displayAge = '';
+        if (dob) {
+            let numAge = window.calculateAge(dob);
+            if (!isNaN(numAge)) displayAge = numAge + ' yrs';
+        }
+        demoLabel.textContent = `${demo.label} ${displayAge ? '• ' + displayAge : ''}`;
+    }
+    
+    // Header Avatars
+    const headerAvatar = document.getElementById("user-initial-header");
+    if (headerAvatar) {
+        headerAvatar.innerHTML = `<i class="${demo.icon}" style="color: ${demoColor}; font-size: 14px;"></i>`;
+        headerAvatar.style.backgroundColor = `${demoColor}20`;
+        headerAvatar.style.borderColor = `${demoColor}40`;
+        headerAvatar.classList.add('border-2');
+    }
+    
+    // Sidebar Avatars
+    const sidebarAvatar = document.getElementById("user-initial-sidebar");
+    if (sidebarAvatar) {
+        sidebarAvatar.innerHTML = `<i class="${demo.icon}" style="color: ${demoColor}; font-size: 20px;"></i>`;
+        sidebarAvatar.style.backgroundColor = `${demoColor}20`;
+        sidebarAvatar.style.borderColor = `${demoColor}40`;
+        sidebarAvatar.classList.add('border-2');
+    }
+};
+
+
 /* -- 1. Load Dashboard Data on Page Ready -- */
 
 fetchDashboardData();
@@ -83,6 +222,19 @@ const applyDarkMode = (isDark) => {
     document.documentElement.classList.remove("dark");
     if (darkModeIcon) darkModeIcon.setAttribute("name", "moon-outline");
     localStorage.setItem("darkMode", "disabled");
+  }
+  const prefTheme = document.getElementById("pref-theme");
+  if (prefTheme) {
+      if (localStorage.getItem("darkMode") === "enabled") {
+          prefTheme.value = "dark";
+      } else if (localStorage.getItem("darkMode") === "disabled") {
+          prefTheme.value = "light";
+      } else {
+          prefTheme.value = "system";
+      }
+      if (typeof window.updateThemeRadioCards === 'function') {
+          window.updateThemeRadioCards(prefTheme.value);
+      }
   }
 };
 
@@ -470,16 +622,45 @@ function fetchDashboardData() {
       setElText("sidebar-user-name", responseData.user.name);
       setElText("profile-display-name", responseData.user.name);
 
-      setElText("user-initial-header", responseData.user.initial);
-      setElText("user-initial-sidebar", responseData.user.initial);
-      setElText("user-initial-profile", responseData.user.initial);
-
-      setElValue("profile-name", responseData.user.name);
+      setElText("user-initial-header", "");
+      setElText("user-initial-sidebar", "");
+      /* -- Populate Profile Form -- */
+      if (responseData.profile) {
+        const p = responseData.profile;
+        setElValue("prof-fname", p.first_name);
+        setElValue("prof-lname", p.last_name);
+        setElValue("prof-cpr", p.cpr);
+        setElValue("prof-dob", p.date_of_birth);
+        if (p.date_of_birth) {
+            const [y, m, d] = p.date_of_birth.split('-');
+            if (y && m && d) setElValue("prof-dob-display", `${d}/${m}/${y}`);
+        }
+        setElValue("prof-gender", p.gender);
+        setElValue("prof-blood", p.blood_type);
+        setElValue("prof-phone", p.phone);
+        setElValue("prof-email", p.email);
+        
+        setElValue("prof-em-name", p.emergency_contact_name);
+        setElValue("prof-em-rel", p.emergency_contact_relation);
+        setElValue("prof-em-phone", p.emergency_contact_phone);
+        setElValue("prof-allergies", p.allergies);
+        setElValue("prof-chronic", p.chronic_conditions);
+        
+        if (p.preferences) {
+            if (document.getElementById("pref-sms")) document.getElementById("pref-sms").checked = p.preferences.sms_notifications;
+            if (document.getElementById("pref-email")) document.getElementById("pref-email").checked = p.preferences.email_notifications;
+            setElValue("pref-theme", p.preferences.theme_mode || 'system');
+        }
+        
+        // Save initial state for dirty checking
+        window.initialProfileState = getProfileFormData();
+        
+        // Update Dynamic Avatars globally
+        window.updateGlobalAvatars(p.date_of_birth, p.gender);
+      }
 
       /* -- Populate Profile Email -- */
-      if (responseData.user.email) {
-        setElValue("profile-email", responseData.user.email);
-      }
+
 
       /* -- Populate Stat Cards -- */
       if (responseData.stats) {
@@ -703,7 +884,7 @@ function fetchDashboardData() {
               a.status.toLowerCase() !== "completed"
           );
           
-          let emptyState = document.getElementById("active-ticket-empty-state");
+          let emptyStates = document.querySelectorAll(".active-ticket-empty-state");
           let containers = document.querySelectorAll(".active-ticket-container");
 
           if (activeTickets.length > 0) {
@@ -711,14 +892,14 @@ function fetchDashboardData() {
               renderActiveTicket(activeTicketIndex);
               renderCarouselDots();
               
-              if (emptyState) emptyState.classList.add("hidden");
+              emptyStates.forEach(e => e.classList.add("hidden"));
               containers.forEach(c => c.classList.remove("hidden"));
 
               if (typeof resetCarouselTimer === "function") {
                   resetCarouselTimer();
               }
           } else {
-              if (emptyState) emptyState.classList.remove("hidden");
+              emptyStates.forEach(e => e.classList.remove("hidden"));
               containers.forEach(c => c.classList.add("hidden"));
           }
       }
@@ -1176,6 +1357,21 @@ window.openTicketDetailModal = function() {
     else if (prioName === "Priority") prioColor = "#f97316";
     else prioColor = "#22c55e";
 
+    // Demographic icon
+    const demo = getDemographicIcon(t.date_of_birth || null, t.gender || 'Other');
+    const demoColor = isDark ? demo.colorDark : demo.colorLight;
+
+    // Calculate display age
+    let displayAge = '';
+    if (t.date_of_birth) {
+        const dob = new Date(t.date_of_birth);
+        const today = new Date();
+        let age = today.getFullYear() - dob.getFullYear();
+        const md = today.getMonth() - dob.getMonth();
+        if (md < 0 || (md === 0 && today.getDate() < dob.getDate())) age--;
+        displayAge = age + ' yrs';
+    }
+
     Swal.fire({
         title: '',
         html: `
@@ -1188,7 +1384,22 @@ window.openTicketDetailModal = function() {
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px;">
                     <div>
                         <p style="font-size:12px; text-transform:uppercase; letter-spacing:1px; color:${theme.textSecondary}; margin-bottom:4px; font-weight:600;">Patient Name</p>
-                        <p style="font-size:18px; font-weight:700; color:${theme.textPrimary};">${t.patient_name || 'N/A'}</p>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <i class="${demo.icon}" style="font-size:24px; color:${demoColor};"></i>
+                            <p style="font-size:18px; font-weight:700; color:${theme.textPrimary}; margin:0;">${t.patient_name || 'N/A'}</p>
+                        </div>
+                    </div>
+                    <div>
+                        <p style="font-size:12px; text-transform:uppercase; letter-spacing:1px; color:${theme.textSecondary}; margin-bottom:4px; font-weight:600;">Demographic</p>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:10px; background:${demoColor}15; border:1px solid ${demoColor}30;">
+                                <i class="${demo.icon}" style="font-size:14px; color:${demoColor};"></i>
+                            </span>
+                            <div>
+                                <p style="font-size:14px; font-weight:700; color:${theme.textPrimary}; margin:0;">${demo.label}</p>
+                                <p style="font-size:11px; color:${theme.textSecondary}; margin:0;">${(t.gender || 'N/A')}${displayAge ? ' · ' + displayAge : ''}</p>
+                            </div>
+                        </div>
                     </div>
                     <div>
                         <p style="font-size:12px; text-transform:uppercase; letter-spacing:1px; color:${theme.textSecondary}; margin-bottom:4px; font-weight:600;">CPR (ID)</p>
@@ -1202,7 +1413,7 @@ window.openTicketDetailModal = function() {
                         <p style="font-size:12px; text-transform:uppercase; letter-spacing:1px; color:${theme.textSecondary}; margin-bottom:4px; font-weight:600;">Blood Type</p>
                         <p style="font-size:18px; font-weight:800; color:#ef4444;">${t.blood_type || 'N/A'}</p>
                     </div>
-                    <div style="grid-column: span 2;">
+                    <div>
                         <p style="font-size:12px; text-transform:uppercase; letter-spacing:1px; color:${theme.textSecondary}; margin-bottom:4px; font-weight:600;">Doctor</p>
                         <p style="font-size:18px; font-weight:700; color:${theme.textPrimary};">${t.doctor || 'General Practitioner'}</p>
                     </div>
@@ -1358,96 +1569,173 @@ document.getElementById("change-doc-btn").onclick = function () {
   selectedDoctor = null;
 };
 
-/* -- AI Booking logic removed per refactor -- */
+/* ---------------------------------------------
+     Centralized Doctor Schedules
+     Defines the working days (0=Sun, 1=Mon...6=Sat) and shifts for dynamic slot generation
+     --------------------------------------------- */
+window.doctorSchedules = {
+    default: {
+        workingDays: [1, 2, 3, 4, 5], // Monday - Friday
+        shifts: [
+            { start: "09:00", end: "17:00" } // Standard Clinic Hours
+        ],
+        groupLabel: "Standard Default"
+    },
+    // SHIFT 1 — Morning/Afternoon Group (doc1 to doc5)
+    shift1: {
+        workingDays: [1, 2, 3, 4, 5],
+        shifts: [
+            { start: "09:00", end: "17:00" }
+        ],
+        groupLabel: "Shift 1 (Daytime)"
+    },
+    // SHIFT 2 — Evening/Overnight Group (doc6 to doc10)
+    shift2: {
+        workingDays: [1, 2, 3, 4, 5],
+        shifts: [
+            { start: "17:00", end: "01:00" }
+        ],
+        groupLabel: "Shift 2 (Overnight)"
+    }
+};
+
 /* ---------------------------------------------
      loadBookingSlots(date, doctorId)
-     Fetches available hours from AI Scheduler
-     and renders selectable buttons.
+     Generates interactive time slots dynamically based on the doctor's specific centralized schedule.
      --------------------------------------------- */
 function loadBookingSlots(date, doctorId) {
-  var url = "../Ai/ai_scheduler.php?date=" + date;
-  if (doctorId) url += "&doctor_id=" + doctorId;
+    var section = document.getElementById("time-slot-section");
+    var container = document.getElementById("time-slots-container");
+    
+    if (!section || !container) return;
+    
+    // Purge the container to prevent any stale shifts from persisting
+    container.innerHTML = "";
+    
+    section.style.display = "block";
+    section.classList.remove("hidden");
+    document.getElementById("btn-confirm-book").style.display = "none";
+    document.getElementById("btn-confirm-book").classList.add("hidden");
+    document.getElementById("selected-time-slot").value = "";
 
+    if (!date) return;
 
+    let targetDate = new Date(date);
+    if (isNaN(targetDate.getTime())) return;
+    
+    let dayOfWeek = targetDate.getDay(); // 0-6
+    
+    // Determine the Doctor's Shift Group based on ID ranges
+    let schedule = window.doctorSchedules.default;
+    let docNumMatch = doctorId ? doctorId.toString().match(/\d+/) : null;
+    if (docNumMatch) {
+        let docNum = parseInt(docNumMatch[0], 10);
+        if (docNum >= 1 && docNum <= 5) {
+            schedule = window.doctorSchedules.shift1;
+        } else if (docNum >= 6 && docNum <= 10) {
+            schedule = window.doctorSchedules.shift2;
+        }
+    }
 
-  fetch(url)
-    .then(function (res) {
-      return res.json();
-    })
-    .then(function (data) {
-      var section = document.getElementById("time-slot-section");
-      var container = document.getElementById("time-slots-container");
-      section.style.display = "block";
-      container.innerHTML = "";
-
-      if (!data.timeline || data.timeline.length === 0) {
-        container.innerHTML = "<p>No available slots for this date.</p>";
+    if (!schedule.workingDays.includes(dayOfWeek)) {
+        container.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400 py-4 col-span-full">No available working hours for this date.</p>';
         return;
-      }
+    }
 
-      let todayStr = new Date().toISOString().split("T")[0];
-      let isToday = (date === todayStr);
-      let currentHour = new Date().getHours();
+    let todayStr = new Date().toISOString().split("T")[0];
+    let isToday = (date === todayStr);
+    let now = new Date();
+    let currentHour = now.getHours();
+    let currentMinute = now.getMinutes();
 
-      data.timeline.forEach(function (slot) {
-        // "hour" string format example: "09:00 AM - 10:00 AM"
-        var timeStr = slot.hour.split(" - ")[0]; // "09:00 AM"
-        var timeParts = timeStr.split(" "); // ["09:00", "AM"]
-        var hm = timeParts[0].split(":");
-        var h = parseInt(hm[0]);
-        if (timeParts[1] === "PM" && h < 12) h += 12;
-        if (timeParts[1] === "AM" && h === 12) h = 0;
+    let slots = [];
+    let shiftRangeDisplays = [];
+
+    // Helper to format HH and MM to "hh:mm A"
+    function formatTimeAMPM(h, m) {
+        let ampm = h >= 12 ? "PM" : "AM";
+        let h12 = h % 12;
+        if (h12 === 0) h12 = 12;
+        return h12.toString().padStart(2, "0") + ":" + m.toString().padStart(2, "0") + " " + ampm;
+    }
+
+    schedule.shifts.forEach(shift => {
+        shiftRangeDisplays.push(`${shift.start} to ${shift.end}`);
+        let [startH, startM] = shift.start.split(":").map(Number);
+        let [endH, endM] = shift.end.split(":").map(Number);
         
-        if (isToday && h < currentHour) return;
+        let startTotalMins = startH * 60 + startM;
+        let endTotalMins = endH * 60 + endM;
+        
+        // Handle Overnight Cross-over Logic
+        if (endTotalMins <= startTotalMins) {
+            endTotalMins += 24 * 60; // Add 1440 mins to span securely past midnight
+        }
 
+        let slotDuration = 30; // 30 min intervals
+
+        for (let m = startTotalMins; m < endTotalMins; m += slotDuration) {
+            let actualM = m % (24 * 60); // Modulo wraps it securely within a 24-hour cycle
+            let slotH = Math.floor(actualM / 60);
+            let slotM = actualM % 60;
+            
+            // Filter past slots if the selected date is today
+            if (isToday) {
+                let currentTotalMins = currentHour * 60 + currentMinute;
+                if (m < currentTotalMins) {
+                    continue; // Skip past times securely without failing on tomorrow's early morning hours
+                }
+            }
+
+            let nextTotalMins = (m + slotDuration);
+            let nextActualM = nextTotalMins % (24 * 60);
+            let nextH = Math.floor(nextActualM / 60);
+            let nextM = nextActualM % 60;
+
+            let slotStr24 = slotH.toString().padStart(2, "0") + ":" + slotM.toString().padStart(2, "0");
+            let label = formatTimeAMPM(slotH, slotM) + " - " + formatTimeAMPM(nextH, nextM);
+
+            slots.push({
+                label: label,
+                timeDB: slotStr24 + ":00" // Formatted for the database backend
+            });
+        }
+    });
+
+    // Output Debug Logs exactly as requested
+    console.log("Selected Provider:", doctorId || "None");
+    console.log("Assigned Shift Group:", schedule.groupLabel);
+    console.log("Generated Time Range:", shiftRangeDisplays.join(" | "));
+
+    if (slots.length === 0) {
+        container.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400 py-4 col-span-full">No available working hours for this date.</p>';
+        return;
+    }
+
+    slots.forEach(slot => {
         var btn = document.createElement("button");
         btn.type = "button";
-        btn.className = "btn-slot px-4 py-3 border border-gray-200 bg-white text-gray-900 rounded-xl cursor-pointer font-medium text-sm transition-all hover:border-blue-500";
+        btn.className = "btn-slot px-4 py-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl cursor-pointer font-medium text-sm transition-all hover:border-blue-500 dark:hover:border-blue-400";
+        btn.textContent = slot.label;
 
-        btn.textContent = slot.hour;
-
-        if (slot.chairs_left === 0) {
-          btn.disabled = true;
-          btn.className += " opacity-50 line-through cursor-not-allowed";
-          btn.textContent += " (Full)";
-        } else {
-          btn.onclick = function () {
+        btn.onclick = function () {
             // Deselect others
             document.querySelectorAll(".btn-slot").forEach((b) => {
-              b.classList.remove("slot-selected");
+                b.classList.remove("slot-selected", "border-blue-500", "bg-blue-50", "dark:border-blue-500", "dark:bg-blue-900/30", "text-blue-700", "dark:text-blue-400");
             });
             // Select this
-            btn.classList.add("slot-selected");
+            btn.classList.add("slot-selected", "border-blue-500", "bg-blue-50", "dark:border-blue-500", "dark:bg-blue-900/30", "text-blue-700", "dark:text-blue-400");
 
-            // Convert "09:00 AM" to "09:00:00" for DB
-            var timeParts = timeStr.split(" "); // ["09:00", "AM"]
-            var hm = timeParts[0].split(":");
-            var h = parseInt(hm[0]);
-            var m = hm[1];
-            if (timeParts[1] === "PM" && h < 12) h += 12;
-            if (timeParts[1] === "AM" && h === 12) h = 0;
-
-            var formattedTime = h.toString().padStart(2, "0") + ":" + m + ":00";
-
-            document.getElementById("selected-time-slot").value = formattedTime;
+            document.getElementById("selected-time-slot").value = slot.timeDB;
             document.getElementById("btn-confirm-book").style.display = "block";
-          };
-        }
+            document.getElementById("btn-confirm-book").classList.remove("hidden");
+        };
+
         container.appendChild(btn);
-
-        // Auto-select if this is the AI recommended slot
-        if (window.aiRecommendedSlot && window.aiRecommendedSlot === slot.hour && !btn.disabled) {
-            // Use setTimeout to ensure the DOM is ready and the button can be styled correctly
-            setTimeout(() => {
-                btn.click();
-            }, 100);
-        }
-      });
-
-      // Scroll to times
-      section.classList.remove("hidden");
-      section.scrollIntoView({ behavior: "smooth" });
     });
+
+    // Scroll smoothly to time slots
+    section.scrollIntoView({ behavior: "smooth" });
 }
 
 /* ---------------------------------------------
@@ -2375,3 +2663,356 @@ function selectDateFromCalendar(dateStr, dateObj) {
         grid.appendChild(btn);
     }
 }
+
+/* ---------------------------------------------
+     Profile Form Logic & Validation
+     --------------------------------------------- */
+window.switchProfileTab = function(tabName) {
+    // Hide all tabs
+    document.querySelectorAll('.profile-tab-content').forEach(el => el.classList.add('hidden'));
+    // Reset all buttons
+    document.querySelectorAll('.profile-tab-btn').forEach(btn => {
+        btn.className = "profile-tab-btn flex-1 lg:w-full text-left px-4 py-3 rounded-xl text-sm font-semibold transition-all text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700";
+    });
+
+    // Show selected tab
+    const selectedTab = document.getElementById('tab-' + tabName);
+    if (selectedTab) selectedTab.classList.remove('hidden');
+
+    // Highlight active button
+    const selectedBtn = document.getElementById('tab-btn-' + tabName);
+    if (selectedBtn) {
+        selectedBtn.className = "profile-tab-btn flex-1 lg:w-full text-left px-4 py-3 rounded-xl text-sm font-semibold transition-all bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
+    }
+};
+
+window.getProfileFormData = function() {
+    const form = document.getElementById('profile-form');
+    if (!form) return "";
+    const formData = new FormData(form);
+    const data = {};
+    for (let [key, value] of formData.entries()) {
+        data[key] = value;
+    }
+    // Handle unchecked checkboxes
+    ['pref_sms', 'pref_email', 'pref_push'].forEach(key => {
+        if (!data[key]) data[key] = false;
+    });
+    return JSON.stringify(data);
+};
+
+window.checkProfileDirtyState = function() {
+    const currentState = getProfileFormData();
+    const actionButtons = document.getElementById('profile-action-buttons');
+    if (actionButtons) {
+        if (currentState !== window.initialProfileState) {
+            actionButtons.classList.remove('opacity-50', 'pointer-events-none');
+        } else {
+            actionButtons.classList.add('opacity-50', 'pointer-events-none');
+        }
+    }
+    // Update global avatars instantly to reflect any date or gender changes
+    if (typeof window.updateGlobalAvatars === 'function') {
+        window.updateGlobalAvatars();
+    }
+};
+
+// Add listeners to profile form inputs
+document.addEventListener('DOMContentLoaded', () => {
+    const profileForm = document.getElementById('profile-form');
+    if (profileForm) {
+        profileForm.addEventListener('input', checkProfileDirtyState);
+        profileForm.addEventListener('change', checkProfileDirtyState);
+        
+        // Real-time CPR validation
+        const cprInput = document.getElementById('prof-cpr');
+        const cprError = document.getElementById('cpr-error');
+        if (cprInput && cprError) {
+            cprInput.addEventListener('input', function() {
+                this.value = this.value.replace(/[^0-9]/g, '').slice(0, 9);
+                if (this.value.length > 0 && this.value.length < 9) {
+                    cprError.classList.remove('hidden');
+                    this.classList.add('border-red-500', 'focus:ring-red-500');
+                } else {
+                    cprError.classList.add('hidden');
+                    this.classList.remove('border-red-500', 'focus:ring-red-500');
+                }
+            });
+        }
+
+        // Date of Birth DD/MM/YYYY mask & validation
+        const dobDisplay = document.getElementById('prof-dob-display');
+        const dobHidden = document.getElementById('prof-dob');
+        const dobError = document.getElementById('dob-error');
+        
+        if (dobDisplay && dobHidden && dobError) {
+            dobDisplay.addEventListener('input', function() {
+                let v = this.value.replace(/\D/g, '');
+                if (v.length >= 2 && v.length < 4) {
+                    v = v.substring(0, 2) + '/' + v.substring(2);
+                } else if (v.length >= 4) {
+                    v = v.substring(0, 2) + '/' + v.substring(2, 4) + '/' + v.substring(4, 8);
+                }
+                this.value = v;
+                
+                if (v.length === 10) {
+                    const [dd, mm, yyyy] = v.split('/');
+                    const d = parseInt(dd, 10);
+                    const m = parseInt(mm, 10);
+                    const y = parseInt(yyyy, 10);
+                    
+                    const isValid = d >= 1 && d <= 31 && m >= 1 && m <= 12 && y >= 1900 && y <= new Date().getFullYear() + 1;
+                    
+                    if (isValid) {
+                        dobError.classList.add('hidden');
+                        this.classList.remove('border-red-500', 'focus:ring-red-500');
+                        dobHidden.value = `${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
+                        checkProfileDirtyState();
+                    } else {
+                        dobError.classList.remove('hidden');
+                        this.classList.add('border-red-500', 'focus:ring-red-500');
+                        dobHidden.value = '';
+                        checkProfileDirtyState();
+                    }
+                } else {
+                    dobHidden.value = '';
+                    if (v.length > 0) {
+                        dobError.classList.remove('hidden');
+                        this.classList.add('border-red-500', 'focus:ring-red-500');
+                    } else {
+                        dobError.classList.add('hidden');
+                        this.classList.remove('border-red-500', 'focus:ring-red-500');
+                    }
+                    checkProfileDirtyState();
+                }
+            });
+        }
+    }
+});
+
+window.resetProfileForm = function() {
+    if (typeof fetchDashboardData === 'function') {
+        fetchDashboardData();
+    }
+    const actionButtons = document.getElementById('profile-action-buttons');
+    if (actionButtons) actionButtons.classList.add('opacity-50', 'pointer-events-none');
+};
+
+window.submitProfileForm = function() {
+    const form = document.getElementById('profile-form');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+    
+    const cpr = document.getElementById('prof-cpr').value;
+    if (cpr.length !== 9) {
+        Swal.fire('Validation Error', 'CPR must be exactly 9 digits.', 'error');
+        return;
+    }
+
+    const formData = new FormData(form);
+    
+    const isDark = document.documentElement.classList.contains('dark');
+    const popupBg = isDark ? '#1f2937' : '#ffffff';
+    const textColor = isDark ? '#f9fafb' : '#111827';
+
+    fetch('../php/profile_handler.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            Swal.fire({
+                title: 'Saved!',
+                text: 'Your profile has been successfully updated.',
+                icon: 'success',
+                background: popupBg,
+                color: textColor,
+                timer: 2000,
+                showConfirmButton: false
+            });
+            window.initialProfileState = getProfileFormData();
+            checkProfileDirtyState();
+            
+            // Sync theme if changed
+            const themePref = document.getElementById('pref-theme').value;
+            if (themePref === 'dark') {
+                if (typeof applyDarkMode === 'function') applyDarkMode(true);
+            } else if (themePref === 'light') {
+                if (typeof applyDarkMode === 'function') applyDarkMode(false);
+            } else {
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    if (typeof applyDarkMode === 'function') applyDarkMode(true);
+                } else {
+                    if (typeof applyDarkMode === 'function') applyDarkMode(false);
+                }
+                localStorage.removeItem('darkMode');
+                if (document.getElementById('pref-theme')) document.getElementById('pref-theme').value = "system";
+            }
+            
+            fetchDashboardData();
+        } else {
+            Swal.fire({ title: 'Error', text: data.message || 'Failed to save profile.', icon: 'error', background: popupBg, color: textColor });
+        }
+    })
+    .catch(err => {
+        console.error("Profile Save Error:", err);
+        Swal.fire({ title: 'Error', text: 'Network error. Please try again.', icon: 'error', background: popupBg, color: textColor });
+    });
+};
+
+/* ---------------------------------------------
+     Family Network Form Logic
+     --------------------------------------------- */
+document.addEventListener('DOMContentLoaded', () => {
+    const famRel = document.getElementById('fam-rel');
+    if (famRel) {
+        famRel.addEventListener('change', function() {
+            const rel = this.value;
+            const lnameEl = document.getElementById('fam-lname');
+            const phoneEl = document.getElementById('fam-phone');
+            const emailEl = document.getElementById('fam-email');
+            
+            // Reset fields
+            if (lnameEl) {
+                lnameEl.value = '';
+                lnameEl.classList.remove('bg-blue-50/30', 'dark:bg-blue-900/10');
+            }
+            if (phoneEl) {
+                phoneEl.value = '';
+                phoneEl.classList.remove('bg-blue-50/30', 'dark:bg-blue-900/10');
+            }
+            if (emailEl) {
+                emailEl.value = '';
+                emailEl.classList.remove('bg-blue-50/30', 'dark:bg-blue-900/10');
+            }
+
+            if (rel && window.initialProfileState) {
+                const parentProfile = JSON.parse(window.initialProfileState);
+                
+                // 1. Global Defaults (Phone & Email for everyone)
+                if (phoneEl) {
+                    phoneEl.value = parentProfile['phone'] || '';
+                    phoneEl.classList.add('bg-blue-50/30', 'dark:bg-blue-900/10');
+                }
+                if (emailEl) {
+                    emailEl.value = parentProfile['email'] || '';
+                    emailEl.classList.add('bg-blue-50/30', 'dark:bg-blue-900/10');
+                }
+                
+                // 2. Last Name Inheritance (Child or Brother/Sister only)
+                if (rel === 'Child' || rel === 'Brother/Sister') {
+                    if (lnameEl) {
+                        lnameEl.value = parentProfile['last_name'] || '';
+                        lnameEl.classList.add('bg-blue-50/30', 'dark:bg-blue-900/10');
+                    }
+                }
+            }
+        });
+    }
+});
+
+window.submitFamilyForm = function() {
+    const rel = document.getElementById('fam-rel').value;
+    const fname = document.getElementById('fam-fname').value;
+    const lname = document.getElementById('fam-lname').value;
+    
+    if (!rel || !fname || !lname) {
+        Swal.fire('Missing Fields', 'Please fill out all required fields (Relationship, First Name, Last Name).', 'warning');
+        return;
+    }
+    
+    const cpr = document.getElementById('fam-cpr').value;
+    if (cpr && cpr.length !== 9) {
+        Swal.fire('Validation Error', 'CPR must be exactly 9 digits if provided.', 'error');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('relationship', rel);
+    formData.append('first_name', fname);
+    formData.append('last_name', lname);
+    formData.append('cpr', cpr);
+    formData.append('date_of_birth', document.getElementById('fam-dob').value);
+    formData.append('gender', document.getElementById('fam-gender').value);
+    formData.append('blood_type', document.getElementById('fam-blood').value);
+    formData.append('phone', document.getElementById('fam-phone').value);
+    formData.append('email', document.getElementById('fam-email').value);
+
+    const isDark = document.documentElement.classList.contains('dark');
+    const popupBg = isDark ? '#1f2937' : '#ffffff';
+    const textColor = isDark ? '#f9fafb' : '#111827';
+
+    fetch('../php/family_handler.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            Swal.fire({
+                title: 'Linked!',
+                text: 'Family member account has been securely added.',
+                icon: 'success',
+                background: popupBg,
+                color: textColor
+            });
+            // Reset the form
+            document.getElementById('fam-rel').value = '';
+            document.getElementById('fam-fname').value = '';
+            document.getElementById('fam-lname').value = '';
+            document.getElementById('fam-cpr').value = '';
+            document.getElementById('fam-dob').value = '';
+            document.getElementById('fam-gender').value = 'Male';
+            document.getElementById('fam-blood').value = '';
+            document.getElementById('fam-phone').value = '';
+            document.getElementById('fam-email').value = '';
+            
+            ['fam-lname', 'fam-phone', 'fam-email'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.remove('bg-blue-50/30', 'dark:bg-blue-900/10');
+            });
+        } else {
+            Swal.fire({ title: 'Error', text: data.message || 'Failed to add family member.', icon: 'error', background: popupBg, color: textColor });
+        }
+    })
+    .catch(err => {
+        console.error("Family Save Error:", err);
+        Swal.fire({ title: 'Error', text: 'Network error. Please try again.', icon: 'error', background: popupBg, color: textColor });
+    });
+};
+
+/* ---------------------------------------------
+     Theme Radio Group Logic
+     --------------------------------------------- */
+window.setThemeSelection = function(val) {
+    const hiddenInput = document.getElementById('pref-theme');
+    if (hiddenInput) {
+        hiddenInput.value = val;
+        window.updateThemeRadioCards(val);
+        if (typeof window.checkProfileDirtyState === 'function') {
+            window.checkProfileDirtyState();
+        }
+    }
+};
+
+window.updateThemeRadioCards = function(activeVal) {
+    const cards = document.querySelectorAll('.theme-radio-card');
+    cards.forEach(card => {
+        if (card.getAttribute('data-theme-val') === activeVal) {
+            card.classList.add('active');
+        } else {
+            card.classList.remove('active');
+        }
+    });
+};
+
+// Initialize cards on load if input has value
+document.addEventListener('DOMContentLoaded', () => {
+    const hiddenInput = document.getElementById('pref-theme');
+    if (hiddenInput && hiddenInput.value) {
+        window.updateThemeRadioCards(hiddenInput.value);
+    }
+});

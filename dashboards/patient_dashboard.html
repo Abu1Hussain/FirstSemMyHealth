@@ -13,6 +13,7 @@
 
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script>
         if (localStorage.getItem('darkMode') === 'enabled') {
             document.documentElement.classList.add('dark');
@@ -380,6 +381,42 @@
             border-color: #059669 !important;
         }
     </style>
+    <style>
+
+        /* App Appearance Custom Radio Wrapper styles */
+        .theme-radio-group { display: flex; gap: 1rem; margin-top: 0.5rem; }
+        .theme-radio-card {
+            flex: 1; border: 2px solid transparent; border-radius: 0.75rem; padding: 1rem;
+            cursor: pointer; position: relative; transition: all 0.2s ease;
+            background-color: var(--tw-bg-opacity, rgba(249,250,251,1));
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem;
+        }
+        .dark .theme-radio-card { background-color: rgba(55,65,81,1); }
+        .theme-radio-card:hover { transform: translateY(-2px); }
+        .theme-radio-card .tick-mark {
+            position: absolute; top: -0.5rem; right: -0.5rem;
+            background: #fff; border-radius: 50%; opacity: 0;
+            transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); font-size: 1.5rem;
+        }
+        
+        /* Active State - Light Mode (High Contrast Black) */
+        html:not(.dark) .theme-radio-card.active {
+            border-color: #000000 !important;
+            background-color: #ffffff;
+        }
+        html:not(.dark) .theme-radio-card.active .tick-mark {
+            opacity: 1; color: #000000;
+        }
+        
+        /* Active State - Dark Mode (Clean Luminous Accent) */
+        .dark .theme-radio-card.active {
+            border-color: #60a5fa !important;
+            background-color: rgba(31,41,55,1);
+        }
+        .dark .theme-radio-card.active .tick-mark {
+            opacity: 1; color: #60a5fa; background: #1f2937; box-shadow: 0 0 10px rgba(96,165,250,0.3);
+        }
+    </style>
 </head>
 <body class="flex flex-col h-screen overflow-hidden bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
 
@@ -621,7 +658,7 @@
                     <!-- Dashboard Active Ticket Wrapper -->
                     <div id="static-active-ticket-wrapper" class="w-full">
                         <!-- Empty State -->
-                        <div id="active-ticket-empty-state" class="bg-gray-50 dark:bg-gray-800 rounded-2xl p-10 border-2 border-dashed border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center text-center transition-all">
+                        <div id="active-ticket-empty-state" class="active-ticket-empty-state bg-gray-50 dark:bg-gray-800 rounded-2xl p-10 border-2 border-dashed border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center text-center transition-all">
                             <div class="p-4 bg-white dark:bg-gray-700 rounded-full shadow-sm mb-4">
                                 <ion-icon name="ticket-outline" class="text-4xl text-gray-300 dark:text-gray-500"></ion-icon>
                             </div>
@@ -724,7 +761,49 @@
                             </div>
                         </div>
 
-                        <!-- Quick Ticket removed per refactor -->
+                        <!-- Appointments Tab Active Ticket Wrapper -->
+                        <div class="w-full mt-6 px-6 pb-6">
+                            <!-- Empty State -->
+                            <div class="active-ticket-empty-state bg-gray-50 dark:bg-gray-800 rounded-2xl p-10 border-2 border-dashed border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center text-center transition-all">
+                                <div class="p-4 bg-white dark:bg-gray-700 rounded-full shadow-sm mb-4">
+                                    <ion-icon name="ticket-outline" class="text-4xl text-gray-300 dark:text-gray-500"></ion-icon>
+                                </div>
+                                <p class="text-gray-500 dark:text-gray-400 font-bold text-lg">There's no ticket</p>
+                                <p class="text-xs text-gray-400 mt-1">Book an appointment to generate a ticket</p>
+                            </div>
+
+                            <!-- Appointments Active Ticket Container -->
+                            <div class="active-ticket-container hidden bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-800 rounded-2xl p-6 shadow-sm border border-blue-100 dark:border-gray-700 relative overflow-hidden cursor-pointer hover:shadow-lg hover:border-blue-300 dark:hover:border-blue-600 transition-all duration-300" onclick="window.openTicketDetailModal()">
+                                <div class="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+                                    <ion-icon name="ticket" class="text-8xl text-blue-500"></ion-icon>
+                                </div>
+                                <div class="flex justify-between items-start mb-1">
+                                    <h3 class="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest">Your Active Ticket</h3>
+                                    <div class="flex items-center gap-3">
+                                        <button class="ticket-prev-btn hidden text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" onclick="event.stopPropagation(); window.prevActiveTicket();"><ion-icon name="chevron-back-outline"></ion-icon></button>
+                                        <div class="ticket-carousel-dots flex gap-1.5 items-center"></div>
+                                        <button class="ticket-next-btn hidden text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" onclick="event.stopPropagation(); window.nextActiveTicket();"><ion-icon name="chevron-forward-outline"></ion-icon></button>
+                                    </div>
+                                </div>
+                                <div class="ticket-slide-area transition-opacity duration-500">
+                                    <div class="flex items-center gap-6">
+                                        <div class="flex-shrink-0 text-center">
+                                            <h4 class="active-ticket-number text-5xl font-black text-gray-900 dark:text-white">#--</h4>
+                                            <span class="active-ticket-priority inline-block mt-2 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide rounded-full bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300">Standard</span>
+                                        </div>
+                                        <div class="border-l-2 border-blue-200 dark:border-gray-700 pl-6 space-y-1">
+                                            <p class="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2"><ion-icon name="calendar-outline"></ion-icon> <span class="active-ticket-date">--</span></p>
+                                            <p class="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2"><ion-icon name="time-outline" class="text-blue-500"></ion-icon> <span class="active-ticket-time">--</span></p>
+                                            <p class="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2"><ion-icon name="person-outline" class="text-indigo-500"></ion-icon> <span class="active-ticket-doctor">--</span></p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-4 flex justify-between items-end border-t border-blue-200 dark:border-gray-700 pt-3">
+                                    <button class="text-xs font-bold px-4 py-2 rounded border border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 dark:border-red-900 dark:hover:bg-red-900/30 transition-colors" onclick="event.stopPropagation(); window.cancelActiveTicket();">Cancel Ticket</button>
+                                    <p class="text-[10px] text-blue-400 dark:text-blue-500 italic pointer-events-none mb-1">Click anywhere for details →</p>
+                                </div>
+                            </div><!-- /.active-ticket-container -->
+                        </div>
                     </div>
                 </div><!-- /appointments-today-content -->
 
@@ -994,42 +1073,258 @@
                  VIEW: PROFILE
             =============================== -->
             <div id="view-profile" class="content-section space-y-6" data-aos="fade-up">
-                <h1 class="text-3xl font-bold text-gray-900 dark:text-white">My Profile</h1>
-                <div class="max-w-xl mx-auto">
-                    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                        <div class="p-8 text-center bg-gray-50 dark:bg-gray-700/50 border-b border-gray-100 dark:border-gray-700">
-                            <div class="relative inline-block">
-                                <div id="user-initial-profile" class="h-24 w-24 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-4xl shadow-lg border-4 border-white dark:border-gray-800">?</div>
-                                <button class="absolute bottom-0 right-0 p-2 bg-white dark:bg-gray-800 rounded-full shadow-md text-blue-600 focus:outline-none">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white">My Profile & Settings</h1>
+                    <div id="profile-action-buttons" class="flex gap-3 opacity-50 pointer-events-none transition-all">
+                        <button type="button" id="btn-discard-profile" onclick="resetProfileForm()" class="px-4 py-2 text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg transition-colors">Discard</button>
+                        <button type="button" id="btn-save-profile" onclick="submitProfileForm()" class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-md">Save Changes</button>
+                    </div>
+                </div>
+
+                <div class="flex flex-col lg:flex-row gap-6">
+                    <!-- Sidebar Tabs -->
+                    <div class="w-full lg:w-64 flex-shrink-0">
+                        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-2 flex flex-row lg:flex-col gap-1 overflow-x-auto">
+                            <button onclick="switchProfileTab('identity')" id="tab-btn-identity" class="profile-tab-btn flex-1 lg:w-full text-left px-4 py-3 rounded-xl text-sm font-semibold transition-all bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                                <ion-icon name="person-outline" class="mr-2 text-lg align-text-bottom"></ion-icon> Identity & Contact
+                            </button>
+                            <button onclick="switchProfileTab('medical')" id="tab-btn-medical" class="profile-tab-btn flex-1 lg:w-full text-left px-4 py-3 rounded-xl text-sm font-semibold transition-all text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700">
+                                <ion-icon name="medical-outline" class="mr-2 text-lg align-text-bottom"></ion-icon> Medical Info
+                            </button>
+                            <button onclick="switchProfileTab('preferences')" id="tab-btn-preferences" class="profile-tab-btn flex-1 lg:w-full text-left px-4 py-3 rounded-xl text-sm font-semibold transition-all text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700">
+                                <ion-icon name="settings-outline" class="mr-2 text-lg align-text-bottom"></ion-icon> Preferences
+                            </button>
+                            <button onclick="switchProfileTab('family')" id="tab-btn-family" class="profile-tab-btn flex-1 lg:w-full text-left px-4 py-3 rounded-xl text-sm font-semibold transition-all text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700">
+                                <ion-icon name="people-outline" class="mr-2 text-lg align-text-bottom"></ion-icon> Family Network
+                            </button>
+                        </div>
+                        
+                        <!-- Avatar Card -->
+                        <div class="mt-6 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 text-center">
+                            <div class="relative inline-block mx-auto mb-4">
+                                <div id="profile-dynamic-avatar" class="h-24 w-24 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-4xl shadow-inner border-4 border-white dark:border-gray-800 overflow-hidden">
+                                    <i class="fa-solid fa-user text-gray-400"></i>
+                                </div>
+                                <button class="absolute bottom-0 right-0 p-2 bg-white dark:bg-gray-800 rounded-full shadow-md text-blue-600 border border-gray-100 dark:border-gray-700 hover:bg-gray-50 focus:outline-none transition-colors">
                                     <ion-icon name="camera-outline"></ion-icon>
                                 </button>
                             </div>
-                            <h2 id="profile-display-name" class="mt-4 text-2xl font-bold text-gray-900 dark:text-white">Patient Name</h2>
-                            <p class="text-sm text-gray-500">Patient account</p>
+                            <h2 id="profile-display-name" class="text-xl font-bold text-gray-900 dark:text-white line-clamp-1">Patient Name</h2>
+                            <p id="profile-display-demo" class="text-xs text-gray-500 mt-1 uppercase tracking-widest font-semibold"></p>
                         </div>
-                        <div class="p-8 space-y-6">
-                            <div class="space-y-4">
-                                <div class="space-y-1">
-                                    <label class="text-xs font-bold text-gray-500 uppercase">Full Name</label>
-                                    <input type="text" id="profile-name" class="w-full bg-gray-50 dark:bg-gray-700 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+
+                    <!-- Tab Content Area -->
+                    <div class="flex-1">
+                        <form id="profile-form" class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 md:p-8">
+                            
+                            <!-- TAB 1: IDENTITY -->
+                            <div id="tab-identity" class="profile-tab-content space-y-6">
+                                <h3 class="text-lg font-bold text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-700 pb-3">Identity & Contact Details</h3>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div class="space-y-1">
+                                        <label class="text-xs font-bold text-gray-500 uppercase">First Name <span class="text-red-500">*</span></label>
+                                        <input type="text" id="prof-fname" name="first_name" required class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 dark:text-white transition-all">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="text-xs font-bold text-gray-500 uppercase">Last Name <span class="text-red-500">*</span></label>
+                                        <input type="text" id="prof-lname" name="last_name" required class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 dark:text-white transition-all">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="text-xs font-bold text-gray-500 uppercase">CPR (National ID) <span class="text-red-500">*</span></label>
+                                        <input type="text" id="prof-cpr" name="cpr" required pattern="\d{9}" maxlength="9" title="Must be exactly 9 digits" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 dark:text-white transition-all font-mono">
+                                        <p class="text-[10px] text-gray-400 mt-1 hidden" id="cpr-error">CPR must be exactly 9 digits.</p>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="text-xs font-bold text-gray-500 uppercase">Date of Birth</label>
+                                        <input type="text" id="prof-dob-display" placeholder="DD/MM/YYYY" maxlength="10" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 dark:text-white transition-all font-mono">
+                                        <input type="hidden" id="prof-dob" name="date_of_birth">
+                                        <p class="text-[10px] text-gray-400 mt-1 hidden" id="dob-error">Invalid date format (DD/MM/YYYY).</p>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="text-xs font-bold text-gray-500 uppercase">Gender</label>
+                                        <select id="prof-gender" name="gender" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 dark:text-white transition-all appearance-none">
+                                            <option value="Male">Male</option>
+                                            <option value="Female">Female</option>
+                                        </select>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="text-xs font-bold text-gray-500 uppercase">Blood Type</label>
+                                        <select id="prof-blood" name="blood_type" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 dark:text-white transition-all appearance-none">
+                                            <option value="">Unknown</option>
+                                            <option value="A+">A+</option><option value="A-">A-</option>
+                                            <option value="B+">B+</option><option value="B-">B-</option>
+                                            <option value="AB+">AB+</option><option value="AB-">AB-</option>
+                                            <option value="O+">O+</option><option value="O-">O-</option>
+                                        </select>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="text-xs font-bold text-gray-500 uppercase">Phone Number</label>
+                                        <input type="tel" id="prof-phone" name="phone" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 dark:text-white transition-all">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="text-xs font-bold text-gray-500 uppercase">Email Address</label>
+                                        <input type="email" id="prof-email" name="email" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 dark:text-white transition-all">
+                                    </div>
                                 </div>
-                                <div class="space-y-1">
-                                    <label class="text-xs font-bold text-gray-500 uppercase">Email Address</label>
-                                    <input type="email" id="profile-email" class="w-full bg-gray-50 dark:bg-gray-700 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                <div class="pt-4 mt-6 flex justify-center">
+                                    <a href="../loginReg/change_password.html" class="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg transition-colors">
+                                        <ion-icon name="lock-closed-outline" class="text-sm"></ion-icon> Change Password
+                                    </a>
                                 </div>
                             </div>
-                            <button type="button" id="btn-update-profile" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all">
-                                Update Profile Settings
-                            </button>
-                            <div class="pt-4 text-center">
-                                <a href="../loginReg/change_password.html" class="text-sm font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 flex items-center justify-center gap-2">
-                                    <ion-icon name="lock-closed-outline"></ion-icon>
-                                    Change Account Password
-                                </a>
+
+                            <!-- TAB 2: MEDICAL INFO -->
+                            <div id="tab-medical" class="profile-tab-content hidden space-y-6">
+                                <h3 class="text-lg font-bold text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-700 pb-3">Emergency Contact</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-bold text-gray-500 uppercase">Contact Name</label>
+                                        <input type="text" id="prof-em-name" name="emergency_contact_name" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 outline-none text-gray-900 dark:text-white">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-bold text-gray-500 uppercase">Relationship</label>
+                                        <input type="text" id="prof-em-rel" name="emergency_contact_relation" placeholder="e.g. Spouse, Parent" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 outline-none text-gray-900 dark:text-white">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="text-[10px] font-bold text-gray-500 uppercase">Phone Number</label>
+                                        <input type="tel" id="prof-em-phone" name="emergency_contact_phone" class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 outline-none text-gray-900 dark:text-white">
+                                    </div>
+                                </div>
+
+                                <h3 class="text-lg font-bold text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-700 pb-3 pt-4">Medical Background</h3>
+                                <div class="space-y-4">
+                                    <div class="space-y-1">
+                                        <label class="text-xs font-bold text-gray-500 uppercase">Known Allergies</label>
+                                        <textarea id="prof-allergies" name="allergies" rows="2" placeholder="List any drug or food allergies..." class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 dark:text-white transition-all"></textarea>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label class="text-xs font-bold text-gray-500 uppercase">Chronic Conditions</label>
+                                        <textarea id="prof-chronic" name="chronic_conditions" rows="2" placeholder="e.g. Asthma, Hypertension, Diabetes..." class="w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 dark:text-white transition-all"></textarea>
+                                    </div>
+                                </div>
                             </div>
 
+                            <!-- TAB 3: PREFERENCES -->
+                            <div id="tab-preferences" class="profile-tab-content hidden space-y-6">
+                                <h3 class="text-lg font-bold text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-700 pb-3">Notification Settings</h3>
+                                
+                                <div class="space-y-4">
+                                    <label class="flex items-center justify-between cursor-pointer p-4 rounded-xl border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                                        <div>
+                                            <p class="text-sm font-bold text-gray-900 dark:text-white">SMS Notifications</p>
+                                            <p class="text-xs text-gray-500">Receive text messages for upcoming appointments</p>
+                                        </div>
+                                        <div class="relative">
+                                            <input type="checkbox" id="pref-sms" name="pref_sms" value="true" class="sr-only peer">
+                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                                        </div>
+                                    </label>
 
-                        </div>
+                                    <label class="flex items-center justify-between cursor-pointer p-4 rounded-xl border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                                        <div>
+                                            <p class="text-sm font-bold text-gray-900 dark:text-white">Email Notifications</p>
+                                            <p class="text-xs text-gray-500">Receive medical reports and invoices via email</p>
+                                        </div>
+                                        <div class="relative">
+                                            <input type="checkbox" id="pref-email" name="pref_email" value="true" class="sr-only peer">
+                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                <h3 class="text-lg font-bold text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-700 pb-3 pt-4">App Appearance</h3>
+                                <div class="space-y-3">
+                                    <label class="text-xs font-bold text-gray-500 uppercase">Theme Override</label>
+                                    <div class="theme-radio-group grid grid-cols-1 md:grid-cols-3 gap-4" id="pref-theme-group">
+                                        <div class="theme-radio-card group" data-theme-val="system" onclick="setThemeSelection('system')">
+                                            <ion-icon name="desktop-outline" class="text-2xl text-gray-400 group-hover:text-gray-600 dark:text-gray-500 dark:group-hover:text-gray-300"></ion-icon>
+                                            <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">System</span>
+                                            <ion-icon name="checkmark-circle" class="tick-mark"></ion-icon>
+                                        </div>
+                                        <div class="theme-radio-card group" data-theme-val="light" onclick="setThemeSelection('light')">
+                                            <ion-icon name="sunny-outline" class="text-2xl text-gray-400 group-hover:text-gray-600 dark:text-gray-500 dark:group-hover:text-gray-300"></ion-icon>
+                                            <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Light Mode</span>
+                                            <ion-icon name="checkmark-circle" class="tick-mark"></ion-icon>
+                                        </div>
+                                        <div class="theme-radio-card group" data-theme-val="dark" onclick="setThemeSelection('dark')">
+                                            <ion-icon name="moon-outline" class="text-2xl text-gray-400 group-hover:text-gray-600 dark:text-gray-500 dark:group-hover:text-gray-300"></ion-icon>
+                                            <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">Dark Mode</span>
+                                            <ion-icon name="checkmark-circle" class="tick-mark"></ion-icon>
+                                        </div>
+                                    </div>
+                                    <input type="hidden" id="pref-theme" name="pref_theme" value="system">
+                                </div>
+                            </div>
+
+                            <!-- TAB 4: FAMILY NETWORK -->
+                            <div id="tab-family" class="profile-tab-content hidden space-y-6">
+                                <h3 class="text-lg font-bold text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-700 pb-3">Family Network</h3>
+                                <p class="text-sm text-gray-500 mb-4">Link accounts for your children, parents, or siblings to easily book appointments on their behalf.</p>
+                                
+                                <div class="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6 border border-gray-100 dark:border-gray-600">
+                                    <h4 class="text-sm font-bold text-gray-900 dark:text-white mb-4">Add a Family Member</h4>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div class="space-y-1">
+                                            <label class="text-xs font-bold text-gray-500 uppercase">Relationship <span class="text-red-500">*</span></label>
+                                            <select id="fam-rel" class="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 dark:text-white appearance-none transition-colors">
+                                                <option value="">Select Relationship</option>
+                                                <option value="Child">Child</option>
+                                                <option value="Mother/Father">Mother/Father</option>
+                                                <option value="Brother/Sister">Brother/Sister</option>
+                                            </select>
+                                        </div>
+                                        <div class="space-y-1">
+                                            <label class="text-xs font-bold text-gray-500 uppercase">First Name <span class="text-red-500">*</span></label>
+                                            <input type="text" id="fam-fname" class="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 dark:text-white">
+                                        </div>
+                                        <div class="space-y-1">
+                                            <label class="text-xs font-bold text-gray-500 uppercase">Last Name <span class="text-red-500">*</span></label>
+                                            <input type="text" id="fam-lname" class="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 dark:text-white transition-colors">
+                                        </div>
+                                        <div class="space-y-1">
+                                            <label class="text-xs font-bold text-gray-500 uppercase">CPR (National ID)</label>
+                                            <input type="text" id="fam-cpr" maxlength="9" class="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 dark:text-white font-mono">
+                                        </div>
+                                        <div class="space-y-1">
+                                            <label class="text-xs font-bold text-gray-500 uppercase">Date of Birth</label>
+                                            <input type="date" id="fam-dob" class="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 dark:text-white">
+                                        </div>
+                                        <div class="space-y-1">
+                                            <label class="text-xs font-bold text-gray-500 uppercase">Gender</label>
+                                            <select id="fam-gender" class="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 dark:text-white appearance-none">
+                                                <option value="Male">Male</option>
+                                                <option value="Female">Female</option>
+                                            </select>
+                                        </div>
+                                        <div class="space-y-1">
+                                            <label class="text-xs font-bold text-gray-500 uppercase">Blood Type</label>
+                                            <select id="fam-blood" class="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 dark:text-white appearance-none">
+                                                <option value="">Unknown</option>
+                                                <option value="A+">A+</option><option value="A-">A-</option>
+                                                <option value="B+">B+</option><option value="B-">B-</option>
+                                                <option value="AB+">AB+</option><option value="AB-">AB-</option>
+                                                <option value="O+">O+</option><option value="O-">O-</option>
+                                            </select>
+                                        </div>
+                                        <div class="space-y-1">
+                                            <label class="text-xs font-bold text-gray-500 uppercase">Phone Number</label>
+                                            <input type="tel" id="fam-phone" class="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 dark:text-white transition-colors">
+                                        </div>
+                                        <div class="space-y-1">
+                                            <label class="text-xs font-bold text-gray-500 uppercase">Email Address</label>
+                                            <input type="email" id="fam-email" class="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-gray-900 dark:text-white transition-colors">
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 flex justify-end">
+                                        <button type="button" onclick="submitFamilyForm()" class="px-4 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors shadow-sm">
+                                            <ion-icon name="add-outline" class="mr-1"></ion-icon> Link Account
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>

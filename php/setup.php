@@ -86,14 +86,42 @@ $conn->query("CREATE TABLE IF NOT EXISTS patients (
     last_name     VARCHAR(100) NOT NULL,
     cpr           VARCHAR(20) NOT NULL UNIQUE,
     date_of_birth DATE,
-    gender        ENUM('Male', 'Female', 'Other'),
+    gender        ENUM('Male', 'Female'),
     phone         VARCHAR(20),
     email         VARCHAR(255),
     address       TEXT,
     blood_type    VARCHAR(5),
+    emergency_contact_name VARCHAR(100),
+    emergency_contact_relation VARCHAR(50),
+    emergency_contact_phone VARCHAR(20),
+    allergies     TEXT,
+    chronic_conditions TEXT,
+    preferences   TEXT,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 echo "📋 Table 'patients' created.<br>";
+
+
+/* ────────────────────────────────────────────────────
+   TABLE: family_members
+   Stores family accounts linked to the primary user.
+   ──────────────────────────────────────────────────── */
+
+$conn->query("CREATE TABLE IF NOT EXISTS family_members (
+    member_id       INT AUTO_INCREMENT PRIMARY KEY,
+    primary_user_id INT NOT NULL,
+    relationship    ENUM('Child', 'Mother/Father', 'Brother/Sister') NOT NULL,
+    first_name      VARCHAR(100),
+    last_name       VARCHAR(100),
+    cpr             VARCHAR(20),
+    date_of_birth   DATE,
+    gender          ENUM('Male', 'Female'),
+    blood_type      VARCHAR(5),
+    phone           VARCHAR(20),
+    email           VARCHAR(255),
+    FOREIGN KEY (primary_user_id) REFERENCES users(user_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+echo "📋 Table 'family_members' created.<br>";
 
 
 /* ────────────────────────────────────────────────────
