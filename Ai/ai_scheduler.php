@@ -68,18 +68,18 @@ if ($doctorQuery) {
 
 // Ensure the 2-shift roster guarantees at least 1 Male and 1 Female General Medicine doctor per shift
 // Ensure the 2-shift roster guarantees exactly 5 doctors per shift (no overlap).
-// First Shift Roster (Shift 1): Doctors 1 to 5. (09:00 to 13:00)
-// Second Shift Roster (Shift 2): Doctors 6 to 10. (13:00 to 17:00)
+// First Shift Roster (Shift 1): Doctors 1 to 5. (09:00 to 17:00)
+// Second Shift Roster (Shift 2): Doctors 6 to 10. (17:00 to 01:00)
 foreach ($doctors as &$doc) {
     $did = (int)$doc['id'];
     $shiftNum = ($did <= 5) ? 1 : 2;
-    $shiftName = ($shiftNum === 1) ? 'Morning Shift (09:00 - 13:00)' : 'Evening Shift (13:00 - 17:00)';
+    $shiftName = ($shiftNum === 1) ? 'Shift 1 (09:00 - 17:00)' : 'Shift 2 (17:00 - 01:00)';
     
     // Determine active shift based on current time (with 10-min early access offset)
     $currentHour = (int)date('H');
     $currentMinute = (int)date('i');
-    $activeShift = ($currentHour < 13) ? 1 : 2;
-    if ($currentHour == 12 && $currentMinute >= 50) {
+    $activeShift = ($currentHour >= 9 && $currentHour < 17) ? 1 : 2;
+    if ($currentHour == 16 && $currentMinute >= 50) {
         $activeShift = 2;
     }
     
@@ -129,11 +129,22 @@ unset($doc);
 
 $timeline  = [];
 $startHour = 9;    // Clinic opens at 9 AM
-$endHour   = 17;   // Clinic closes at 5 PM
 
-for ($hour = $startHour; $hour < $endHour; $hour++) {
-    $slotStart = $requestedDate . ' ' . str_pad($hour, 2, '0', STR_PAD_LEFT) . ':00:00';
-    $slotEnd   = $requestedDate . ' ' . str_pad($hour + 1, 2, '0', STR_PAD_LEFT) . ':00:00';
+for ($i = 0; $i < 16; $i++) {
+    $hour = ($startHour + $i) % 24;
+    $slotDate = $requestedDate;
+    if ($hour < 9) { // Crossed midnight
+        $slotDate = date('Y-m-d', strtotime($requestedDate . ' +1 day'));
+    }
+    
+    $slotEndHour = ($hour + 1) % 24;
+    $slotEndDate = ($slotEndHour <= 9 && $slotEndHour > 0) ? date('Y-m-d', strtotime($requestedDate . ' +1 day')) : $slotDate;
+    if ($slotEndHour === 0) {
+        $slotEndDate = date('Y-m-d', strtotime($requestedDate . ' +1 day'));
+    }
+
+    $slotStart = $slotDate . ' ' . str_pad($hour, 2, '0', STR_PAD_LEFT) . ':00:00';
+    $slotEnd   = $slotEndDate . ' ' . str_pad($slotEndHour, 2, '0', STR_PAD_LEFT) . ':00:00';
 
     // Build the count query
     $countSql = "SELECT COUNT(*) as booked FROM appointments
@@ -147,7 +158,7 @@ for ($hour = $startHour; $hour < $endHour; $hour++) {
     $bookedCount = $result ? $result->fetch_assoc()['booked'] : 0;
 
     // Determine active doctors in this hour's shift
-    $currentShift = ($hour < 13) ? 1 : 2;
+    $currentShift = ($i < 8) ? 1 : 2;
     
     // STRICT 4-CHAIR LIMIT per time slot — no multiplication
     $maxChairs = 4;
@@ -197,7 +208,7 @@ $summary = [
     'date'                   => $requestedDate,
     'total_appointments'     => $totalAppointmentsToday,
     'total_available_chairs' => $totalAvailableChairs,
-    'clinic_hours'           => $startHour . ':00 AM - ' . ($endHour > 12 ? ($endHour - 12) : $endHour) . ':00 PM',
+    'clinic_hours'           => '09:00 AM - 01:00 AM',
     'doctors_count'          => count($doctors)
 ];
 

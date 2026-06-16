@@ -23,6 +23,11 @@ let allDoctors = [];
 let showAllDoctors = false;
 let activityTimerInterval = null;
 
+/* -- Active Ticket Carousel State -- */
+let activeTickets = [];
+let activeTicketIndex = 0;
+let ticketCarouselInterval = null;
+
 /* -- 1. Load Dashboard Data on Page Ready -- */
 
 fetchDashboardData();
@@ -31,31 +36,40 @@ loadAvailabilityTimeline();
 /* -- 2. UI Logic: Sidebar & Dark Mode -- */
 if (sidebarToggle) {
   const mobileOverlay = document.getElementById("mobile-overlay");
+  const mobileSidebar = document.getElementById("sidebar-mobile");
   
   sidebarToggle.addEventListener("click", () => {
     if (window.innerWidth < 768) {
-      // Mobile behavior
-      sidebar.classList.toggle("-translate-x-full");
-      if (mobileOverlay) mobileOverlay.classList.toggle("hidden");
-    } else {
-      // Desktop behavior
-      sidebar.classList.toggle("sidebar-collapsed");
-      sidebar.classList.toggle("sidebar-expanded");
-      if (sidebar.classList.contains("sidebar-collapsed")) {
-        mainContent.classList.remove("md:ml-64");
-        mainContent.classList.add("md:ml-[4.5rem]");
-      } else {
-        mainContent.classList.remove("md:ml-[4.5rem]");
-        mainContent.classList.add("md:ml-64");
+      // Mobile behavior: slide in the mobile sidebar
+      if (mobileSidebar) {
+        mobileSidebar.classList.toggle("-translate-x-full");
+        if (mobileOverlay) mobileOverlay.classList.toggle("hidden");
       }
+    } else {
+      // Desktop behavior: zero-width collapse
+      const isClosed = sidebar.classList.toggle("sidebar-closed");
+      sidebarToggle.innerHTML = isClosed ? '&#8250;' : '&#8249;';
     }
   });
 
-  // Close sidebar on overlay click
+  // Close mobile sidebar on overlay click
   if (mobileOverlay) {
     mobileOverlay.addEventListener("click", () => {
-      sidebar.classList.add("-translate-x-full");
+      if (mobileSidebar) mobileSidebar.classList.add("-translate-x-full");
       mobileOverlay.classList.add("hidden");
+    });
+  }
+
+  // Hook up mobile sidebar navigation links
+  if (mobileSidebar) {
+    mobileSidebar.querySelectorAll(".sidebar-link[data-view]").forEach((link) => {
+      link.addEventListener("click", (e) => {
+        e.preventDefault();
+        const view = link.dataset.view;
+        if (view) window.showSection(view);
+        mobileSidebar.classList.add("-translate-x-full");
+        if (mobileOverlay) mobileOverlay.classList.add("hidden");
+      });
     });
   }
 }
@@ -154,9 +168,11 @@ window.getCurrentActiveShift = function() {
     let hours = now.getHours();
     let minutes = now.getMinutes();
     
-    // Shift Handover: 12:50 - 13:00 triggers Shift 2 early
-    if (hours === 12 && minutes >= 50) return 2;
-    if (hours < 13) return 1;
+    // Shift 1: 09:00 - 17:00
+    // Shift 2: 17:00 - 01:00
+    // Shift Handover: 16:50 - 17:00 triggers Shift 2 early
+    if (hours === 16 && minutes >= 50) return 2;
+    if (hours >= 9 && hours < 17) return 1;
     return 2;
 };
 
@@ -166,18 +182,31 @@ window.checkShiftStatus = function() {
     let minutes = now.getMinutes();
 
     let shiftClosing = false;
-    // Clinic closes at 17:00, so lockout at 16:50
-    if (hours === 16 && minutes >= 50) shiftClosing = true; 
-    if (hours >= 17 || hours < 9) shiftClosing = true;
+    let clinicClosed = false;
+
+    // Shift 2 closes at 01:00, so lockout at 00:50
+    if (hours === 0 && minutes >= 50) shiftClosing = true; 
+    
+    // Clinic is closed from 01:00 to 09:00
+    if (hours >= 1 && hours < 9) clinicClosed = true;
 
     const triageContainer = document.getElementById('triage-buttons');
     const quickApptBtn = document.getElementById('btn-quick-appointment');
 
-    if (shiftClosing) {
+    if (clinicClosed) {
         if (quickApptBtn) {
             quickApptBtn.disabled = true;
             quickApptBtn.classList.add('opacity-50', 'cursor-not-allowed', 'bg-gray-400');
-            quickApptBtn.innerHTML = '⚠️ Shift Closing';
+            quickApptBtn.innerHTML = '⚠️ Clinic Closed';
+        }
+        if (triageContainer) {
+            triageContainer.classList.add('hidden');
+        }
+    } else if (shiftClosing) {
+        if (quickApptBtn) {
+            quickApptBtn.disabled = true;
+            quickApptBtn.classList.add('opacity-50', 'cursor-not-allowed', 'bg-gray-400');
+            quickApptBtn.innerHTML = '⚠️ Booking is closed for the day. Please check tomorrow\'s availability.';
         }
         if (triageContainer) {
             triageContainer.classList.add('hidden');
@@ -192,6 +221,38 @@ window.checkShiftStatus = function() {
 };
 setInterval(window.checkShiftStatus, 30000);
 document.addEventListener("DOMContentLoaded", window.checkShiftStatus);
+
+// Live tracking for time slots
+setInterval(() => {
+    // Refresh Today's Availability timeline
+    let docFilter = document.getElementById("availability-doctor-filter");
+    if (typeof loadAvailabilityTimeline === "function") {
+        loadAvailabilityTimeline(docFilter ? docFilter.value : "");
+    }
+    
+    // Hide past booking slots without fully refreshing form (prevents interrupting user)
+    let dateInput = document.getElementById("appointment-date");
+    let todayStr = new Date().toISOString().split("T")[0];
+    if (dateInput && dateInput.value === todayStr) {
+        let currentHour = new Date().getHours();
+        document.querySelectorAll(".btn-slot").forEach(btn => {
+            let timeText = btn.textContent.split(" - ")[0];
+            if (!timeText) return;
+            let timeParts = timeText.split(" ");
+            if (timeParts.length < 2) return;
+            let h = parseInt(timeParts[0].split(":")[0]);
+            if (timeParts[1].includes("PM") && h < 12) h += 12;
+            if (timeParts[1].includes("AM") && h === 12) h = 0;
+            
+            let mappedH = h === 0 ? 24 : h;
+            let mappedCurrent = currentHour === 0 ? 24 : currentHour;
+            
+            if (mappedH < mappedCurrent) {
+                btn.style.display = "none";
+            }
+        });
+    }
+}, 60000);
 
 /* -- 3. Quick Appointment Auto-Ticket Form -- */
 window.handleTriageBooking = function(priority) {
@@ -215,6 +276,7 @@ window.handleTriageBooking = function(priority) {
     }
 
     let today = new Date().toISOString().split('T')[0];
+    let availableSlot;
     fetch(`../Ai/ai_scheduler.php?date=${today}&doctor_id=${randomDoc.id}`)
         .then(res => res.json())
         .then(data => {
@@ -222,9 +284,12 @@ window.handleTriageBooking = function(priority) {
             
             let now = new Date();
             let currentHour = now.getHours();
-            let availableSlot = data.timeline.find(slot => {
+            availableSlot = data.timeline.find(slot => {
                 let slotHour = parseInt(slot.time_24h.split(':')[0]);
-                return slot.chairs_left > 0 && slotHour >= currentHour;
+                // Map hour 0 to 24 so that it registers as the end of the day for filtering future slots
+                let mappedSlotHour = slotHour === 0 ? 24 : slotHour;
+                let mappedCurrentHour = currentHour === 0 ? 24 : currentHour;
+                return slot.chairs_left > 0 && mappedSlotHour >= mappedCurrentHour;
             });
 
             if (!availableSlot) {
@@ -237,6 +302,7 @@ window.handleTriageBooking = function(priority) {
             formData.append("take_ticket", "1");
             formData.append("selected_time", availableSlot.time_24h);
             formData.append("doctor_id", randomDoc.id);
+            formData.append("priority", priority);
 
             return fetch("../php/appointment_handler.php", {
                 method: "POST",
@@ -459,12 +525,14 @@ function fetchDashboardData() {
           }
 
           // Decide the badge colour based on priority
-          var priorityBadge = '<span class="badge badge-gray">Normal</span>';
-          if (appointment.priority === "Highly Important")
+          var priorityBadge = '<span class="badge badge-green">Standard</span>';
+          if (appointment.priority === "Highly Important" || appointment.priority === "Urgent")
             priorityBadge =
-              '<span class="badge badge-red">Highly Important</span>';
-          if (appointment.priority === "Important")
-            priorityBadge = '<span class="badge badge-orange">Important</span>';
+              '<span class="badge badge-red">' + appointment.priority + '</span>';
+          else if (appointment.priority === "Important" || appointment.priority === "Priority")
+            priorityBadge = '<span class="badge badge-orange">' + appointment.priority + '</span>';
+          else if (appointment.priority === "Normal" || appointment.priority === "Standard")
+            priorityBadge = '<span class="badge badge-green">' + appointment.priority + '</span>';
 
           allRows +=
             "<tr>" +
@@ -627,26 +695,33 @@ function fetchDashboardData() {
           renderDoctorsGrid();
       }
 
-      /* -- Show Active Ticket (if any) -- */
-      if (responseData.appointments && responseData.appointments.length > 0) {
-          const activeAppt = responseData.appointments.find(a => 
+      /* -- Show Active Ticket Carousel (if any) -- */
+      if (responseData.appointments) {
+          activeTickets = responseData.appointments.filter(a =>
               a.status.toLowerCase() !== "terminated" &&
               a.status.toLowerCase() !== "cancelled" &&
               a.status.toLowerCase() !== "completed"
           );
-          if (activeAppt) {
-              const ticketCont = document.getElementById("active-ticket-container");
-              if (ticketCont) {
-                  document.getElementById("active-ticket-number").textContent = activeAppt.ticket_code || "#--";
-                  document.getElementById("active-ticket-date").textContent = activeAppt.date || "--";
-                  document.getElementById("active-ticket-time").textContent = activeAppt.wait_time ? "~" + activeAppt.wait_time + " min wait" : "--";
-                  document.getElementById("active-ticket-doctor").textContent = activeAppt.doctor || "General Practitioner";
-                  ticketCont.classList.remove("hidden");
+          
+          let emptyState = document.getElementById("active-ticket-empty-state");
+          let containers = document.querySelectorAll(".active-ticket-container");
+
+          if (activeTickets.length > 0) {
+              activeTicketIndex = 0;
+              renderActiveTicket(activeTicketIndex);
+              renderCarouselDots();
+              
+              if (emptyState) emptyState.classList.add("hidden");
+              containers.forEach(c => c.classList.remove("hidden"));
+
+              if (typeof resetCarouselTimer === "function") {
+                  resetCarouselTimer();
               }
+          } else {
+              if (emptyState) emptyState.classList.remove("hidden");
+              containers.forEach(c => c.classList.add("hidden"));
           }
       }
-
-
       /* -- Render Medical Records -- */
       var recordsBody = document.getElementById("records-list");
       if (recordsBody && responseData.records) {
@@ -909,6 +984,247 @@ function updateActivityTimers() {
 
 
 /* ---------------------------------------------
+     Active Ticket Carousel Helpers
+     --------------------------------------------- */
+function renderActiveTicket(index) {
+    if (!activeTickets[index]) return;
+    const t = activeTickets[index];
+    
+    document.querySelectorAll(".active-ticket-number").forEach(el => el.textContent = t.ticket_code || "#--");
+    document.querySelectorAll(".active-ticket-date").forEach(el => el.textContent = t.date || "--");
+    document.querySelectorAll(".active-ticket-time").forEach(el => el.textContent = t.wait_time ? "~" + t.wait_time + " min wait" : "--");
+    document.querySelectorAll(".active-ticket-doctor").forEach(el => el.textContent = t.doctor || "General Practitioner");
+    
+    document.querySelectorAll(".active-ticket-priority").forEach(el => {
+        let prio = t.priority || "Standard";
+        el.textContent = prio;
+        el.className = "active-ticket-priority inline-block mt-2 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide rounded-full";
+        if (prio === "Urgent" || prio === "Emergency") {
+            el.classList.add("bg-red-100", "text-red-700", "dark:bg-red-900/40", "dark:text-red-400");
+        } else if (prio === "Priority") {
+            el.classList.add("bg-orange-100", "text-orange-700", "dark:bg-orange-900/40", "dark:text-orange-400");
+        } else {
+            el.classList.add("bg-green-100", "text-green-700", "dark:bg-green-900/40", "dark:text-green-400");
+        }
+    });
+}
+
+function renderCarouselDots() {
+    const dotsContainers = document.querySelectorAll(".ticket-carousel-dots");
+    const prevBtns = document.querySelectorAll(".ticket-prev-btn");
+    const nextBtns = document.querySelectorAll(".ticket-next-btn");
+    
+    if (activeTickets.length <= 1) {
+        dotsContainers.forEach(c => c.innerHTML = "");
+        prevBtns.forEach(btn => btn.classList.add("hidden"));
+        nextBtns.forEach(btn => btn.classList.add("hidden"));
+        return;
+    }
+    
+    prevBtns.forEach(btn => btn.classList.remove("hidden"));
+    nextBtns.forEach(btn => btn.classList.remove("hidden"));
+    
+    const dotsHtml = activeTickets.map((_, i) =>
+        `<span class="inline-block w-2 h-2 rounded-full transition-all duration-300 ${i === activeTicketIndex ? 'bg-blue-600 scale-125' : 'bg-blue-300 dark:bg-gray-500'}"></span>`
+    ).join("");
+    
+    dotsContainers.forEach(c => c.innerHTML = dotsHtml);
+}
+
+function resetCarouselTimer() {
+    if (ticketCarouselInterval) clearInterval(ticketCarouselInterval);
+    if (activeTickets.length > 1) {
+        ticketCarouselInterval = setInterval(() => {
+            if (typeof window.nextActiveTicket === "function") {
+                window.nextActiveTicket();
+            }
+        }, 5000);
+    }
+}
+
+window.prevActiveTicket = function() {
+    if (activeTickets.length <= 1) return;
+    activeTicketIndex = (activeTicketIndex - 1 + activeTickets.length) % activeTickets.length;
+    updateActiveTicketDOM();
+    resetCarouselTimer();
+};
+
+window.nextActiveTicket = function() {
+    if (activeTickets.length <= 1) return;
+    activeTicketIndex = (activeTicketIndex + 1) % activeTickets.length;
+    updateActiveTicketDOM();
+    resetCarouselTimer();
+};
+
+function updateActiveTicketDOM() {
+    const slideAreas = document.querySelectorAll(".ticket-slide-area");
+    slideAreas.forEach(area => area.style.opacity = "0");
+    setTimeout(() => {
+        renderActiveTicket(activeTicketIndex);
+        renderCarouselDots();
+        slideAreas.forEach(area => area.style.opacity = "1");
+    }, 300);
+}
+
+// Swipe Support for Ticket Container
+document.addEventListener("DOMContentLoaded", () => {
+    const ticketContainers = document.querySelectorAll(".active-ticket-container");
+    ticketContainers.forEach(container => {
+        let touchstartX = 0;
+        let touchendX = 0;
+        container.addEventListener('touchstart', e => {
+            touchstartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+        container.addEventListener('touchend', e => {
+            touchendX = e.changedTouches[0].screenX;
+            if (touchendX < touchstartX - 30) {
+                window.nextActiveTicket();
+            } else if (touchendX > touchstartX + 30) {
+                window.prevActiveTicket();
+            }
+        }, { passive: true });
+    });
+});
+
+window.cancelActiveTicket = function() {
+    if (!activeTickets[activeTicketIndex]) return;
+    const t = activeTickets[activeTicketIndex];
+    
+    // Detect current theme
+    const isDark = document.documentElement.classList.contains('dark');
+    const popupBg = isDark ? '#1f2937' : '#ffffff';
+    const textColor = isDark ? '#f9fafb' : '#111827';
+    const backdrop = isDark ? 'rgba(0,0,0,0.75)' : 'rgba(0,0,0,0.45)';
+
+    if (typeof Swal !== 'undefined') {
+        Swal.fire({
+            title: 'Cancel Appointment?',
+            text: `Are you sure you want to cancel your appointment with ${t.doctor}? This action cannot be undone.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Yes, cancel it!',
+            background: popupBg,
+            color: textColor,
+            backdrop: backdrop,
+            customClass: { popup: 'rounded-2xl' }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const formData = new FormData();
+                formData.append('terminate_appointment', '1');
+                formData.append('appointment_id', t.appointment_id);
+                
+                fetch('../php/appointment_handler.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        Swal.fire({
+                            title: 'Cancelled!',
+                            text: 'Your appointment has been successfully cancelled.',
+                            icon: 'success',
+                            background: popupBg,
+                            color: textColor,
+                            backdrop: backdrop,
+                            customClass: { popup: 'rounded-2xl' }
+                        });
+                        if (activeTickets.length === 1) {
+                            document.querySelectorAll(".active-ticket-container").forEach(c => c.classList.add("hidden"));
+                        }
+                        fetchDashboardData();
+                    } else {
+                        Swal.fire({ title: 'Error', text: data.message || 'Failed to cancel appointment.', icon: 'error', background: popupBg, color: textColor, backdrop: backdrop });
+                    }
+                })
+                .catch(err => {
+                    console.error("Cancellation Error:", err);
+                    Swal.fire({ title: 'Error', text: 'An unexpected error occurred.', icon: 'error', background: popupBg, color: textColor, backdrop: backdrop });
+                });
+            }
+        });
+    }
+};
+
+window.openTicketDetailModal = function() {
+    if (!activeTickets[activeTicketIndex]) return;
+    const t = activeTickets[activeTicketIndex];
+    const bookedAt = t.created_at ? new Date(t.created_at.replace(/-/g, "/")).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }) : "N/A";
+
+    // Detect current theme
+    const isDark = document.documentElement.classList.contains('dark');
+
+    // Theme-aware color tokens
+    const theme = {
+        popupBg:       isDark ? '#1f2937' : '#ffffff',
+        popupBorder:   isDark ? '#374151' : '#e5e7eb',
+        textPrimary:   isDark ? '#f9fafb' : '#111827',
+        textSecondary: isDark ? '#9ca3af' : '#6b7280',
+        textMuted:     isDark ? '#d1d5db' : '#374151',
+        divider:       isDark ? '#374151' : '#e5e7eb',
+        timestampBg:   isDark ? '#111827' : '#f3f4f6',
+        btnBg:         isDark ? '#4338ca' : '#4f46e5',
+        btnHoverBg:    isDark ? '#4f46e5' : '#4338ca',
+        backdrop:      isDark ? 'rgba(0,0,0,0.75)' : 'rgba(0,0,0,0.45)',
+    };
+
+    let prioName = t.priority || "Standard";
+    let prioColor = theme.textPrimary;
+    if (prioName === "Urgent" || prioName === "Emergency") prioColor = "#ef4444";
+    else if (prioName === "Priority") prioColor = "#f97316";
+    else prioColor = "#22c55e";
+
+    Swal.fire({
+        title: '',
+        html: `
+            <div style="text-align:left; font-family:'Inter',sans-serif; padding:10px;">
+                <div style="text-align:center; margin-bottom:24px;">
+                    <span style="font-size:4rem; font-weight:900; background:linear-gradient(135deg,#4f46e5,#818cf8); -webkit-background-clip:text; -webkit-text-fill-color:transparent; line-height:1;">${t.ticket_code || '#--'}</span>
+                    <p style="font-size:13px; color:${theme.textSecondary}; text-transform:uppercase; letter-spacing:3px; margin-top:8px; font-weight:600;">Active Ticket ID</p>
+                </div>
+                <hr style="border-color:${theme.divider}; margin:20px 0;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px;">
+                    <div>
+                        <p style="font-size:12px; text-transform:uppercase; letter-spacing:1px; color:${theme.textSecondary}; margin-bottom:4px; font-weight:600;">Patient Name</p>
+                        <p style="font-size:18px; font-weight:700; color:${theme.textPrimary};">${t.patient_name || 'N/A'}</p>
+                    </div>
+                    <div>
+                        <p style="font-size:12px; text-transform:uppercase; letter-spacing:1px; color:${theme.textSecondary}; margin-bottom:4px; font-weight:600;">CPR (ID)</p>
+                        <p style="font-size:18px; font-weight:700; font-family:monospace; color:${theme.textPrimary};">${t.cpr || 'N/A'}</p>
+                    </div>
+                    <div>
+                        <p style="font-size:12px; text-transform:uppercase; letter-spacing:1px; color:${theme.textSecondary}; margin-bottom:4px; font-weight:600;">Priority Level</p>
+                        <p style="font-size:18px; font-weight:800; color:${prioColor};">${prioName}</p>
+                    </div>
+                    <div>
+                        <p style="font-size:12px; text-transform:uppercase; letter-spacing:1px; color:${theme.textSecondary}; margin-bottom:4px; font-weight:600;">Blood Type</p>
+                        <p style="font-size:18px; font-weight:800; color:#ef4444;">${t.blood_type || 'N/A'}</p>
+                    </div>
+                    <div style="grid-column: span 2;">
+                        <p style="font-size:12px; text-transform:uppercase; letter-spacing:1px; color:${theme.textSecondary}; margin-bottom:4px; font-weight:600;">Doctor</p>
+                        <p style="font-size:18px; font-weight:700; color:${theme.textPrimary};">${t.doctor || 'General Practitioner'}</p>
+                    </div>
+                    <div style="grid-column: span 2; background:${theme.timestampBg}; padding:16px; border-radius:12px;">
+                        <p style="font-size:12px; text-transform:uppercase; letter-spacing:1px; color:${theme.textSecondary}; margin-bottom:4px; font-weight:600;">Booking Timestamp</p>
+                        <p style="font-size:16px; font-weight:600; color:${theme.textMuted};">${bookedAt}</p>
+                    </div>
+                </div>
+            </div>
+        `,
+        showConfirmButton: true,
+        confirmButtonText: 'Close Window',
+        confirmButtonColor: theme.btnBg,
+        width: 580,
+        background: theme.popupBg,
+        color: theme.textPrimary,
+        backdrop: theme.backdrop,
+        customClass: { popup: 'rounded-3xl shadow-2xl' }
+    });
+};
+
+/* ---------------------------------------------
      loadAvailabilityTimeline(doctorId)
      Calls the AI Scheduler to get today's hourly
      chair availability and renders the timeline.
@@ -935,7 +1251,17 @@ function loadAvailabilityTimeline(doctorId = "") {
       timelineContainer.innerHTML = "";
       var timelineHtml = "";
 
+      let now = new Date();
+      let currentHour = now.getHours();
+
       data.timeline.forEach(function (slot) {
+        // Time validation for past slots
+        let slotHour = parseInt(slot.time_24h.split(':')[0]);
+        let mappedSlotHour = slotHour === 0 ? 24 : slotHour;
+        let mappedCurrentHour = currentHour === 0 ? 24 : currentHour;
+        
+        if (mappedSlotHour < mappedCurrentHour) return;
+
         // Slot chairs are determined by ai_scheduler now (4 per active GP), we can use the server's response.
         // We do not override it here unless we have to.
         var isFull = slot.chairs_left <= 0;
@@ -1059,17 +1385,20 @@ function loadBookingSlots(date, doctorId) {
         return;
       }
 
+      let todayStr = new Date().toISOString().split("T")[0];
+      let isToday = (date === todayStr);
+      let currentHour = new Date().getHours();
+
       data.timeline.forEach(function (slot) {
         // "hour" string format example: "09:00 AM - 10:00 AM"
-        // We just want the start time for the value, e.g. "09:00:00"
-        // Let's parse the start hour from the display string or just rely on index/logic
-        // Ideally backend sends raw time. But here we have formatted string.
-        // Let's re-construct standard time from the "hour" property or add raw_time to PHP.
-        // For now, let's assume we can parse or use the loop index if needed.
-        // Actually, best to update PHP to send standardized start time.
-        // BUT, to save a step, let's parse "09:00 AM" -> "09:00:00" logic here.
-
         var timeStr = slot.hour.split(" - ")[0]; // "09:00 AM"
+        var timeParts = timeStr.split(" "); // ["09:00", "AM"]
+        var hm = timeParts[0].split(":");
+        var h = parseInt(hm[0]);
+        if (timeParts[1] === "PM" && h < 12) h += 12;
+        if (timeParts[1] === "AM" && h === 12) h = 0;
+        
+        if (isToday && h < currentHour) return;
 
         var btn = document.createElement("button");
         btn.type = "button";
@@ -1325,7 +1654,13 @@ window.overrideTodayManualSelection = function (time24h, hourStr, element) {
 
   // Derive shift from the SELECTED TIME SLOT, not the wall clock
   let slotHour = parseInt(time24h.split(':')[0]);
-  let slotShift = (slotHour < 13) ? 1 : 2;
+  let slotShift = (slotHour >= 9 && slotHour < 17) ? 1 : 2;
+
+  // Inter-Shift Transition Logic: Handover 16:50 - 17:00
+  let now = new Date();
+  if (now.getHours() === 16 && now.getMinutes() >= 50) {
+      slotShift = 2;
+  }
 
   let selectedShiftDocs = allDoctors.filter(d => {
       let docId = parseInt(d.id);
@@ -1665,13 +2000,65 @@ window.processPayment = async function () {
     }
 };
 
-/* -- 10. Render Notifications -- */
+/* -- 10. Render Notifications & Dropdown -- */
+window.toggleNotificationMenu = function(e) {
+    if (e) e.stopPropagation();
+    const menu = document.getElementById('notificationMenu');
+    if (menu) {
+        if (menu.classList.contains('hidden')) {
+            menu.classList.remove('hidden');
+            setTimeout(() => {
+                menu.classList.remove('opacity-0', 'scale-95');
+                menu.classList.add('opacity-100', 'scale-100', 'pointer-events-auto');
+            }, 10);
+        } else {
+            menu.classList.remove('opacity-100', 'scale-100', 'pointer-events-auto');
+            menu.classList.add('opacity-0', 'scale-95');
+            setTimeout(() => {
+                menu.classList.add('hidden');
+            }, 200);
+        }
+    }
+};
+
+// Close dropdown on outside click
+document.addEventListener('click', function(e) {
+    const menu = document.getElementById('notificationMenu');
+    const btn = document.getElementById('notificationMenuButton');
+    if (menu && !menu.classList.contains('hidden') && !menu.contains(e.target) && (!btn || !btn.contains(e.target))) {
+        toggleNotificationMenu();
+    }
+});
+
 window.renderNotifications = function (notifications) {
     const tableBody = document.getElementById("notifications-table-body");
     if (!tableBody) return;
 
     let html = "";
     let unreadCount = 0;
+
+    /* -- Populate Header Micro-window -- */
+    const latestContainer = document.getElementById("latest-notification-container");
+    if (latestContainer) {
+        if (notifications && notifications.length > 0) {
+            const latest = notifications[0];
+            const msgPreview = latest.message.length > 60 ? latest.message.substring(0, 60) + '...' : latest.message;
+            latestContainer.innerHTML = `
+                <p class="text-xs font-bold text-gray-900 dark:text-white mb-1">${latest.topic || 'Update'}</p>
+                <p class="text-[11px] text-gray-500 dark:text-gray-400">${msgPreview}</p>
+                <p class="text-[9px] text-gray-400 mt-2 text-right">${latest.date || ''}</p>
+            `;
+            latestContainer.classList.add("cursor-pointer", "hover:bg-blue-100/50", "dark:hover:bg-gray-600/50", "transition-colors");
+            latestContainer.onclick = function() {
+                handleViewNotification(latest);
+                toggleNotificationMenu();
+            };
+        } else {
+            latestContainer.innerHTML = '<p class="text-xs text-gray-500 text-center py-2">No recent notifications</p>';
+            latestContainer.onclick = null;
+            latestContainer.className = "bg-blue-50/50 dark:bg-gray-700/50 rounded-xl p-3 border border-blue-100/50 dark:border-gray-600";
+        }
+    }
 
     if (!notifications || notifications.length === 0) {
       html = '<tr><td colspan="4" class="py-12 text-center text-gray-500">No notifications yet.</td></tr>';

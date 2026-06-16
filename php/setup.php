@@ -145,7 +145,7 @@ $conn->query("CREATE TABLE IF NOT EXISTS appointments (
     appointment_type VARCHAR(100) DEFAULT 'General',
     status           VARCHAR(50) DEFAULT 'pending',
     reason           TEXT,
-    ai_priority      ENUM('Highly Important', 'Important', 'Normal') DEFAULT 'Normal',
+    ai_priority      VARCHAR(50) DEFAULT 'Standard',
     ai_suggestion    TEXT,
     queue_number     INT,
     created_by       INT,
@@ -154,7 +154,18 @@ $conn->query("CREATE TABLE IF NOT EXISTS appointments (
     FOREIGN KEY (doctor_id)   REFERENCES doctors(doctor_id) ON DELETE SET NULL,
     FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-echo "📋 Table 'appointments' created.<br>";
+
+// --- Migration: Change ai_priority from ENUM to VARCHAR(50) if needed ---
+$colInfo = $conn->query("SHOW COLUMNS FROM appointments LIKE 'ai_priority'");
+if ($colInfo && $colInfo->num_rows > 0) {
+    $colRow = $colInfo->fetch_assoc();
+    if (stripos($colRow['Type'], 'enum') !== false) {
+        $conn->query("ALTER TABLE appointments MODIFY COLUMN ai_priority VARCHAR(50) DEFAULT 'Standard'");
+        echo "🔄 Migrated 'appointments' table: Changed 'ai_priority' from ENUM to VARCHAR(50).<br>";
+    }
+}
+
+echo "📋 Table 'appointments' ready.<br>";
 
 
 /* ────────────────────────────────────────────────────

@@ -144,6 +144,32 @@ $doctorsQuery = $conn->query(
 if ($doctorsQuery) {
     while ($doctor = $doctorsQuery->fetch_assoc()) {
         $doctor['image_url'] = '../image/' . $doctor['profile_image'];
+        
+        // Count today's appointments for capacity
+        $today = date('Y-m-d');
+        $countQuery = $conn->query(
+            "SELECT COUNT(*) as booked FROM appointments
+             WHERE doctor_id = '{$doctor['id']}'
+             AND DATE(appointment_date) = '$today'"
+        );
+        $bookedCount = $countQuery ? $countQuery->fetch_assoc()['booked'] : 0;
+        $doctor['is_full'] = ($bookedCount >= 16);
+        
+        // Roster and shift assignment logic
+        $did = (int)$doctor['id'];
+        $shiftNum = ($did <= 5) ? 1 : 2;
+        
+        if ($did === 1 || $did === 2 || $did === 6 || $did === 7) {
+            $doctor['specialization'] = "General Medicine";
+        } elseif ($did === 3 || $did === 8) {
+            $doctor['specialization'] = "Dentistry";
+        } elseif ($did === 4 || $did === 9) {
+            $doctor['specialization'] = "ENT Specialist";
+        } elseif ($did === 5 || $did === 10) {
+            $doctor['specialization'] = "Ophthalmology";
+        }
+        
+        $doctor['shift'] = $shiftNum;
         $doctors[] = $doctor;
     }
 }
@@ -162,9 +188,21 @@ $startHour  = 9;   // Clinic opens at 9 AM
 $endHour    = 17;  // Clinic closes at 5 PM
 $maxChairs  = 30;  // Maximum patients per hour slot
 
-for ($hour = $startHour; $hour < $endHour; $hour++) {
-    $slotStart = "$today " . str_pad($hour, 2, '0', STR_PAD_LEFT) . ":00:00";
-    $slotEnd   = "$today " . str_pad($hour + 1, 2, '0', STR_PAD_LEFT) . ":00:00";
+for ($i = 0; $i < 16; $i++) {
+    $hour = ($startHour + $i) % 24;
+    $slotDate = $today;
+    if ($hour < 9) { // Crossed midnight
+        $slotDate = date('Y-m-d', strtotime($today . ' +1 day'));
+    }
+    
+    $slotEndHour = ($hour + 1) % 24;
+    $slotEndDate = ($slotEndHour <= 9 && $slotEndHour > 0) ? date('Y-m-d', strtotime($today . ' +1 day')) : $slotDate;
+    if ($slotEndHour === 0) {
+        $slotEndDate = date('Y-m-d', strtotime($today . ' +1 day'));
+    }
+
+    $slotStart = "$slotDate " . str_pad($hour, 2, '0', STR_PAD_LEFT) . ":00:00";
+    $slotEnd   = "$slotEndDate " . str_pad($slotEndHour, 2, '0', STR_PAD_LEFT) . ":00:00";
 
     // Count how many appointments are booked in this time slot
     $stmt = $conn->prepare(
@@ -308,10 +346,12 @@ if ($patientId) {
     $stmt = $conn->prepare(
         "SELECT a.*, 
                 CONCAT(ms.first_name, ' ', ms.last_name) as doctor_name,
-                t.ticket_code
+                t.ticket_code,
+                p.cpr, p.blood_type, CONCAT(p.first_name, ' ', p.last_name) as patient_name
          FROM appointments a
          LEFT JOIN doctors ms ON a.doctor_id = ms.doctor_id
          LEFT JOIN tickets t ON a.appointment_id = t.appointment_id
+         LEFT JOIN patients p ON a.patient_id = p.patient_id
          WHERE a.patient_id = ? AND a.status NOT IN ('terminated', 'cancelled', 'completed')
          ORDER BY a.appointment_date DESC"
     );
@@ -333,7 +373,11 @@ if ($patientId) {
                 'queue_number' => $appt['queue_number'],
                 'ticket_code'  => $appt['ticket_code'] ?? 'N/A',
                 'wait_time'    => $estimatedWait,
-                'doctor'       => $appt['doctor_name'] ?? 'General'
+                'doctor'       => $appt['doctor_name'] ?? 'General',
+                'cpr'          => $appt['cpr'] ?? 'N/A',
+                'blood_type'   => $appt['blood_type'] ?? 'N/A',
+                'patient_name' => $appt['patient_name'] ?? 'N/A',
+                'created_at'   => $appt['created_at'] ?? $appt['appointment_date']
             ];
         }
         $stmt->close();

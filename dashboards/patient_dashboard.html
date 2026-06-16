@@ -52,18 +52,70 @@
         .dark ::-webkit-scrollbar-thumb:hover { background: #718096; }
 
         /* -- Sidebar -- */
-        .sidebar { transition: width 0.3s ease-in-out; overflow-x: hidden; scrollbar-width: none; -ms-overflow-style: none; }
+        .sidebar {
+            width: 16rem;
+            transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            position: relative;
+        }
         .sidebar::-webkit-scrollbar { display: none; }
-        .sidebar-collapsed { width: 4.5rem; }
-        .sidebar-expanded  { width: 16rem; }
-        .sidebar-collapsed .sidebar-text,
-        .sidebar-collapsed .sidebar-logo-text,
-        .sidebar-collapsed .profile-info { display: none; }
-        .sidebar-expanded .sidebar-text,
-        .sidebar-expanded .sidebar-logo-text,
-        .sidebar-expanded .profile-info { display: inline; }
-        .sidebar-expanded .sidebar-logo-text { display: block; }
-        .sidebar-collapsed .badge-new { display: none !important; }
+        .sidebar.sidebar-closed { width: 0; }
+        .sidebar-inner {
+            min-width: 16rem;
+            width: 16rem;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        /* -- Sidebar Edge Toggle Button -- */
+        .sidebar-edge-toggle {
+            position: absolute;
+            top: 50%;
+            right: -16px;
+            transform: translateY(-50%);
+            z-index: 50;
+            width: 16px;
+            height: 56px;
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            color: #fff;
+            border: none;
+            border-radius: 0 10px 10px 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            box-shadow: 4px 0 12px rgba(37, 99, 235, 0.25);
+            transition: background 0.2s, width 0.2s, right 0.2s;
+            padding: 0;
+            line-height: 1;
+        }
+        .sidebar-edge-toggle:hover {
+            background: linear-gradient(135deg, #1d4ed8, #2563eb);
+            width: 20px;
+        }
+        .dark .sidebar-edge-toggle {
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
+            box-shadow: 4px 0 16px rgba(37, 99, 235, 0.4);
+        }
+
+        /* When sidebar is closed, the toggle moves to left edge of viewport area */
+        .sidebar-wrapper {
+            position: relative;
+            flex-shrink: 0;
+        }
+        .sidebar-wrapper .sidebar-edge-toggle {
+            right: -16px;
+        }
+
+        /* -- Main Content Transition -- */
+        #mainContent {
+            transition: margin-left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
 
         /* -- Section Visibility -- */
         .content-section { display: none; }
@@ -343,9 +395,6 @@
                 <img src="../image/HealthcareNewIcon-removebg-preview.png" alt="MyHealth Logo" class="h-12 w-auto group-hover:scale-105 transition-transform" />
                 <span class="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-indigo-600 dark:from-primary-400 dark:to-indigo-400 tracking-tight">MyHealth</span>
             </a>
-            <button id="sidebarToggle" class="flex p-2 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500">
-                <ion-icon name="menu-outline" class="text-3xl"></ion-icon>
-            </button>
         </div>
         <div class="flex items-center space-x-4">
                 <!-- Dark Mode -->
@@ -361,10 +410,22 @@
                     <ion-icon name="call" class="text-xl"></ion-icon>
                 </button>
                 <!-- Notifications -->
-                <button onclick="showSection('notifications')" class="flex relative p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none">
-                    <ion-icon name="notifications-outline" class="text-xl"></ion-icon>
-                    <span id="header-notif-badge" class="hidden absolute top-1.5 right-1.5 h-2 w-2 bg-red-500 rounded-full border border-white dark:border-gray-800"></span>
-                </button>
+                <div class="relative">
+                    <button id="notificationMenuButton" onclick="toggleNotificationMenu(event)" class="flex relative p-2 rounded-full text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none transition-colors">
+                        <ion-icon name="notifications-outline" class="text-xl"></ion-icon>
+                        <span id="header-notif-badge" class="hidden absolute top-1.5 right-1.5 h-2 w-2 bg-red-500 rounded-full border border-white dark:border-gray-800"></span>
+                    </button>
+                    <!-- Micro-window for latest notification -->
+                    <div id="notificationMenu" class="absolute right-0 mt-2 w-72 bg-white dark:bg-gray-800 rounded-2xl shadow-xl py-4 px-4 hidden ring-1 ring-black/5 dark:ring-white/10 z-50 transform origin-top-right transition-all duration-200 opacity-0 scale-95 pointer-events-none">
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Latest Update</h4>
+                            <button onclick="document.querySelector('[data-view=\'notifications\']').click(); toggleNotificationMenu(event);" class="text-[10px] text-blue-500 hover:text-blue-600 font-bold uppercase tracking-wide">View All</button>
+                        </div>
+                        <div id="latest-notification-container" class="bg-blue-50/50 dark:bg-gray-700/50 rounded-xl p-3 border border-blue-100/50 dark:border-gray-600">
+                            <p class="text-xs text-gray-500 text-center py-2">No recent notifications</p>
+                        </div>
+                    </div>
+                </div>
                 <!-- User avatar top-right -->
                 <div class="relative">
                     <button id="userMenuButton" class="flex items-center space-x-2 focus:outline-none py-1 px-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
@@ -381,12 +442,14 @@
     </header>
 
     <div class="flex flex-1 overflow-hidden relative">
-<!-- ======================================
+<!-- ======================================
          SIDEBAR
-    ====================================== -->
+    ====================================== -->
     <!-- Sidebar Mobile Overlay -->
     <div id="mobile-overlay" class="fixed inset-0 bg-black/50 z-30 hidden transition-opacity"></div>
-    <aside id="sidebar" class="sidebar sidebar-expanded bg-white dark:bg-gray-800 shadow-xl flex flex-col space-y-2 border-r border-gray-200 dark:border-gray-700 absolute inset-y-0 left-0 z-40 overflow-y-auto transform -translate-x-full md:translate-x-0 transition-transform duration-300">
+    <div class="sidebar-wrapper hidden md:block">
+    <aside id="sidebar" class="sidebar bg-white dark:bg-gray-800 shadow-xl border-r border-gray-200 dark:border-gray-700 h-full overflow-y-auto">
+        <div class="sidebar-inner">
         <!-- Nav Links -->
         <nav class="flex-grow px-2 space-y-1 pt-2">
             <a href="javascript:void(0)" data-view="dashboard" class="sidebar-link active flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-all">
@@ -443,12 +506,48 @@
                 <span class="sidebar-text ml-2 whitespace-nowrap">Logout</span>
             </a>
         </div>
+        </div><!-- /.sidebar-inner -->
+    </aside>
+    <!-- Edge-Attached Sidebar Toggle -->
+    <button id="sidebarToggle" class="sidebar-edge-toggle" title="Toggle sidebar">&#8249;</button>
+    </div><!-- /.sidebar-wrapper -->
+
+    <!-- Mobile Sidebar (hidden on desktop, slides in on mobile) -->
+    <aside id="sidebar-mobile" class="sidebar bg-white dark:bg-gray-800 shadow-xl border-r border-gray-200 dark:border-gray-700 fixed inset-y-0 left-0 z-40 overflow-y-auto transform -translate-x-full transition-transform duration-300 md:hidden" style="width:16rem; top: 5rem;">
+        <div class="sidebar-inner">
+        <nav class="flex-grow px-2 space-y-1 pt-2">
+            <a href="javascript:void(0)" data-view="dashboard" class="sidebar-link active flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-all">
+                <ion-icon name="grid-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
+                <span class="sidebar-text ml-3 text-sm font-medium">Dashboard</span>
+            </a>
+            <a href="javascript:void(0)" data-view="appointments" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-all">
+                <ion-icon name="calendar-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
+                <span class="sidebar-text ml-3 text-sm font-medium">Appointments</span>
+            </a>
+            <a href="javascript:void(0)" data-view="records" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-all">
+                <ion-icon name="document-text-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
+                <span class="sidebar-text ml-3 text-sm font-medium">Health Records</span>
+            </a>
+            <a href="javascript:void(0)" data-view="prescriptions" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-all">
+                <ion-icon name="flask-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
+                <span class="sidebar-text ml-3 text-sm font-medium">Prescriptions</span>
+            </a>
+            <a href="javascript:void(0)" data-view="notifications" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-all">
+                <ion-icon name="notifications-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
+                <span class="sidebar-text ml-3 text-sm font-medium">Notifications</span>
+            </a>
+            <a href="javascript:void(0)" data-view="profile" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-blue-600 hover:text-white group transition-all">
+                <ion-icon name="person-outline" class="text-xl text-gray-500 dark:text-gray-400 group-hover:text-white"></ion-icon>
+                <span class="sidebar-text ml-3 text-sm font-medium">My Profile</span>
+            </a>
+        </nav>
+        </div>
     </aside>
 
-    <!-- ======================================
+    <!-- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
          MAIN CONTENT
-    ====================================== -->
-    <div id="mainContent" class="flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out w-full md:ml-64 h-full">
+    = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =  -->
+    <div id="mainContent" class="flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out w-full h-full">
 
         
 
@@ -519,33 +618,79 @@
                         </div>
                     </div>
                     
-                    <div id="active-ticket-container" class="hidden bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-800 rounded-2xl p-6 shadow-sm border border-blue-100 dark:border-gray-700 relative overflow-hidden">
+                    <!-- Dashboard Active Ticket Wrapper -->
+                    <div id="static-active-ticket-wrapper" class="w-full">
+                        <!-- Empty State -->
+                        <div id="active-ticket-empty-state" class="bg-gray-50 dark:bg-gray-800 rounded-2xl p-10 border-2 border-dashed border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center text-center transition-all">
+                            <div class="p-4 bg-white dark:bg-gray-700 rounded-full shadow-sm mb-4">
+                                <ion-icon name="ticket-outline" class="text-4xl text-gray-300 dark:text-gray-500"></ion-icon>
+                            </div>
+                            <p class="text-gray-500 dark:text-gray-400 font-bold text-lg">There's no ticket</p>
+                            <p class="text-xs text-gray-400 mt-1">Book an appointment to generate a ticket</p>
+                        </div>
+
+                        <!-- Dashboard Active Ticket Container -->
+                        <div class="active-ticket-container hidden bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-800 rounded-2xl p-6 shadow-sm border border-blue-100 dark:border-gray-700 relative overflow-hidden cursor-pointer hover:shadow-lg hover:border-blue-300 dark:hover:border-blue-600 transition-all duration-300" onclick="window.openTicketDetailModal()">
                         <div class="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
                             <ion-icon name="ticket" class="text-8xl text-blue-500"></ion-icon>
                         </div>
-                        <h3 class="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-1">Your Active Ticket</h3>
-                        <div class="flex items-center gap-6">
-                            <div class="flex-shrink-0">
-                                <h4 id="active-ticket-number" class="text-5xl font-black text-gray-900 dark:text-white">#--</h4>
-                            </div>
-                            <div class="border-l-2 border-blue-200 dark:border-gray-700 pl-6 space-y-1">
-                                <p class="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2"><ion-icon name="calendar-outline"></ion-icon> <span id="active-ticket-date">--</span></p>
-                                <p class="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2"><ion-icon name="time-outline" class="text-blue-500"></ion-icon> <span id="active-ticket-time">--</span></p>
-                                <p class="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2"><ion-icon name="person-outline" class="text-indigo-500"></ion-icon> <span id="active-ticket-doctor">--</span></p>
+                        <div class="flex justify-between items-start mb-1">
+                            <h3 class="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest">Your Active Ticket</h3>
+                            <div class="flex items-center gap-3">
+                                <button class="ticket-prev-btn hidden text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" onclick="event.stopPropagation(); window.prevActiveTicket();"><ion-icon name="chevron-back-outline"></ion-icon></button>
+                                <div class="ticket-carousel-dots flex gap-1.5 items-center"></div>
+                                <button class="ticket-next-btn hidden text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors" onclick="event.stopPropagation(); window.nextActiveTicket();"><ion-icon name="chevron-forward-outline"></ion-icon></button>
                             </div>
                         </div>
-                    </div>
-                </div>
+                        <div class="ticket-slide-area transition-opacity duration-500">
+                            <div class="flex items-center gap-6">
+                                <div class="flex-shrink-0 text-center">
+                                    <h4 class="active-ticket-number text-5xl font-black text-gray-900 dark:text-white">#--</h4>
+                                    <span class="active-ticket-priority inline-block mt-2 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide rounded-full bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300">Standard</span>
+                                </div>
+                                <div class="border-l-2 border-blue-200 dark:border-gray-700 pl-6 space-y-1">
+                                    <p class="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2"><ion-icon name="calendar-outline"></ion-icon> <span class="active-ticket-date">--</span></p>
+                                    <p class="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2"><ion-icon name="time-outline" class="text-blue-500"></ion-icon> <span class="active-ticket-time">--</span></p>
+                                    <p class="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2"><ion-icon name="person-outline" class="text-indigo-500"></ion-icon> <span class="active-ticket-doctor">--</span></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex justify-between items-end border-t border-blue-200 dark:border-gray-700 pt-3">
+                            <button class="text-xs font-bold px-4 py-2 rounded border border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 dark:border-red-900 dark:hover:bg-red-900/30 transition-colors" onclick="event.stopPropagation(); window.cancelActiveTicket();">Cancel Ticket</button>
+                            <p class="text-[10px] text-blue-400 dark:text-blue-500 italic pointer-events-none mb-1">Click anywhere for details →</p>
+                        </div>
+                    </div><!-- /.active-ticket-container -->
+                </div><!-- /#static-active-ticket-wrapper -->
 
-                <!-- Recent Activity -->
-                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-                    <div class="p-5 border-b border-gray-100 dark:border-gray-700">
-                        <h3 class="text-lg font-bold text-gray-900 dark:text-white">Recent Activity</h3>
-                    </div>
-                    <div id="activity-container" class="p-5">
-                        <p class="py-4 text-center text-gray-500 dark:text-gray-400">No recent activity to show.</p>
-                    </div>
+                <!-- Quick Access Panel -->
+                <div id="quick-access-panel" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <button onclick="document.querySelector('[data-view=\'records\']').click();" class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md hover:border-blue-500 dark:hover:border-blue-500 transition-all group flex flex-col items-center justify-center gap-3">
+                        <div class="p-3 bg-blue-50 dark:bg-blue-900/30 rounded-xl group-hover:scale-110 transition-transform">
+                            <ion-icon name="document-text-outline" class="text-2xl text-blue-600 dark:text-blue-400"></ion-icon>
+                        </div>
+                        <span class="text-xs font-bold text-gray-700 dark:text-gray-300">Health Records</span>
+                    </button>
+                    <button onclick="document.querySelector('[data-view=\'prescriptions\']').click();" class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md hover:border-indigo-500 dark:hover:border-indigo-500 transition-all group flex flex-col items-center justify-center gap-3">
+                        <div class="p-3 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl group-hover:scale-110 transition-transform">
+                            <ion-icon name="flask-outline" class="text-2xl text-indigo-600 dark:text-indigo-400"></ion-icon>
+                        </div>
+                        <span class="text-xs font-bold text-gray-700 dark:text-gray-300">Prescriptions</span>
+                    </button>
+                    <button onclick="document.querySelector('[data-view=\'lab-analyzer\']').click();" class="relative bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md hover:border-purple-500 dark:hover:border-purple-500 transition-all group flex flex-col items-center justify-center gap-3">
+                        <div class="absolute top-2 right-2 bg-gradient-to-r from-pink-500 to-purple-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest shadow-sm animate-pulse">New</div>
+                        <div class="p-3 bg-purple-50 dark:bg-purple-900/30 rounded-xl group-hover:scale-110 transition-transform">
+                            <ion-icon name="analytics-outline" class="text-2xl text-purple-600 dark:text-purple-400"></ion-icon>
+                        </div>
+                        <span class="text-xs font-bold text-gray-700 dark:text-gray-300">AI Lab Analyzer</span>
+                    </button>
+                    <button onclick="document.querySelector('[data-view=\'billing\']').click();" class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md hover:border-green-500 dark:hover:border-green-500 transition-all group flex flex-col items-center justify-center gap-3">
+                        <div class="p-3 bg-green-50 dark:bg-green-900/30 rounded-xl group-hover:scale-110 transition-transform">
+                            <ion-icon name="card-outline" class="text-2xl text-green-600 dark:text-green-400"></ion-icon>
+                        </div>
+                        <span class="text-xs font-bold text-gray-700 dark:text-gray-300">Billing</span>
+                    </button>
                 </div>
+            </div>
             </div>
 
             <!-- ===============================
@@ -645,40 +790,6 @@
                     </div>
                 </div><!-- /appointments-future-content -->
 
-                <!-- Upcoming Appointments List -->
-                <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                    <div class="p-5 border-b border-gray-100 dark:border-gray-700">
-                        <h3 class="text-lg font-bold text-gray-900 dark:text-white">Upcoming Appointments</h3>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="appt-table">
-                            <thead>
-                                <tr>
-                                    <th>Date & Time</th>
-                                    <th>Reason</th>
-                                    <th>Priority</th>
-                                    <th>Status</th>
-                                    <th>Queue Info</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="appointments-list">
-                                <tr>
-                                    <td colspan="6" class="py-4">
-                                        <div class="skeleton skeleton-text h-4 w-full mb-2"></div>
-                                        <div class="skeleton skeleton-text h-4 w-3/4"></div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td colspan="6" class="py-4">
-                                        <div class="skeleton skeleton-text h-4 w-full mb-2"></div>
-                                        <div class="skeleton skeleton-text h-4 w-5/6"></div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
             </div>
 
             <!-- ===============================

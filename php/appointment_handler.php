@@ -37,6 +37,18 @@ if (!isset($_SESSION['user_id'])) {
 
 
 /* ══════════════════════════════════════════════════════
+   END-OF-DAY BOOKING BLOCK (SHIFT 2 CUTOFF)
+   ══════════════════════════════════════════════════════ */
+if (isset($_POST['take_ticket']) || isset($_POST['book_appointment'])) {
+    $currentHour = (int)date('H');
+    $currentMinute = (int)date('i');
+    if ($currentHour === 0 && $currentMinute >= 50) {
+        ob_clean(); echo json_encode(['status' => 'error', 'message' => "Booking is closed for the day. Please check tomorrow's availability."]);
+        exit();
+    }
+}
+
+/* ══════════════════════════════════════════════════════
    TAKE A TICKET (Walk-in / Immediate)
    ══════════════════════════════════════════════════════ */
 
@@ -73,11 +85,17 @@ if (isset($_POST['take_ticket'])) {
         exit();
     }
 
-    // --- Handle Time Selection ---
+    // --- Handle Time Selection & Midnight Crossover ---
     $currentHour = (int)date('H');
+    $clinicDate = ($currentHour < 9) ? date('Y-m-d', strtotime('-1 day')) : date('Y-m-d');
+
     if ($selectedTime) {
         $hour = (int)explode(':', $selectedTime)[0];
-        $slotStart = "$requestDate " . $selectedTime;
+        $slotDate = $clinicDate;
+        if ($hour < 9) {
+            $slotDate = date('Y-m-d', strtotime($clinicDate . ' +1 day'));
+        }
+        $slotStart = "$slotDate " . $selectedTime;
     } else {
         // If before 9 AM, default to the first opening slot (9 AM)
         if ($currentHour < 9) {
@@ -88,39 +106,55 @@ if (isset($_POST['take_ticket'])) {
         } else {
             $hour = $currentHour;
         }
-        $slotStart = "$requestDate " . str_pad($hour, 2, '0', STR_PAD_LEFT) . ":00:00";
+        $slotDate = ($hour < 9) ? date('Y-m-d', strtotime($clinicDate . ' +1 day')) : $clinicDate;
+        $slotStart = "$slotDate " . str_pad($hour, 2, '0', STR_PAD_LEFT) . ":00:00";
+    }
+
+    $reqTimestamp = strtotime($slotStart);
+    $currentTimestampHour = strtotime(date('Y-m-d H:00:00'));
+    if ($reqTimestamp < $currentTimestampHour) {
+        ob_clean(); echo json_encode(['status' => 'error', 'message' => "Selected time slot is in the past."]);
+        exit();
     }
     
-    // Calculate Daily Queue Number
+    // Calculate Daily Queue Number based on the actual slot date
     $dailyCountSql = "SELECT COUNT(*) as daily_total FROM appointments WHERE DATE(appointment_date) = ?";
     $stmt = $conn->prepare($dailyCountSql);
-    $stmt->bind_param("s", $requestDate);
+    $stmt->bind_param("s", $slotDate);
     $stmt->execute();
     $dailyTotal = $stmt->get_result()->fetch_assoc()['daily_total'] ?? 0;
     $stmt->close();
 
     $newQueueNumber = $dailyTotal + 1;
 
-    // Calculate Letter based on Hour (9=A, 10=B, etc.)
-    $letter = chr(ord('A') + ($hour - 9)); 
+    $priorityParam = $_POST['priority'] ?? 'Standard';
+
+    // Calculate Letter based on Hour (9=A, 10=B, etc., up to 0=P)
+    $effectiveHour = ($hour < 9) ? $hour + 24 : $hour;
+    $letter = chr(ord('A') + ($effectiveHour - 9)); 
     $ticketCode = $letter . '-' . str_pad($newQueueNumber, 2, '0', STR_PAD_LEFT);
 
     // Insert Appointment
     $stmt = $conn->prepare(
         "INSERT INTO appointments
          (patient_id, doctor_id, appointment_date, appointment_type, status, reason, ai_priority, ai_suggestion, queue_number, created_by)
-         VALUES (?, ?, ?, 'Walk-in', 'pending', 'Walk-in Ticket', 'Normal', ?, ?, ?)"
+         VALUES (?, ?, ?, 'Walk-in', 'pending', 'Walk-in Ticket', ?, ?, ?, ?)"
     );
 
     // GP Auto-Assignment
-    $stmtGP = $conn->prepare("SELECT doctor_id FROM doctors WHERE specialization LIKE '%General%' OR department LIKE '%General%' LIMIT 1");
-    $stmtGP->execute();
-    $gpResult = $stmtGP->get_result();
-    $dIdVal = ($gpResult && $gpResult->num_rows > 0) ? $gpResult->fetch_assoc()['doctor_id'] : 1;
-    $stmtGP->close();
+    $reqDoctorId = $_POST['doctor_id'] ?? null;
+    if (!empty($reqDoctorId)) {
+        $dIdVal = $reqDoctorId;
+    } else {
+        $stmtGP = $conn->prepare("SELECT doctor_id FROM doctors WHERE specialization LIKE '%General%' OR department LIKE '%General%' LIMIT 1");
+        $stmtGP->execute();
+        $gpResult = $stmtGP->get_result();
+        $dIdVal = ($gpResult && $gpResult->num_rows > 0) ? $gpResult->fetch_assoc()['doctor_id'] : 1;
+        $stmtGP->close();
+    }
 
     $aiSugDummy = 'Walk-in automated ticket (Auto-assigned GP).';
-    $stmt->bind_param("iisssi", $patientId, $dIdVal, $slotStart, $aiSugDummy, $newQueueNumber, $userId);
+    $stmt->bind_param("iisssii", $patientId, $dIdVal, $slotStart, $priorityParam, $aiSugDummy, $newQueueNumber, $userId);
 
 
     if ($stmt->execute()) {
@@ -268,14 +302,25 @@ Return ONLY valid JSON without any markdown formatting like ```json. Example: {\
     $selectedTimePost = $_POST['selected_time'] ?? null;
 
     if ($selectedTimePost) {
-        // User selected a specific time (e.g. "14:00:00")
-        // Combine date and time
-        $requestedSlotStart = "$requestDate " . $selectedTimePost;
+        // User selected a specific time (e.g. "14:00:00" or "00:00:00")
+        $hour = (int)explode(':', $selectedTimePost)[0];
+        $slotDate = $requestDate;
+        if ($hour < 9) {
+            $slotDate = date('Y-m-d', strtotime($requestDate . ' +1 day'));
+        }
+        $requestedSlotStart = "$slotDate " . $selectedTimePost;
         
         // Validate it's within bounds
         $reqHour = (int)explode(':', $selectedTimePost)[0];
         if ($reqHour < $startHour || $reqHour >= $endHour) {
             ob_clean(); echo json_encode(['status' => 'error', 'message' => "Selected time is outside clinic hours."]);
+            exit();
+        }
+
+        $reqTimestamp = strtotime($requestedSlotStart);
+        $currentTimestampHour = strtotime(date('Y-m-d H:00:00'));
+        if ($reqTimestamp < $currentTimestampHour) {
+            ob_clean(); echo json_encode(['status' => 'error', 'message' => "Selected time slot is in the past. Please choose a future time."]);
             exit();
         }
 
@@ -393,7 +438,8 @@ Return ONLY valid JSON without any markdown formatting like ```json. Example: {\
         // --- NEW: Insert into TICKETS table for Booked Appointment ---
         // Reuse ticket code logic
         $hour = (int)date('H', strtotime($assignedTime));
-        $letter = chr(ord('A') + ($hour - 9)); 
+        $effectiveHour = ($hour < 9) ? $hour + 24 : $hour;
+        $letter = chr(ord('A') + ($effectiveHour - 9)); 
         $ticketCode = $letter . '-' . str_pad($queueNumber, 2, '0', STR_PAD_LEFT);
 
         $stmtTick = $conn->prepare("INSERT INTO tickets (patient_id, appointment_id, doctor_id, ticket_code) VALUES (?, ?, ?, ?)");
