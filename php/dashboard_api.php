@@ -546,6 +546,30 @@ $response['invoices'] = $invoices;
 
 
 /* ═══════════════════════════════
+   FAMILY MEMBERS
+   (Linked accounts for this user)
+   ═══════════════════════════════ */
+$family_members = [];
+$stmt = $conn->prepare(
+    "SELECT member_id, relationship, first_name, last_name, cpr, date_of_birth, gender, blood_type, phone, email
+     FROM family_members
+     WHERE primary_user_id = ?
+     ORDER BY member_id DESC"
+);
+if ($stmt) {
+    $stmt->bind_param("i", $userId);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    while ($row = $res->fetch_assoc()) {
+        $family_members[] = $row;
+    }
+    $stmt->close();
+}
+$response['family_members'] = $family_members;
+
+
+
+/* ═══════════════════════════════
    SEND EVERYTHING BACK
    (One big JSON response with
    all dashboard data)

@@ -646,8 +646,11 @@ if ($action === 'add_staff' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $user_id = $conn->insert_id;
         $stmt1->close();
 
-        $stmt2 = $conn->prepare("INSERT INTO doctors (first_name, last_name, specialization, department, user_id, department_id, email) VALUES (?, ?, ?, 'General', ?, ?, ?)");
-        $stmt2->bind_param("sssiis", $fname, $lname, $spec, $user_id, $dept, $email);
+        require_once 'utils/license_generator.php';
+        $licenseNo = generateMedicalLicenseNumber(date('Y'), $fname, $spec, $user_id);
+
+        $stmt2 = $conn->prepare("INSERT INTO doctors (first_name, last_name, specialization, department, user_id, department_id, email, license_number) VALUES (?, ?, ?, 'General', ?, ?, ?, ?)");
+        $stmt2->bind_param("sssiiss", $fname, $lname, $spec, $user_id, $dept, $email, $licenseNo);
         $stmt2->execute();
         $stmt2->close();
 

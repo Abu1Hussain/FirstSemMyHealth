@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $lastName  = trim($_POST['last_name'] ?? '');
     $cpr       = trim($_POST['cpr'] ?? '');
     $dob       = trim($_POST['date_of_birth'] ?? '');
-    $gender    = trim($_POST['gender'] ?? 'Other');
+    $gender    = trim($_POST['gender'] ?? 'Not Selected');
     $bloodType = trim($_POST['blood_type'] ?? '');
     $phone     = trim($_POST['phone'] ?? '');
     $email     = trim($_POST['email'] ?? '');

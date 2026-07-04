@@ -30,6 +30,8 @@
  * ═══════════════════════════════════════════════════════════
  */
 
+require_once 'utils/license_generator.php';
+
 /* ── Database credentials (same as db_connect.php) ── */
 $servername = "localhost";
 $username   = "root";
@@ -86,7 +88,7 @@ $conn->query("CREATE TABLE IF NOT EXISTS patients (
     last_name     VARCHAR(100) NOT NULL,
     cpr           VARCHAR(20) NOT NULL UNIQUE,
     date_of_birth DATE,
-    gender        ENUM('Male', 'Female'),
+    gender        ENUM('Male', 'Female', 'Not Selected') DEFAULT 'Not Selected',
     phone         VARCHAR(20),
     email         VARCHAR(255),
     address       TEXT,
@@ -115,7 +117,7 @@ $conn->query("CREATE TABLE IF NOT EXISTS family_members (
     last_name       VARCHAR(100),
     cpr             VARCHAR(20),
     date_of_birth   DATE,
-    gender          ENUM('Male', 'Female'),
+    gender          ENUM('Male', 'Female', 'Not Selected') DEFAULT 'Not Selected',
     blood_type      VARCHAR(5),
     phone           VARCHAR(20),
     email           VARCHAR(255),
@@ -651,9 +653,12 @@ foreach ($doctorsList as $doctor) {
     $existingStaff = $conn->query("SELECT doctor_id FROM doctors WHERE user_id = $doctorUserId");
 
     if ($existingStaff->num_rows === 0) {
+        // Generate License Number
+        $licenseNo = generateMedicalLicenseNumber(date('Y'), $doctor['firstName'], $doctor['specialization'], $doctorUserId);
+
         // New doctor — insert their profile
-        $stmt = $conn->prepare("INSERT INTO doctors (user_id, first_name, last_name, role, specialization, phone, email, department, profile_image, bio, capacity) VALUES (?, ?, ?, 'Doctor', ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("issssssssi",
+        $stmt = $conn->prepare("INSERT INTO doctors (user_id, first_name, last_name, role, specialization, phone, email, department, profile_image, bio, capacity, license_number) VALUES (?, ?, ?, 'Doctor', ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("isssssssssis",
             $doctorUserId,
             $doctor['firstName'],
             $doctor['lastName'],
@@ -663,14 +668,17 @@ foreach ($doctorsList as $doctor) {
             $doctor['department'],
             $doctor['image'],
             $doctor['bio'],
-            $doctor['capacity']
+            $doctor['capacity'],
+            $licenseNo
         );
         $stmt->execute();
         $stmt->close();
     } else {
-        // Existing doctor — update their profile
-        $stmt = $conn->prepare("UPDATE doctors SET first_name = ?, last_name = ?, specialization = ?, department = ?, profile_image = ?, bio = ?, capacity = ? WHERE user_id = ?");
-        $stmt->bind_param("ssssssii",
+        // Existing doctor — generate and update their profile with the auto-generated license
+        $licenseNo = generateMedicalLicenseNumber(date('Y'), $doctor['firstName'], $doctor['specialization'], $doctorUserId);
+        
+        $stmt = $conn->prepare("UPDATE doctors SET first_name = ?, last_name = ?, specialization = ?, department = ?, profile_image = ?, bio = ?, capacity = ?, license_number = ? WHERE user_id = ?");
+        $stmt->bind_param("ssssssisi",
             $doctor['firstName'],
             $doctor['lastName'],
             $doctor['specialization'],
@@ -678,6 +686,7 @@ foreach ($doctorsList as $doctor) {
             $doctor['image'],
             $doctor['bio'],
             $doctor['capacity'],
+            $licenseNo,
             $doctorUserId
         );
         $stmt->execute();

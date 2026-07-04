@@ -43,10 +43,10 @@
   async function boot() {
     // Load React + ReactDOM via CDN
     await loadScript(
-      "https://unpkg.com/react@18/umd/react.production.min.js"
+      "../js/react.production.min.js"
     );
     await loadScript(
-      "https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
+      "../js/react-dom.production.min.js"
     );
 
     // Create mount point
@@ -963,7 +963,7 @@
                     value: input,
                     onChange: (e) => setInput(e.target.value),
                     onKeyDown: handleKeyDown,
-                    placeholder: "Ask me anything about MyHealth...",
+                    placeholder: window.location.pathname.includes('doctor_dashboard') ? "Ask about patient data, clinical insights, or summaries..." : "Ask me anything about MyHealth...",
                     disabled: loading,
                     style: {
                       flex: 1,

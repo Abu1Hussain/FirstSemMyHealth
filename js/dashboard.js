@@ -285,6 +285,16 @@ window.showSection = function (viewId) {
       }
     });
 
+    // Toggle Global Ticket Anchor visibility
+    const globalTicketAnchor = document.getElementById("global-ticket-anchor");
+    if (globalTicketAnchor) {
+      if (viewId === "dashboard" || viewId === "appointments") {
+        globalTicketAnchor.classList.remove("hidden");
+      } else {
+        globalTicketAnchor.classList.add("hidden");
+      }
+    }
+
     if (viewId === "appointments") {
       loadAvailabilityTimeline();
     }
@@ -473,14 +483,13 @@ window.handleTriageBooking = function(priority) {
                         showConfirmButton: false
                     });
                 }
-                
-                const container = document.getElementById('active-ticket-container');
+                const container = document.querySelector('.active-ticket-container');
                 if (container) {
                     container.classList.remove('hidden');
-                    if (document.getElementById('active-ticket-number')) document.getElementById('active-ticket-number').textContent = data.ticket_number;
-                    if (document.getElementById('active-ticket-date')) document.getElementById('active-ticket-date').textContent = "Today";
-                    if (document.getElementById('active-ticket-time')) document.getElementById('active-ticket-time').textContent = availableSlot.hour || availableSlot.time_24h;
-                    if (document.getElementById('active-ticket-doctor')) document.getElementById('active-ticket-doctor').textContent = randomDoc.name;
+                    if (document.querySelector('.active-ticket-number')) document.querySelector('.active-ticket-number').textContent = data.ticket_number;
+                    if (document.querySelector('.active-ticket-date')) document.querySelector('.active-ticket-date').textContent = "Today";
+                    if (document.querySelector('.active-ticket-time')) document.querySelector('.active-ticket-time').textContent = availableSlot.hour || availableSlot.time_24h;
+                    if (document.querySelector('.active-ticket-doctor')) document.querySelector('.active-ticket-doctor').textContent = randomDoc.name;
                 }
                 
                 if (typeof fetchDashboardData === "function") fetchDashboardData();
@@ -659,8 +668,10 @@ function fetchDashboardData() {
         window.updateGlobalAvatars(p.date_of_birth, p.gender);
       }
 
-      /* -- Populate Profile Email -- */
-
+      /* -- Populate Family Members -- */
+      if (responseData.family_members && typeof window.renderFamilyMembers === 'function') {
+          window.renderFamilyMembers(responseData.family_members);
+      }
 
       /* -- Populate Stat Cards -- */
       if (responseData.stats) {
@@ -908,17 +919,46 @@ function fetchDashboardData() {
       if (recordsBody && responseData.records) {
         recordsBody.innerHTML = responseData.records.length
           ? responseData.records
-              .map(
-                (r) =>
-                  `<tr>
-                    <td><div class="font-bold text-gray-900 dark:text-white">${r.date}</div></td>
-                    <td><span class="badge badge-blue">${r.type}</span></td>
-                    <td class="max-w-xs truncate">${r.summary}</td>
-                    <td><div class="flex items-center gap-2"><ion-icon name="person-circle-outline"></ion-icon> ${r.doctor}</div></td>
-                </tr>`,
-              )
+              .map((r) => {
+                  let visual = '';
+                  let icon = 'document-text';
+                  let color = 'blue';
+                  
+                  if (r.type.includes('Lab')) {
+                      icon = 'flask'; color = 'purple';
+                  } else if (r.type.includes('Vital')) {
+                      icon = 'pulse'; color = 'red';
+                      const val = Math.floor(Math.random() * 40) + 60; // Mock metric
+                      visual = `<div class="mt-4"><div class="flex justify-between text-xs mb-1"><span class="font-semibold text-gray-500">Metric Level</span><span class="font-bold">${val}%</span></div><div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5"><div class="bg-red-500 h-1.5 rounded-full" style="width: ${val}%"></div></div></div>`;
+                  } else if (r.type.includes('Note')) {
+                      icon = 'create'; color = 'emerald';
+                  }
+
+                  return `
+                  <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md hover:border-${color}-300 dark:hover:border-${color}-700 transition-all duration-200 group relative flex flex-col h-full">
+                      <div class="flex justify-between items-start mb-3">
+                          <div class="bg-${color}-50 text-${color}-600 dark:bg-${color}-900/20 dark:text-${color}-400 p-2.5 rounded-xl transition-colors">
+                              <ion-icon name="${icon}-outline" class="text-xl"></ion-icon>
+                          </div>
+                          <span class="text-xs font-bold text-gray-400 bg-gray-50 dark:bg-gray-700/50 px-2.5 py-1 rounded-full">${r.date}</span>
+                      </div>
+                      <h4 class="font-bold text-gray-900 dark:text-white text-lg mb-1 group-hover:text-${color}-600 dark:group-hover:text-${color}-400 transition-colors">${r.type}</h4>
+                      <p class="text-sm text-gray-500 dark:text-gray-400 line-clamp-2 flex-grow">${r.summary}</p>
+                      ${visual}
+                      <div class="mt-5 pt-4 border-t border-gray-50 dark:border-gray-700/50 flex justify-between items-center">
+                          <div class="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-400">
+                              <ion-icon name="person-circle-outline" class="text-gray-400 text-lg"></ion-icon>
+                              ${r.doctor}
+                          </div>
+                          <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity translate-x-2 group-hover:translate-x-0">
+                              <button class="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors" title="View Details"><ion-icon name="eye-outline"></ion-icon></button>
+                              <button class="p-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors" title="Download PDF"><ion-icon name="download-outline"></ion-icon></button>
+                          </div>
+                      </div>
+                  </div>`;
+              })
               .join("")
-          : '<tr><td colspan="4" class="py-12 text-center text-gray-500">No records found.</td></tr>';
+          : '<div class="col-span-full py-12 text-center text-gray-500">No records found.</div>';
       }
 
       /* -- Render Prescriptions -- */
@@ -926,18 +966,67 @@ function fetchDashboardData() {
       if (prescriptionsBody && responseData.prescriptions) {
         prescriptionsBody.innerHTML = responseData.prescriptions.length
           ? responseData.prescriptions
-              .map(
-                (p) =>
-                  `<tr>
-                    <td><div class="font-bold text-gray-900 dark:text-white">${p.medication}</div></td>
-                    <td><span class="badge badge-indigo">${p.dosage}</span></td>
-                    <td>${p.frequency}</td>
-                    <td>${p.duration}</td>
-                    <td><div class="flex items-center gap-2"><ion-icon name="person-circle-outline"></ion-icon> ${p.doctor}</div></td>
-                </tr>`,
-              )
+              .map((p) => {
+                  let status = 'Active';
+                  let statusBg = 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400';
+                  let btnColor = 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300 dark:hover:bg-indigo-900/50';
+                  let btnText = 'Request Refill';
+                  let progress = Math.floor(Math.random() * 60) + 20;
+
+                  if (p.duration.toLowerCase().includes('completed') || p.duration.includes('0 days')) {
+                      status = 'Completed'; statusBg = 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400';
+                      btnText = 'View Details'; progress = 100;
+                  } else if (progress < 30) {
+                      status = 'Refill Needed'; statusBg = 'bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400';
+                      btnColor = 'bg-amber-500 text-white hover:bg-amber-600 shadow-sm shadow-amber-200 dark:shadow-none';
+                  }
+
+                  let timeIcon = p.frequency.toLowerCase().includes('night') ? 'moon' : 'sunny';
+                  if (p.frequency.toLowerCase().includes('twice')) timeIcon = 'sync';
+
+                  return `
+                  <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-200 relative overflow-hidden flex flex-col h-full group">
+                      <div class="flex justify-between items-start mb-5">
+                          <div>
+                              <span class="inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-wide uppercase ${statusBg} mb-2">${status}</span>
+                              <h4 class="font-bold text-gray-900 dark:text-white text-xl">${p.medication}</h4>
+                          </div>
+                          <div class="relative w-12 h-12 flex items-center justify-center">
+                              <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                                  <path class="text-gray-100 dark:text-gray-700" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                  <path class="text-indigo-500 transition-all duration-1000 ease-out" stroke-dasharray="${progress}, 100" stroke-width="3" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                              </svg>
+                              <span class="absolute text-[10px] font-bold text-gray-700 dark:text-gray-300">${progress}%</span>
+                          </div>
+                      </div>
+                      
+                      <div class="grid grid-cols-2 gap-4 mb-5 flex-grow">
+                          <div class="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-3 flex items-center gap-3">
+                              <div class="bg-white dark:bg-gray-800 p-1.5 rounded-lg shadow-sm text-indigo-500"><ion-icon name="medical-outline" class="text-lg"></ion-icon></div>
+                              <div class="min-w-0">
+                                  <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider truncate">Dosage</p>
+                                  <p class="text-sm font-bold text-gray-800 dark:text-gray-200 truncate" title="${p.dosage}">${p.dosage}</p>
+                              </div>
+                          </div>
+                          <div class="bg-gray-50 dark:bg-gray-700/30 rounded-xl p-3 flex items-center gap-3">
+                              <div class="bg-white dark:bg-gray-800 p-1.5 rounded-lg shadow-sm text-amber-500"><ion-icon name="${timeIcon}-outline" class="text-lg"></ion-icon></div>
+                              <div class="min-w-0">
+                                  <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider truncate">Frequency</p>
+                                  <p class="text-sm font-bold text-gray-800 dark:text-gray-200 truncate" title="${p.frequency}">${p.frequency}</p>
+                              </div>
+                          </div>
+                      </div>
+                      
+                      <div class="flex items-center justify-between pt-4 border-t border-gray-50 dark:border-gray-700/50">
+                          <p class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[120px]" title="${p.doctor}">Dr. ${p.doctor}</p>
+                          <button class="px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 ${btnColor}">
+                              ${btnText}
+                          </button>
+                      </div>
+                  </div>`;
+              })
               .join("")
-          : '<tr><td colspan="5" class="py-12 text-center text-gray-500">No prescriptions found.</td></tr>';
+          : '<div class="col-span-full py-12 text-center text-gray-500">No prescriptions found.</div>';
       }
 
       /* -- Populate Profile Form -- */
@@ -2349,55 +2438,65 @@ window.renderNotifications = function (notifications) {
     }
 
     if (!notifications || notifications.length === 0) {
-      html = '<tr><td colspan="4" class="py-12 text-center text-gray-500">No notifications yet.</td></tr>';
+      html = '<div class="py-12 text-center text-gray-500 flex-1 flex items-center justify-center">No notifications yet.</div>';
     } else {
       notifications.forEach((notif) => {
         if (notif.is_read == 0) unreadCount++;
-        const date = notif.date || 'N/A';
-        const topic = notif.topic || 'General';
-        const msgPreview = notif.message.length > 60 ? notif.message.substring(0, 60) + '...' : notif.message;
-        const readBold = notif.is_read == 0 ? 'font-bold' : '';
-        const unreadBg = notif.is_read == 0 ? 'bg-blue-50/50 dark:bg-blue-900/10' : '';
-        const unreadBadge = notif.is_read == 0 ? '<span class="notif-new-badge ml-2 px-1.5 py-0.5 bg-blue-600 text-white text-[10px] rounded-full uppercase tracking-tighter">New</span>' : '';
+        const msgPreview = notif.message.length > 80 ? notif.message.substring(0, 80) + '...' : notif.message;
+        const formattedDate = notif.date ? new Date(notif.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'N/A';
         
-        // Display 'Admin' instead of full email if the sender is admin
-        let sender = notif.sender_name || notif.sender || 'Admin';
-        if (sender.toLowerCase().includes('admin')) sender = 'Admin';
-        
-        const fullDate = notif.date || 'N/A';
-        
-        const formattedDate = notif.date ? new Date(notif.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : 'N/A';
-        const boldClass = notif.is_read == 0 ? 'font-bold' : '';
-        const bgClass = notif.is_read == 0 ? 'bg-blue-50/50 dark:bg-blue-900/10' : '';
+        let icon = 'notifications-outline';
+        let iconColor = 'text-gray-500 dark:text-gray-400';
+        let bgIconClass = 'bg-gray-100 dark:bg-gray-700/50';
 
-        let tagClass = 'bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200'; // Default
         if (notif.topic && notif.topic.toLowerCase().includes('appointment')) {
-            tagClass = 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
+            icon = 'calendar-outline';
+            iconColor = 'text-green-500'; bgIconClass = 'bg-green-100 dark:bg-green-900/30';
         } else if (notif.topic && notif.topic.toLowerCase().includes('system')) {
-            tagClass = 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300';
+            icon = 'construct-outline';
+            iconColor = 'text-purple-500'; bgIconClass = 'bg-purple-100 dark:bg-purple-900/30';
         } else if (notif.topic && notif.topic.toLowerCase().includes('alert')) {
-            tagClass = 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
+            icon = 'warning-outline';
+            iconColor = 'text-red-500'; bgIconClass = 'bg-red-100 dark:bg-red-900/30';
         } else if (notif.topic && notif.topic.toLowerCase().includes('message')) {
-            tagClass = 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
+            icon = 'chatbubble-ellipses-outline';
+            iconColor = 'text-blue-500'; bgIconClass = 'bg-blue-100 dark:bg-blue-900/30';
+        } else if (notif.topic && notif.topic.toLowerCase().includes('result') || notif.topic.toLowerCase().includes('lab')) {
+            icon = 'flask-outline';
+            iconColor = 'text-fuchsia-500'; bgIconClass = 'bg-fuchsia-100 dark:bg-fuchsia-900/30';
+        } else if (notif.topic && notif.topic.toLowerCase().includes('prescription') || notif.topic.toLowerCase().includes('medication')) {
+            icon = 'medical-outline';
+            iconColor = 'text-indigo-500'; bgIconClass = 'bg-indigo-100 dark:bg-indigo-900/30';
         }
 
+        const bgClass = notif.is_read == 0 ? 'bg-blue-50/40 dark:bg-blue-900/10 hover:bg-blue-50 dark:hover:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700/30';
+        const unreadDot = notif.is_read == 0 ? '<div class="w-2.5 h-2.5 bg-blue-500 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.6)] mr-3 flex-shrink-0"></div>' : '<div class="w-2.5 h-2.5 mr-3 flex-shrink-0"></div>';
+
         const rowHtml = `
-            <tr id="notif-row-${notif.id}" class="transition-all duration-300 ${bgClass} ${boldClass}" data-notif-id="${notif.id}">
-                <td class="py-4 px-4 text-xs text-gray-500 whitespace-nowrap">${formattedDate}</td>
-                <td class="py-4 px-4">
-                    <div class="flex items-center gap-2">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${tagClass}">
+            <div id="notif-row-${notif.id}" class="transition-all duration-200 border-b border-gray-50 dark:border-gray-700/50 flex items-center p-4 cursor-pointer group ${bgClass}" data-notif-id="${notif.id}" onclick='handleViewNotification(${JSON.stringify(notif).replace(/'/g, "&apos;")})'>
+                ${unreadDot}
+                
+                <div class="h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0 ${bgIconClass} ${iconColor} mr-4 transition-transform group-hover:scale-110 duration-200">
+                    <ion-icon name="${icon}" class="text-xl"></ion-icon>
+                </div>
+                
+                <div class="flex-1 min-w-0 pr-4">
+                    <div class="flex items-center justify-between mb-0.5">
+                        <p class="text-sm font-bold text-gray-900 dark:text-white truncate ${notif.is_read == 0 ? 'text-blue-900 dark:text-blue-100' : ''}">
                             ${notif.topic || "Alert"}
-                        </span>
-                        ${notif.is_read == 0 ? `<span class="notif-new-badge px-1.5 py-0.5 bg-blue-500 text-white text-[9px] font-black rounded uppercase tracking-tighter">New</span>` : ""}
+                        </p>
+                        <p class="text-xs text-gray-400 whitespace-nowrap ml-2">${formattedDate}</p>
                     </div>
-                </td>
-                <td class="py-4 px-4 text-center">
-                    <button onclick='handleViewNotification(${JSON.stringify(notif).replace(/'/g, "&apos;")})' class="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all" title="View Details">
+                    <p class="text-sm text-gray-500 dark:text-gray-400 truncate ${notif.is_read == 0 ? 'font-medium text-gray-800 dark:text-gray-200' : ''}">${msgPreview}</p>
+                </div>
+                
+                <div class="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                    <button class="p-2 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg transition-colors" title="View Details" onclick="event.stopPropagation(); handleViewNotification(${JSON.stringify(notif).replace(/'/g, "&apos;")})">
                         <ion-icon name="eye-outline" class="text-lg"></ion-icon>
                     </button>
-                </td>
-            </tr>
+                    <!-- Assuming deleteNotification/markRead exist or will be added -->
+                </div>
+            </div>
         `;
         html += rowHtml;
       });
@@ -2914,6 +3013,108 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+/* ---------------------------------------------
+     Family DOB Input Mask & Strict Validation
+     DD/MM/YYYY auto-slash, month 1-12 check,
+     future date prevention.
+     --------------------------------------------- */
+document.addEventListener('DOMContentLoaded', () => {
+    const famDobDisplay = document.getElementById('fam-dob-display');
+    const famDobHidden  = document.getElementById('fam-dob');
+    const famDobError   = document.getElementById('fam-dob-error');
+
+    if (famDobDisplay && famDobHidden && famDobError) {
+        famDobDisplay.addEventListener('input', function () {
+            // Strip non-digits
+            let digits = this.value.replace(/\D/g, '');
+
+            // --- Inline segment validation while typing ---
+            // Day segment (first 2 digits): clamp to 01-31
+            if (digits.length >= 2) {
+                let dd = parseInt(digits.substring(0, 2), 10);
+                if (dd < 1 || dd > 31) {
+                    digits = digits.substring(0, 1);
+                }
+            }
+
+            // Month segment (digits 3-4): clamp to 01-12
+            if (digits.length >= 4) {
+                let mm = parseInt(digits.substring(2, 4), 10);
+                if (mm < 1 || mm > 12) {
+                    digits = digits.substring(0, 3);
+                }
+            } else if (digits.length === 3) {
+                let partialMonth = parseInt(digits.substring(2, 3), 10);
+                if (partialMonth > 1) {
+                    digits = digits.substring(0, 2);
+                }
+            }
+
+            // Year segment (digits 5-8): prevent future year as user types
+            if (digits.length >= 8) {
+                let yyyy = parseInt(digits.substring(4, 8), 10);
+                let currentYear = new Date().getFullYear();
+                if (yyyy > currentYear) {
+                    digits = digits.substring(0, 7);
+                }
+            }
+
+            // Rebuild formatted value with auto-slashes
+            let formatted = '';
+            if (digits.length >= 4) {
+                formatted = digits.substring(0, 2) + '/' + digits.substring(2, 4) + '/' + digits.substring(4, 8);
+            } else if (digits.length >= 2) {
+                formatted = digits.substring(0, 2) + '/' + digits.substring(2);
+            } else {
+                formatted = digits;
+            }
+            this.value = formatted;
+
+            // --- Full date validation when complete (DD/MM/YYYY = 10 chars) ---
+            if (formatted.length === 10) {
+                const parts = formatted.split('/');
+                const d = parseInt(parts[0], 10);
+                const m = parseInt(parts[1], 10);
+                const y = parseInt(parts[2], 10);
+
+                const now = new Date();
+                let valid = d >= 1 && d <= 31 && m >= 1 && m <= 12 && y >= 1900 && y <= now.getFullYear();
+
+                if (valid) {
+                    const daysInMonth = new Date(y, m, 0).getDate();
+                    if (d > daysInMonth) valid = false;
+                }
+
+                if (valid) {
+                    const enteredDate = new Date(y, m - 1, d);
+                    if (enteredDate > now) valid = false;
+                }
+
+                if (valid) {
+                    famDobError.classList.add('hidden');
+                    this.classList.remove('border-red-500', 'focus:ring-red-500');
+                    famDobHidden.value = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                } else {
+                    famDobError.textContent = 'Invalid or future date.';
+                    famDobError.classList.remove('hidden');
+                    this.classList.add('border-red-500', 'focus:ring-red-500');
+                    famDobHidden.value = '';
+                }
+            } else {
+                famDobHidden.value = '';
+                if (formatted.length > 0) {
+                    famDobError.textContent = 'Invalid date format.';
+                    famDobError.classList.remove('hidden');
+                    this.classList.add('border-red-500', 'focus:ring-red-500');
+                } else {
+                    famDobError.classList.add('hidden');
+                    this.classList.remove('border-red-500', 'focus:ring-red-500');
+                }
+            }
+        });
+    }
+});
+
 window.submitFamilyForm = function() {
     const rel = document.getElementById('fam-rel').value;
     const fname = document.getElementById('fam-fname').value;
@@ -2930,7 +3131,14 @@ window.submitFamilyForm = function() {
         return;
     }
 
+    const memberIdVal = document.getElementById('fam-member-id').value;
+    const isEdit = memberIdVal && parseInt(memberIdVal) > 0;
+
     const formData = new FormData();
+    formData.append('action', isEdit ? 'edit' : 'add');
+    if (isEdit) {
+        formData.append('member_id', memberIdVal);
+    }
     formData.append('relationship', rel);
     formData.append('first_name', fname);
     formData.append('last_name', lname);
@@ -2953,34 +3161,207 @@ window.submitFamilyForm = function() {
     .then(data => {
         if (data.status === 'success') {
             Swal.fire({
-                title: 'Linked!',
-                text: 'Family member account has been securely added.',
+                title: isEdit ? 'Updated!' : 'Linked!',
+                text: isEdit ? 'Family member account has been securely updated.' : 'Family member account has been securely added.',
                 icon: 'success',
                 background: popupBg,
                 color: textColor
             });
-            // Reset the form
-            document.getElementById('fam-rel').value = '';
-            document.getElementById('fam-fname').value = '';
-            document.getElementById('fam-lname').value = '';
-            document.getElementById('fam-cpr').value = '';
-            document.getElementById('fam-dob').value = '';
-            document.getElementById('fam-gender').value = 'Male';
-            document.getElementById('fam-blood').value = '';
-            document.getElementById('fam-phone').value = '';
-            document.getElementById('fam-email').value = '';
             
-            ['fam-lname', 'fam-phone', 'fam-email'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.classList.remove('bg-blue-50/30', 'dark:bg-blue-900/10');
-            });
+            // Reset/Clean up form
+            if (isEdit) {
+                window.cancelEditFamilyMember();
+            } else {
+                document.getElementById('fam-rel').value = '';
+                document.getElementById('fam-fname').value = '';
+                document.getElementById('fam-lname').value = '';
+                document.getElementById('fam-cpr').value = '';
+                document.getElementById('fam-dob').value = '';
+                const famDobDisplay = document.getElementById('fam-dob-display');
+                if(famDobDisplay) famDobDisplay.value = '';
+                document.getElementById('fam-gender').value = 'Not Selected';
+                document.getElementById('fam-blood').value = '';
+                document.getElementById('fam-phone').value = '';
+                document.getElementById('fam-email').value = '';
+                
+                ['fam-lname', 'fam-phone', 'fam-email'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.classList.remove('bg-blue-50/30', 'dark:bg-blue-900/10');
+                });
+            }
+            
+            if (typeof fetchDashboardData === 'function') {
+                fetchDashboardData();
+            }
         } else {
-            Swal.fire({ title: 'Error', text: data.message || 'Failed to add family member.', icon: 'error', background: popupBg, color: textColor });
+            Swal.fire({ title: 'Error', text: data.message || (isEdit ? 'Failed to update family member.' : 'Failed to add family member.'), icon: 'error', background: popupBg, color: textColor });
         }
     })
     .catch(err => {
         console.error("Family Save Error:", err);
         Swal.fire({ title: 'Error', text: 'Network error. Please try again.', icon: 'error', background: popupBg, color: textColor });
+    });
+};
+
+/* ---------------------------------------------
+     Family Network Action Functions
+     --------------------------------------------- */
+window.editFamilyMember = function(id) {
+    const member = (window._familyMembersData || []).find(m => m.member_id == id);
+    if (!member) return;
+    
+    // Set form to edit mode
+    document.getElementById('fam-member-id').value = member.member_id;
+    
+    // Change form title and button text
+    document.getElementById('fam-form-title').innerText = 'Edit Family Member';
+    document.getElementById('fam-submit-text').innerText = 'Update Account';
+    const submitIcon = document.getElementById('fam-submit-icon');
+    if (submitIcon) submitIcon.setAttribute('name', 'checkmark-outline');
+    
+    // Show cancel button
+    const cancelBtn = document.getElementById('fam-cancel-btn');
+    if (cancelBtn) cancelBtn.classList.remove('hidden');
+    
+    // Set field values
+    const famRel = document.getElementById('fam-rel');
+    if (famRel) {
+        famRel.value = member.relationship || '';
+    }
+    
+    document.getElementById('fam-fname').value = member.first_name || '';
+    
+    const lnameEl = document.getElementById('fam-lname');
+    if (lnameEl) {
+        lnameEl.value = member.last_name || '';
+        lnameEl.classList.remove('bg-blue-50/30', 'dark:bg-blue-900/10');
+    }
+    
+    const phoneEl = document.getElementById('fam-phone');
+    if (phoneEl) {
+        phoneEl.value = member.phone || '';
+        phoneEl.classList.remove('bg-blue-50/30', 'dark:bg-blue-900/10');
+    }
+    
+    const emailEl = document.getElementById('fam-email');
+    if (emailEl) {
+        emailEl.value = member.email || '';
+        emailEl.classList.remove('bg-blue-50/30', 'dark:bg-blue-900/10');
+    }
+    
+    document.getElementById('fam-cpr').value = member.cpr || '';
+    
+    // DOB Handling
+    const dobInput = document.getElementById('fam-dob');
+    const dobDisplayInput = document.getElementById('fam-dob-display');
+    if (dobInput) dobInput.value = member.date_of_birth || '';
+    if (dobDisplayInput) {
+        if (member.date_of_birth) {
+            const [y, mm, d] = member.date_of_birth.split('-');
+            if (y && mm && d) {
+                dobDisplayInput.value = `${d}/${mm}/${y}`;
+            } else {
+                dobDisplayInput.value = '';
+            }
+        } else {
+            dobDisplayInput.value = '';
+        }
+    }
+    
+    document.getElementById('fam-gender').value = member.gender || 'Not Selected';
+    document.getElementById('fam-blood').value = member.blood_type || '';
+    
+    // Scroll to the form section smoothly
+    const formTitle = document.getElementById('fam-form-title');
+    if (formTitle) {
+        formTitle.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+};
+
+window.removeFamilyMember = function(id) {
+    const isDark = document.documentElement.classList.contains('dark');
+    const popupBg = isDark ? '#1f2937' : '#ffffff';
+    const textColor = isDark ? '#f9fafb' : '#111827';
+    
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "Do you want to unlink this family member? They will no longer be visible in your Family Network.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, remove them!',
+        background: popupBg,
+        color: textColor
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const formData = new FormData();
+            formData.append('action', 'remove');
+            formData.append('member_id', id);
+            
+            fetch('../php/family_handler.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    Swal.fire({
+                        title: 'Removed!',
+                        text: 'Family member account has been securely unlinked.',
+                        icon: 'success',
+                        background: popupBg,
+                        color: textColor
+                    });
+                    
+                    // If currently editing this member, cancel the edit mode
+                    const editingId = document.getElementById('fam-member-id').value;
+                    if (editingId == id) {
+                        window.cancelEditFamilyMember();
+                    }
+                    
+                    if (typeof fetchDashboardData === 'function') {
+                        fetchDashboardData();
+                    }
+                } else {
+                    Swal.fire({ title: 'Error', text: data.message || 'Failed to remove family member.', icon: 'error', background: popupBg, color: textColor });
+                }
+            })
+            .catch(err => {
+                console.error("Family Remove Error:", err);
+                Swal.fire({ title: 'Error', text: 'Network error. Please try again.', icon: 'error', background: popupBg, color: textColor });
+            });
+        }
+    });
+};
+
+window.cancelEditFamilyMember = function() {
+    document.getElementById('fam-member-id').value = '';
+    
+    document.getElementById('fam-form-title').innerText = 'Add a Family Member';
+    document.getElementById('fam-submit-text').innerText = 'Link Account';
+    const submitIcon = document.getElementById('fam-submit-icon');
+    if (submitIcon) submitIcon.setAttribute('name', 'add-outline');
+    
+    const cancelBtn = document.getElementById('fam-cancel-btn');
+    if (cancelBtn) cancelBtn.classList.add('hidden');
+    
+    // Reset all form fields
+    document.getElementById('fam-rel').value = '';
+    document.getElementById('fam-fname').value = '';
+    document.getElementById('fam-lname').value = '';
+    document.getElementById('fam-cpr').value = '';
+    document.getElementById('fam-dob').value = '';
+    const famDobDisplay = document.getElementById('fam-dob-display');
+    if (famDobDisplay) famDobDisplay.value = '';
+    document.getElementById('fam-gender').value = 'Not Selected';
+    document.getElementById('fam-blood').value = '';
+    document.getElementById('fam-phone').value = '';
+    document.getElementById('fam-email').value = '';
+    
+    ['fam-lname', 'fam-phone', 'fam-email'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('bg-blue-50/30', 'dark:bg-blue-900/10');
     });
 };
 
@@ -3016,3 +3397,59 @@ document.addEventListener('DOMContentLoaded', () => {
         window.updateThemeRadioCards(hiddenInput.value);
     }
 });
+
+/* ---------------------------------------------
+     Family Network Render Logic
+     --------------------------------------------- */
+window.renderFamilyMembers = function(members) {
+    window._familyMembersData = members || [];
+    const container = document.getElementById('linked-accounts-container');
+    if (!container) return;
+    
+    if (!members || members.length === 0) {
+        container.innerHTML = '<p class="text-sm text-gray-500 col-span-full italic">No family members linked yet.</p>';
+        return;
+    }
+    
+    let html = '';
+    members.forEach(m => {
+        let displayDob = 'N/A';
+        if (m.date_of_birth) {
+            const [y, mm, d] = m.date_of_birth.split('-');
+            if (y && mm && d) {
+                displayDob = `${d}/${mm}/${y}`;
+            }
+        }
+        
+        const genderText = m.gender || 'Not Selected';
+        const initial = m.first_name ? m.first_name.charAt(0).toUpperCase() : '?';
+        
+        html += `
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-100 dark:border-gray-700 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow relative">
+            <div class="absolute top-3 right-3 flex items-center gap-1">
+                <button type="button" onclick="editFamilyMember(${m.member_id})" class="p-1.5 text-gray-400 hover:text-blue-500 dark:text-gray-500 dark:hover:text-blue-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" title="Edit Profile">
+                    <ion-icon name="create-outline" class="text-base"></ion-icon>
+                </button>
+                <button type="button" onclick="removeFamilyMember(${m.member_id})" class="p-1.5 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors" title="Remove Connection">
+                    <ion-icon name="trash-outline" class="text-base"></ion-icon>
+                </button>
+            </div>
+            <div class="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-lg flex-shrink-0">
+                ${initial}
+            </div>
+            <div class="flex-1 overflow-hidden">
+                <h4 class="font-bold text-gray-900 dark:text-white truncate pr-16">${m.first_name} ${m.last_name || ''}</h4>
+                <div class="flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400 mt-1 uppercase tracking-wider font-semibold">
+                    <span class="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">${m.relationship}</span>
+                    <span>${genderText}</span>
+                </div>
+                <div class="text-xs text-gray-500 mt-2 flex items-center gap-3">
+                    <span title="Date of Birth"><ion-icon name="calendar-outline" class="align-text-bottom mr-1"></ion-icon>${displayDob}</span>
+                    ${m.cpr ? `<span title="CPR"><ion-icon name="card-outline" class="align-text-bottom mr-1"></ion-icon>${m.cpr}</span>` : ''}
+                </div>
+            </div>
+        </div>`;
+    });
+    
+    container.innerHTML = html;
+};
