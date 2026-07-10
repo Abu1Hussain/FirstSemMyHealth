@@ -60,7 +60,7 @@ A comprehensive web-based Medical Center Management System designed to streamlin
     Open your browser and navigate to the setup script to create the database and seed demo data:
 
     ```
-    http://localhost/FirstSemMyHealth/php/setup.php
+    http://localhost/FirstSemMyHealth/scripts/setup.php
     ```
 
     _You should see a success message indicating tables were created and data was seeded._

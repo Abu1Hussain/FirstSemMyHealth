@@ -56,7 +56,7 @@ You can set up the database using any of the following three methods. **Method A
 We have included a setup script that automatically creates the database, tables, and demo data.
 
 1.  Open your web browser.
-2.  Go to: 👉 [http://localhost/FirstSemMyHealth/php/setup.php](http://localhost/FirstSemMyHealth/php/setup.php)
+2.  Go to: 👉 [http://localhost/FirstSemMyHealth/scripts/setup.php](http://localhost/FirstSemMyHealth/scripts/setup.php)
 3.  Wait for the message **"Setup and seeding completed successfully!"**.
 
 ---

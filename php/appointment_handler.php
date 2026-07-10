@@ -405,13 +405,44 @@ Return ONLY valid JSON without any markdown formatting like ```json. Example: {\
 
     $filePath = '';
     if (isset($_FILES['document']) && $_FILES['document']['error'] === 0) {
+        $fileTmpPath = $_FILES['document']['tmp_name'];
+        $fileNameOriginal = $_FILES['document']['name'];
+        $fileSize = $_FILES['document']['size'];
+        
+        // 1. Validate File Size (Limit: 5MB)
+        $maxFileSize = 5 * 1024 * 1024;
+        if ($fileSize > $maxFileSize) {
+            ob_clean(); echo json_encode(['status' => 'error', 'message' => "File size exceeds the 5MB limit."]);
+            exit();
+        }
+
+        // 2. Validate MIME Type securely using finfo
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mimeType = finfo_file($finfo, $fileTmpPath);
+        finfo_close($finfo);
+
+        $allowedMimeTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+        if (!in_array($mimeType, $allowedMimeTypes)) {
+            ob_clean(); echo json_encode(['status' => 'error', 'message' => "Invalid file type. Only PDF, JPG, and PNG are allowed."]);
+            exit();
+        }
+
+        // 3. Validate Extension
+        $fileExtension = strtolower(pathinfo($fileNameOriginal, PATHINFO_EXTENSION));
+        $allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
+        if (!in_array($fileExtension, $allowedExtensions)) {
+            ob_clean(); echo json_encode(['status' => 'error', 'message' => "Invalid file extension."]);
+            exit();
+        }
+
         $uploadDir = '../uploads/';
         if (!is_dir($uploadDir)) {
             mkdir($uploadDir, 0777, true);
         }
-        // Add timestamp to filename to avoid conflicts
-        $fileName = time() . '_' . basename($_FILES['document']['name']);
-        move_uploaded_file($_FILES['document']['tmp_name'], $uploadDir . $fileName);
+        
+        // Use a secure filename (hash + timestamp + extension) instead of trusting basename
+        $fileName = time() . '_' . bin2hex(random_bytes(8)) . '.' . $fileExtension;
+        move_uploaded_file($fileTmpPath, $uploadDir . $fileName);
         $filePath = $fileName;
     }
 

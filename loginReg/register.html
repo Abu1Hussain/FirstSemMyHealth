@@ -1,200 +1,241 @@
 <!DOCTYPE html>
 <html lang="en" class="">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register – MyHealth</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
-    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
-    <script>
-      if (localStorage.getItem('darkMode') === 'enabled') {
-        document.documentElement.classList.add('dark');
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register – MyHealth</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+  <script>
+   if (localStorage.getItem('darkMode') === 'enabled') {
+    document.documentElement.classList.add('dark');
+   }
+    tailwind.config = { 
+      darkMode: 'class',
+      theme: {
+        extend: {
+
+          fontFamily: {
+            sans: ['Carbona', 'Inter', 'sans-serif']
+          },
+
+          
+          colors: {
+            semantic: {
+              bg: 'var(--bg-primary)',
+              surface: 'var(--bg-secondary)',
+              text: 'var(--text-primary)',
+              cta: 'var(--cta-primary)',
+              ctaHover: 'var(--cta-hover)',
+              brand: 'var(--brand-element)',
+              accent: 'var(--accent)',
+              border: 'var(--border-color)'
+            },
+
+            
+          }
+        }
       }
-        tailwind.config = { 
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            50: '#eef2ff',
-                            100: '#e0e7ff',
-                            200: '#c7d2fe',
-                            300: '#a5b4fc',
-                            400: '#818cf8',
-                            500: '#6366f1',
-                            600: '#4f46e5',
-                            700: '#4338ca',
-                            800: '#3730a3',
-                            900: '#312e81',
-                        }
-                    }
-                }
-            }
-        };
-    </script>
-    <style> body { font-family: 'Inter', sans-serif; } </style>
+    };
+  </script>
+  <style>
+
+  /* Brand Semantic Palette */
+  :root {
+    --color-ink-navy: #160C50;
+    --color-royal-blue: #00269A;
+    --color-pale-lavender: #B8CAFF;
+    --color-mint-aqua: #94EDEA;
+    --color-bright-blue: #1A55FC;
+    
+    --bg-primary: #ffffff;
+    --bg-secondary: var(--color-pale-lavender);
+    --text-primary: var(--color-ink-navy);
+    --cta-primary: var(--color-bright-blue);
+    --cta-hover: #1448d6;
+    --brand-element: var(--color-royal-blue);
+    --accent: var(--color-mint-aqua);
+    --border-color: rgba(22, 12, 80, 0.1);
+  }
+  .dark {
+    --bg-primary: var(--color-ink-navy);
+    --bg-secondary: color-mix(in srgb, var(--color-ink-navy) 88%, white);
+    --text-primary: var(--color-pale-lavender);
+    --cta-primary: var(--color-royal-blue);
+    --cta-hover: var(--color-bright-blue);
+    --brand-element: var(--color-royal-blue);
+    --accent: var(--color-mint-aqua);
+    --border-color: rgba(184, 202, 255, 0.1);
+  }
+  
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Carbona', 'Inter', sans-serif;
+  }
+ body { font-family: 'Inter', sans-serif; } </style>
 </head>
-<body class="bg-gradient-to-br from-slate-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 flex flex-col" style="min-height:100vh;">
+<body class="bg-semantic-bg flex flex-col" style="min-height:100vh;">
 
-    <!-- ═══ Navbar ═══ -->
-    <nav class="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-700 px-6 py-4 flex items-center justify-between sticky top-0 z-50">
-        <a href="../index.html" class="flex items-center gap-3 cursor-pointer group">
-            <img src="../image/HealthcareNewIcon-removebg-preview.png" alt="MyHealth Logo" class="h-12 w-auto group-hover:scale-105 transition-transform" />
-            <span class="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-indigo-600 dark:from-primary-400 dark:to-indigo-400 tracking-tight">MyHealth</span>
-        </a>
-        <div class="flex items-center gap-3">
-            <a href="register.html" class="text-sm font-semibold bg-indigo-600 text-white px-4 py-1.5 rounded-lg shadow-sm hover:bg-indigo-700 transition-colors">Register</a>
-            <a href="login.html" class="text-sm font-medium text-gray-500 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 px-3 py-1.5 rounded-lg transition-colors">Login</a>
-            <button id="darkModeToggle" class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors">
-                <ion-icon id="darkModeIcon" name="moon-outline" style="font-size:1.1rem;"></ion-icon>
-            </button>
+  <!-- ═══ Navbar ═══ -->
+  <nav class="bg-semantic-bg/80 dark:bg-semantic-bg/80 backdrop-blur-md border-b border-semantic-border dark:border-semantic-border px-6 py-4 flex items-center justify-between sticky top-0 z-50">
+    <a href="../index.html" class="flex items-center gap-3 cursor-pointer group">
+      <img src="../image/HealthcareNewIcon-removebg-preview.png" alt="MyHealth Logo" class="h-12 w-auto group-hover:scale-105 transition-transform" />
+      <span class="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-semantic-cta to-semantic-cta dark:from-semantic-cta dark:to-semantic-cta tracking-tight">MyHealth</span>
+    </a>
+    <div class="flex items-center gap-3">
+      <a href="register.html" class="text-sm font-semibold bg-semantic-cta text-white px-4 py-1.5 rounded-lg shadow-sm hover:bg-semantic-ctaHover transition-colors">Register</a>
+   <a href="login.html" class="text-sm font-medium text-semantic-text opacity-70 dark:text-semantic-text dark:opacity-90 hover:text-semantic-cta dark:text-semantic-accent dark:hover:text-semantic-cta dark:text-semantic-accent px-3 py-1.5 rounded-lg transition-colors">Login</a>
+      <button id="darkModeToggle" class="w-9 h-9 flex items-center justify-center rounded-full bg-semantic-surface dark:bg-semantic-surface text-semantic-text opacity-70 dark:text-semantic-text dark:opacity-90 hover:bg-semantic-cta dark:hover:bg-semantic-brand/40 transition-colors">
+        <ion-icon id="darkModeIcon" name="moon-outline" style="font-size:1.1rem;"></ion-icon>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ═══ Form ═══ -->
+  <main class="flex-1 flex items-center justify-center p-6">
+    <div class="w-full max-w-lg bg-semantic-bg dark:bg-semantic-surface rounded-3xl shadow-xl border border-semantic-border dark:border-semantic-border overflow-hidden">
+      <!-- Card Header -->
+      <div class="bg-semantic-cta px-8 py-7 text-center">
+        <div class="w-14 h-14 bg-semantic-bg/20 rounded-2xl flex items-center justify-center mx-auto mb-3">
+          <ion-icon name="person-add-outline" style="font-size:1.8rem;color:white;"></ion-icon>
         </div>
-    </nav>
+        <h1 class="text-2xl font-bold text-white">Create Account</h1>
+    <p class="text-semantic-cta dark:text-semantic-text text-sm mt-1">Join MyHealth</p>
+      </div>
 
-    <!-- ═══ Form ═══ -->
-    <main class="flex-1 flex items-center justify-center p-6">
-        <div class="w-full max-w-lg bg-white dark:bg-gray-800 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
-            <!-- Card Header -->
-            <div class="bg-indigo-600 px-8 py-7 text-center">
-                <div class="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                    <ion-icon name="person-add-outline" style="font-size:1.8rem;color:white;"></ion-icon>
-                </div>
-                <h1 class="text-2xl font-bold text-white">Create Account</h1>
-                <p class="text-indigo-100 text-sm mt-1">Join MyHealth</p>
+      <!-- Card Body -->
+      <div class="p-8 space-y-5">
+        <div id="apiError" class="hidden bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-700 text-sm rounded-xl px-4 py-3"></div>
+
+        <form id="registrationForm" class="space-y-4">
+          <!-- First & Last Name -->
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-1">
+              <label class="text-xs font-bold text-semantic-text uppercase tracking-wider">First Name</label>
+              <input type="text" id="firstName" name="firstName" required placeholder="Ali"
+                  class="w-full bg-semantic-surface dark:bg-semantic-surface border-2 border-semantic-border dark:border-semantic-border rounded-xl px-4 py-3.5 text-sm text-semantic-text dark:text-semantic-text focus:outline-none focus:border-semantic-accent focus:ring-4 focus:ring-semantic-accent dark:focus:ring-semantic-accent/30 transition-all">
+              <span class="hidden text-xs text-red-500 font-medium" id="firstNameError">Enter first name</span>
             </div>
-
-            <!-- Card Body -->
-            <div class="p-8 space-y-5">
-                <div id="apiError" class="hidden bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-700 text-sm rounded-xl px-4 py-3"></div>
-
-                <form id="registrationForm" class="space-y-4">
-                    <!-- First & Last Name -->
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-1">
-                            <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">First Name</label>
-                            <input type="text" id="firstName" name="firstName" required placeholder="Ali"
-                                   class="w-full bg-gray-50 dark:bg-gray-700 border-2 border-gray-100 dark:border-gray-600 rounded-xl px-4 py-3.5 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 dark:focus:ring-indigo-900/30 transition-all">
-                            <span class="hidden text-xs text-red-500 font-medium" id="firstNameError">Enter first name</span>
-                        </div>
-                        <div class="space-y-1">
-                            <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Last Name</label>
-                            <input type="text" id="lastName" name="lastName" required placeholder="Mohamed"
-                                   class="w-full bg-gray-50 dark:bg-gray-700 border-2 border-gray-100 dark:border-gray-600 rounded-xl px-4 py-3.5 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 dark:focus:ring-indigo-900/30 transition-all">
-                            <span class="hidden text-xs text-red-500 font-medium" id="lastNameError">Enter last name</span>
-                        </div>
-                    </div>
-
-                    <!-- Email -->
-                    <div class="space-y-1">
-                        <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Email Address</label>
-                        <div class="relative">
-                            <span class="absolute left-3.5 top-3.5 text-gray-400"><ion-icon name="mail-outline"></ion-icon></span>
-                            <input type="email" id="email" name="email" required placeholder="you@example.com"
-                                   class="w-full bg-gray-50 dark:bg-gray-700 border-2 border-gray-100 dark:border-gray-600 rounded-xl pl-10 pr-4 py-3.5 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 dark:focus:ring-indigo-900/30 transition-all">
-                        </div>
-                        <span class="hidden text-xs text-red-500 font-medium" id="emailError">Please enter a valid email</span>
-                    </div>
-
-                    <!-- Phone -->
-                    <div class="space-y-1">
-                        <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Phone Number</label>
-                        <div class="relative">
-                            <span class="absolute left-3.5 top-3.5 text-gray-400"><ion-icon name="call-outline"></ion-icon></span>
-                            <input type="text" id="phone" name="phone" required placeholder="e.g. 39123456"
-                                   class="w-full bg-gray-50 dark:bg-gray-700 border-2 border-gray-100 dark:border-gray-600 rounded-xl pl-10 pr-4 py-3.5 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 dark:focus:ring-indigo-900/30 transition-all">
-                        </div>
-                        <span class="hidden text-xs text-red-500 font-medium" id="phoneError">Phone number must be numbers only</span>
-                    </div>
-
-                    <!-- CPR -->
-                    <div class="space-y-1">
-                        <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">CPR (National ID)</label>
-                        <div class="relative">
-                            <span class="absolute left-3.5 top-3.5 text-gray-400"><ion-icon name="id-card-outline"></ion-icon></span>
-                            <input type="text" id="cpr" name="cpr" required placeholder="e.g. 880101123456"
-                                   class="w-full bg-gray-50 dark:bg-gray-700 border-2 border-gray-100 dark:border-gray-600 rounded-xl pl-10 pr-4 py-3.5 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 dark:focus:ring-indigo-900/30 transition-all">
-                        </div>
-                        <span class="hidden text-xs text-red-500 font-medium" id="cprError">CPR must contain only numbers</span>
-                    </div>
-
-                    <!-- Password -->
-                    <div class="space-y-1">
-                        <label class="text-xs font-bold text-gray-400 uppercase tracking-wider">Password</label>
-                        <div class="relative">
-                            <span class="absolute left-3.5 top-3.5 text-gray-400"><ion-icon name="lock-closed-outline"></ion-icon></span>
-                            <input type="password" id="password" name="password" required placeholder="Min. 6 characters"
-                                   class="w-full bg-gray-50 dark:bg-gray-700 border-2 border-gray-100 dark:border-gray-600 rounded-xl pl-10 pr-12 py-3.5 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 dark:focus:ring-indigo-900/30 transition-all">
-                            <button type="button" class="toggle-password absolute right-3.5 top-3 text-gray-400 hover:text-indigo-500 transition-colors" data-target="password">
-                                <ion-icon name="eye-outline" style="font-size:1.1rem;"></ion-icon>
-                            </button>
-                        </div>
-                        <span class="hidden text-xs text-red-500 font-medium" id="passwordError">Password must be at least 6 characters</span>
-                    </div>
-
-                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl shadow-md shadow-indigo-200 dark:shadow-none transition-all transform active:scale-95 mt-2">
-                        Create Account
-                    </button>
-                </form>
-
-                <div class="text-center text-sm text-gray-400">
-                    Already have an account? <a href="login.html" class="text-indigo-600 hover:text-indigo-700 font-semibold dark:text-indigo-400">Sign in</a>
-                </div>
+            <div class="space-y-1">
+              <label class="text-xs font-bold text-semantic-text uppercase tracking-wider">Last Name</label>
+              <input type="text" id="lastName" name="lastName" required placeholder="Mohamed"
+                  class="w-full bg-semantic-surface dark:bg-semantic-surface border-2 border-semantic-border dark:border-semantic-border rounded-xl px-4 py-3.5 text-sm text-semantic-text dark:text-semantic-text focus:outline-none focus:border-semantic-accent focus:ring-4 focus:ring-semantic-accent dark:focus:ring-semantic-accent/30 transition-all">
+              <span class="hidden text-xs text-red-500 font-medium" id="lastNameError">Enter last name</span>
             </div>
+          </div>
+
+          <!-- Email -->
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-semantic-text uppercase tracking-wider">Email Address</label>
+            <div class="relative">
+              <span class="absolute left-3.5 top-3.5 text-semantic-text"><ion-icon name="mail-outline"></ion-icon></span>
+              <input type="email" id="email" name="email" required placeholder="you@example.com"
+                  class="w-full bg-semantic-surface dark:bg-semantic-surface border-2 border-semantic-border dark:border-semantic-border rounded-xl pl-10 pr-4 py-3.5 text-sm text-semantic-text dark:text-semantic-text focus:outline-none focus:border-semantic-accent focus:ring-4 focus:ring-semantic-accent dark:focus:ring-semantic-accent/30 transition-all">
+            </div>
+            <span class="hidden text-xs text-red-500 font-medium" id="emailError">Please enter a valid email</span>
+          </div>
+
+          <!-- Phone -->
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-semantic-text uppercase tracking-wider">Phone Number</label>
+            <div class="relative">
+              <span class="absolute left-3.5 top-3.5 text-semantic-text"><ion-icon name="call-outline"></ion-icon></span>
+              <input type="text" id="phone" name="phone" required placeholder="e.g. 39123456"
+                  class="w-full bg-semantic-surface dark:bg-semantic-surface border-2 border-semantic-border dark:border-semantic-border rounded-xl pl-10 pr-4 py-3.5 text-sm text-semantic-text dark:text-semantic-text focus:outline-none focus:border-semantic-accent focus:ring-4 focus:ring-semantic-accent dark:focus:ring-semantic-accent/30 transition-all">
+            </div>
+            <span class="hidden text-xs text-red-500 font-medium" id="phoneError">Phone number must be numbers only</span>
+          </div>
+
+          <!-- CPR -->
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-semantic-text uppercase tracking-wider">CPR (National ID)</label>
+            <div class="relative">
+              <span class="absolute left-3.5 top-3.5 text-semantic-text"><ion-icon name="id-card-outline"></ion-icon></span>
+              <input type="text" id="cpr" name="cpr" required placeholder="e.g. 880101123456"
+                  class="w-full bg-semantic-surface dark:bg-semantic-surface border-2 border-semantic-border dark:border-semantic-border rounded-xl pl-10 pr-4 py-3.5 text-sm text-semantic-text dark:text-semantic-text focus:outline-none focus:border-semantic-accent focus:ring-4 focus:ring-semantic-accent dark:focus:ring-semantic-accent/30 transition-all">
+            </div>
+            <span class="hidden text-xs text-red-500 font-medium" id="cprError">CPR must contain only numbers</span>
+          </div>
+
+          <!-- Password -->
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-semantic-text uppercase tracking-wider">Password</label>
+            <div class="relative">
+              <span class="absolute left-3.5 top-3.5 text-semantic-text"><ion-icon name="lock-closed-outline"></ion-icon></span>
+              <input type="password" id="password" name="password" required placeholder="Min. 6 characters"
+                  class="w-full bg-semantic-surface dark:bg-semantic-surface border-2 border-semantic-border dark:border-semantic-border rounded-xl pl-10 pr-12 py-3.5 text-sm text-semantic-text dark:text-semantic-text focus:outline-none focus:border-semantic-accent focus:ring-4 focus:ring-semantic-accent dark:focus:ring-semantic-accent/30 transition-all">
+       <button type="button" class="toggle-password absolute right-3.5 top-3 text-semantic-text hover:text-semantic-cta dark:text-semantic-accent transition-colors" data-target="password">
+                <ion-icon name="eye-outline" style="font-size:1.1rem;"></ion-icon>
+              </button>
+            </div>
+            <span class="hidden text-xs text-red-500 font-medium" id="passwordError">Password must be at least 6 characters</span>
+          </div>
+
+          <button type="submit" class="w-full bg-semantic-cta hover:bg-semantic-ctaHover text-white font-bold py-3.5 rounded-xl shadow-md shadow-xl  transition-all transform active:scale-95 mt-2">
+            Create Account
+          </button>
+        </form>
+
+        <div class="text-center text-sm text-semantic-text">
+     Already have an account? <a href="login.html" class="text-semantic-cta dark:text-semantic-accent hover:text-semantic-ctaHover font-semibold ">Sign in</a>
         </div>
-    </main>
+      </div>
+    </div>
+  </main>
 
-    <script src="../js/auth.js"></script>
-    <script>
-        function removeNonDigits(t) { return t.replace(/\D/g, ''); }
-        function isValidEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
+  <script src="../js/auth.js"></script>
+  <script>
+    function removeNonDigits(t) { return t.replace(/\D/g, ''); }
+    function isValidEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
 
-        document.getElementById('cpr').addEventListener('input', function()   { this.value = removeNonDigits(this.value); });
-        document.getElementById('phone').addEventListener('input', function() { this.value = removeNonDigits(this.value); });
+    document.getElementById('cpr').addEventListener('input', function()  { this.value = removeNonDigits(this.value); });
+    document.getElementById('phone').addEventListener('input', function() { this.value = removeNonDigits(this.value); });
 
-        document.getElementById('registrationForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const firstName = document.getElementById('firstName').value.trim();
-            const lastName  = document.getElementById('lastName').value.trim();
-            const email     = document.getElementById('email').value.trim();
-            const phone     = document.getElementById('phone').value.trim();
-            const cpr       = document.getElementById('cpr').value.trim();
-            const password  = document.getElementById('password').value.trim();
-            const apiError  = document.getElementById('apiError');
-            apiError.classList.add('hidden');
+    document.getElementById('registrationForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const firstName = document.getElementById('firstName').value.trim();
+      const lastName = document.getElementById('lastName').value.trim();
+      const email   = document.getElementById('email').value.trim();
+      const phone   = document.getElementById('phone').value.trim();
+      const cpr    = document.getElementById('cpr').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const apiError = document.getElementById('apiError');
+      apiError.classList.add('hidden');
 
-            const errors = { firstNameError: !firstName, lastNameError: !lastName, emailError: !isValidEmail(email), phoneError: !phone, cprError: !cpr, passwordError: password.length < 6 };
-            let valid = true;
-            Object.entries(errors).forEach(([id, hasError]) => {
-                document.getElementById(id).classList.toggle('hidden', !hasError);
-                if (hasError) valid = false;
-            });
+      const errors = { firstNameError: !firstName, lastNameError: !lastName, emailError: !isValidEmail(email), phoneError: !phone, cprError: !cpr, passwordError: password.length < 6 };
+      let valid = true;
+      Object.entries(errors).forEach(([id, hasError]) => {
+        document.getElementById(id).classList.toggle('hidden', !hasError);
+        if (hasError) valid = false;
+      });
 
-            if (valid) {
-                const fd = new FormData();
-                fd.append('register_btn', '1');
-                fd.append('firstName', firstName); fd.append('lastName', lastName);
-                fd.append('email', email); fd.append('phone', phone);
-                fd.append('cpr', cpr); fd.append('password', password);
+      if (valid) {
+        const fd = new FormData();
+        fd.append('register_btn', '1');
+        fd.append('firstName', firstName); fd.append('lastName', lastName);
+        fd.append('email', email); fd.append('phone', phone);
+        fd.append('cpr', cpr); fd.append('password', password);
 
-                fetch('../php/auth.php', { method: 'POST', body: fd })
-                    .then(r => r.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            window.location.href = 'MFA.html';
-                        } else {
-                            apiError.textContent = data.message;
-                            apiError.classList.remove('hidden');
-                        }
-                    })
-                    .catch((err) => { 
-                        console.error('Fetch error:', err);
-                        apiError.textContent = 'Connection error. Please make sure XAMPP Apache is running and you are accessing the site via http://localhost.'; 
-                        apiError.classList.remove('hidden'); 
-                    });
+        fetch('../php/auth.php', { method: 'POST', body: fd })
+          .then(r => r.json())
+          .then(data => {
+            if (data.status === 'success') {
+              window.location.href = 'MFA.html';
+            } else {
+              apiError.textContent = data.message;
+              apiError.classList.remove('hidden');
             }
-        });
-    </script>
+          })
+          .catch((err) => { 
+            console.error('Fetch error:', err);
+            apiError.textContent = 'Connection error. Please make sure XAMPP Apache is running and you are accessing the site via http://localhost.'; 
+            apiError.classList.remove('hidden'); 
+          });
+      }
+    });
+  </script>
 </body>
 </html>

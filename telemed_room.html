@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyHealth - Telemedicine Room</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+  <style>
+
+  /* Brand Semantic Palette */
+  :root {
+    --color-ink-navy: #160C50;
+    --color-royal-blue: #00269A;
+    --color-pale-lavender: #B8CAFF;
+    --color-mint-aqua: #94EDEA;
+    --color-bright-blue: #1A55FC;
+    
+    --bg-primary: #ffffff;
+    --bg-secondary: var(--color-pale-lavender);
+    --text-primary: var(--color-ink-navy);
+    --cta-primary: var(--color-bright-blue);
+    --cta-hover: #1448d6;
+    --brand-element: var(--color-royal-blue);
+    --accent: var(--color-mint-aqua);
+    --border-color: rgba(22, 12, 80, 0.1);
+  }
+  .dark {
+    --bg-primary: var(--color-ink-navy);
+    --bg-secondary: color-mix(in srgb, var(--color-ink-navy) 88%, white);
+    --text-primary: var(--color-pale-lavender);
+    --cta-primary: var(--color-royal-blue);
+    --cta-hover: var(--color-bright-blue);
+    --brand-element: var(--color-royal-blue);
+    --accent: var(--color-mint-aqua);
+    --border-color: rgba(184, 202, 255, 0.1);
+  }
+  
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Carbona', 'Inter', sans-serif;
+  }
+
+    body { font-family: 'Inter', sans-serif; background-color: #111827; color: white; margin: 0; overflow: hidden; }
+    .video-container { position: relative; width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; background: #000; }
+    
+    #remote-video {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    
+    #local-video-container {
+      position: absolute; bottom: 100px; right: 24px;
+      width: 240px; height: 160px;
+      border-radius: 12px; overflow: hidden;
+      border: 2px solid #374151;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+      background: #1f2937;
+      z-index: 10;
+    }
+    
+    #local-video {
+      width: 100%; height: 100%; object-fit: cover;
+      transform: scaleX(-1); /* Mirror effect */
+    }
+
+    .controls-bar {
+      position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 16px;
+      background: rgba(31, 41, 55, 0.8); backdrop-filter: blur(8px);
+      padding: 12px 24px; border-radius: 9999px;
+      z-index: 20;
+    }
+
+    .control-btn {
+      width: 52px; height: 52px;
+      border-radius: 50%; border: none; cursor: pointer;
+      display: flex; justify-content: center; align-items: center;
+      font-size: 24px; color: white;
+      transition: all 0.2s ease;
+    }
+    .btn-toggle { background: #374151; }
+    .btn-toggle:hover { background: #4b5563; }
+    .btn-toggle.muted { background: #ef4444; }
+    .btn-end { background: #ef4444; }
+    .btn-end:hover { background: #dc2626; transform: scale(1.05); }
+
+    #call-status {
+      position: absolute; top: 24px; left: 24px;
+      background: rgba(31, 41, 55, 0.8); backdrop-filter: blur(8px);
+      padding: 8px 16px; border-radius: 8px;
+      font-size: 14px; font-weight: 600;
+      display: flex; align-items: center; gap: 8px;
+      z-index: 20;
+    }
+    .pulse-dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(34,197,94,0.7); } 70% { box-shadow: 0 0 0 10px rgba(34,197,94,0); } 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); } }
+  </style>
+</head>
+<body>
+
+  <div class="video-container">
+    <!-- Status Overlay -->
+    <div id="call-status">
+      <div class="pulse-dot"></div>
+      <span id="call-status-text">Connecting to server...</span>
+    </div>
+
+    <!-- Remote Video (Full Screen) -->
+    <video id="remote-video" autoplay playsinline></video>
+
+    <!-- Local Video (Picture-in-Picture) -->
+    <div id="local-video-container">
+      <video id="local-video" autoplay playsinline muted></video>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls-bar">
+      <button id="btn-toggle-mic" class="control-btn btn-toggle" title="Toggle Microphone">
+        <ion-icon name="mic-outline"></ion-icon>
+      </button>
+      <button id="btn-toggle-cam" class="control-btn btn-toggle" title="Toggle Camera">
+        <ion-icon name="videocam-outline"></ion-icon>
+      </button>
+      <button id="btn-end-call" class="control-btn btn-end" title="End Call">
+        <ion-icon name="call-outline" style="transform: rotate(135deg);"></ion-icon>
+      </button>
+    </div>
+  </div>
+
+  <script src="js/webrtc-telemed.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Get appointment ID from URL param
+      const urlParams = new URLSearchParams(window.location.search);
+      const apptId = urlParams.get('appt_id');
+      const role = urlParams.get('role'); // 'patient' or 'doctor'
+      
+      if (!apptId) {
+        alert("Invalid Call Session: Missing Appointment ID.");
+        window.location.href = "index.html";
+        return;
+      }
+
+      // Initialize the WebRTC Session
+      window.telemedSession = new TelemedicineSession(
+        document.getElementById('local-video'),
+        document.getElementById('remote-video'),
+        apptId,
+        role
+      );
+
+      // Connect to Signaling Server
+      window.telemedSession.connectSignaling();
+
+      // Set up button listeners
+      const btnMic = document.getElementById('btn-toggle-mic');
+      const btnCam = document.getElementById('btn-toggle-cam');
+      const btnEnd = document.getElementById('btn-end-call');
+
+      btnMic.addEventListener('click', () => {
+        const isMuted = window.telemedSession.toggleAudio();
+        btnMic.classList.toggle('muted', isMuted);
+        btnMic.innerHTML = isMuted ? '<ion-icon name="mic-off-outline"></ion-icon>' : '<ion-icon name="mic-outline"></ion-icon>';
+      });
+
+      btnCam.addEventListener('click', () => {
+        const isOff = window.telemedSession.toggleVideo();
+        btnCam.classList.toggle('muted', isOff);
+        btnCam.innerHTML = isOff ? '<ion-icon name="videocam-off-outline"></ion-icon>' : '<ion-icon name="videocam-outline"></ion-icon>';
+      });
+
+      btnEnd.addEventListener('click', () => {
+        window.telemedSession.endCall();
+        // Redirect back to dashboard based on role
+        if (role === 'doctor') {
+          window.location.href = "dashboards/doctor_dashboard.html";
+        } else {
+          window.location.href = "dashboards/patient_dashboard.html";
+        }
+      });
+    });
+  </script>
+</body>
+</html>

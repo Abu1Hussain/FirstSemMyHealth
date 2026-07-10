@@ -114,7 +114,7 @@ if ($action === 'dashboard') {
 
 if ($action === 'users') {
     $users = [];
-    $result = $conn->query("SELECT user_id, email, role, status, last_login, created_at FROM users ORDER BY user_id");
+    $result = $conn->query("SELECT u.user_id, COALESCE(p.email, u.email) as email, u.role, u.status, u.last_login, u.created_at FROM users u LEFT JOIN patients p ON u.user_id = p.user_id ORDER BY u.user_id");
 
     while ($row = $result->fetch_assoc()) {
         // Try to find the user's display name from their profile table
@@ -174,7 +174,7 @@ if ($action === 'patients') {
     $result = $conn->query(
         "SELECT p.patient_id, CONCAT(p.first_name, ' ', p.last_name) as name,
                 p.first_name, p.last_name, p.cpr, p.gender,
-                p.phone, p.blood_type, p.date_of_birth, u.email
+                p.phone, p.blood_type, p.date_of_birth, p.email
          FROM patients p
          JOIN users u ON p.user_id = u.user_id
          ORDER BY p.patient_id"

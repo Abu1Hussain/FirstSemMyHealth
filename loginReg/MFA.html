@@ -1,139 +1,180 @@
 <!DOCTYPE html>
 <html lang="en" class="">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MFA Verification – MyHealth</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
-    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
-    <script>
-      if (localStorage.getItem('darkMode') === 'enabled') document.documentElement.classList.add('dark');
-        tailwind.config = { 
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            50: '#eef2ff',
-                            100: '#e0e7ff',
-                            200: '#c7d2fe',
-                            300: '#a5b4fc',
-                            400: '#818cf8',
-                            500: '#6366f1',
-                            600: '#4f46e5',
-                            700: '#4338ca',
-                            800: '#3730a3',
-                            900: '#312e81',
-                        }
-                    }
-                }
-            }
-        };
-    </script>
-    <style> body { font-family: 'Inter', sans-serif; } </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MFA Verification – MyHealth</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+  <script>
+   if (localStorage.getItem('darkMode') === 'enabled') document.documentElement.classList.add('dark');
+    tailwind.config = { 
+      darkMode: 'class',
+      theme: {
+        extend: {
+
+          fontFamily: {
+            sans: ['Carbona', 'Inter', 'sans-serif']
+          },
+
+          
+          colors: {
+            semantic: {
+              bg: 'var(--bg-primary)',
+              surface: 'var(--bg-secondary)',
+              text: 'var(--text-primary)',
+              cta: 'var(--cta-primary)',
+              ctaHover: 'var(--cta-hover)',
+              brand: 'var(--brand-element)',
+              accent: 'var(--accent)',
+              border: 'var(--border-color)'
+            },
+
+            
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+
+  /* Brand Semantic Palette */
+  :root {
+    --color-ink-navy: #160C50;
+    --color-royal-blue: #00269A;
+    --color-pale-lavender: #B8CAFF;
+    --color-mint-aqua: #94EDEA;
+    --color-bright-blue: #1A55FC;
+    
+    --bg-primary: #ffffff;
+    --bg-secondary: var(--color-pale-lavender);
+    --text-primary: var(--color-ink-navy);
+    --cta-primary: var(--color-bright-blue);
+    --cta-hover: #1448d6;
+    --brand-element: var(--color-royal-blue);
+    --accent: var(--color-mint-aqua);
+    --border-color: rgba(22, 12, 80, 0.1);
+  }
+  .dark {
+    --bg-primary: var(--color-ink-navy);
+    --bg-secondary: color-mix(in srgb, var(--color-ink-navy) 88%, white);
+    --text-primary: var(--color-pale-lavender);
+    --cta-primary: var(--color-royal-blue);
+    --cta-hover: var(--color-bright-blue);
+    --brand-element: var(--color-royal-blue);
+    --accent: var(--color-mint-aqua);
+    --border-color: rgba(184, 202, 255, 0.1);
+  }
+  
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Carbona', 'Inter', sans-serif;
+  }
+ body { font-family: 'Inter', sans-serif; } </style>
 </head>
-<body class="bg-gradient-to-br from-slate-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 flex flex-col" style="min-height:100vh;">
+<body class="bg-semantic-bg flex flex-col" style="min-height:100vh;">
 
-    <!-- ═══ Navbar ═══ -->
-    <nav class="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-700 px-6 py-4 flex items-center justify-between sticky top-0 z-50">
-        <a href="../index.html" class="flex items-center gap-3 cursor-pointer group">
-            <img src="../image/HealthcareNewIcon-removebg-preview.png" alt="MyHealth Logo" class="h-12 w-auto group-hover:scale-105 transition-transform" />
-            <span class="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-primary-600 to-indigo-600 dark:from-primary-400 dark:to-indigo-400 tracking-tight">MyHealth</span>
-        </a>
-        <div class="flex items-center gap-3">
-            <a href="login.html" class="text-sm font-medium text-gray-500 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 px-3 py-1.5 rounded-lg transition-colors">Login</a>
-            <button id="darkModeToggle" class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors">
-                <ion-icon id="darkModeIcon" name="moon-outline" style="font-size:1.1rem;"></ion-icon>
-            </button>
+  <!-- ═══ Navbar ═══ -->
+  <nav class="bg-semantic-bg/80 dark:bg-semantic-bg/80 backdrop-blur-md border-b border-semantic-border dark:border-semantic-border px-6 py-4 flex items-center justify-between sticky top-0 z-50">
+    <a href="../index.html" class="flex items-center gap-3 cursor-pointer group">
+      <img src="../image/HealthcareNewIcon-removebg-preview.png" alt="MyHealth Logo" class="h-12 w-auto group-hover:scale-105 transition-transform" />
+      <span class="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-semantic-cta to-semantic-cta dark:from-semantic-cta dark:to-semantic-cta tracking-tight">MyHealth</span>
+    </a>
+    <div class="flex items-center gap-3">
+   <a href="login.html" class="text-sm font-medium text-semantic-text opacity-70 dark:text-semantic-text dark:opacity-90 hover:text-semantic-cta dark:text-semantic-accent dark:hover:text-semantic-cta dark:text-semantic-accent px-3 py-1.5 rounded-lg transition-colors">Login</a>
+      <button id="darkModeToggle" class="w-9 h-9 flex items-center justify-center rounded-full bg-semantic-surface dark:bg-semantic-surface text-semantic-text opacity-70 dark:text-semantic-text dark:opacity-90 hover:bg-semantic-cta dark:hover:bg-semantic-brand/40 transition-colors">
+        <ion-icon id="darkModeIcon" name="moon-outline" style="font-size:1.1rem;"></ion-icon>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ═══ Form ═══ -->
+  <main class="flex-1 flex items-center justify-center p-6">
+    <div class="w-full max-w-md bg-semantic-bg dark:bg-semantic-surface rounded-3xl shadow-xl border border-semantic-border dark:border-semantic-border overflow-hidden">
+      <!-- Card Header -->
+      <div class="bg-semantic-cta px-8 py-7 text-center">
+        <div class="w-14 h-14 bg-semantic-bg/20 rounded-2xl flex items-center justify-center mx-auto mb-3">
+          <ion-icon name="shield-checkmark-outline" style="font-size:1.8rem;color:white;"></ion-icon>
         </div>
-    </nav>
+        <h1 class="text-2xl font-bold text-white">Verify Identity</h1>
+    <p class="text-semantic-cta dark:text-semantic-text text-sm mt-1">Enter the 6-digit code sent to your device</p>
+      </div>
 
-    <!-- ═══ Form ═══ -->
-    <main class="flex-1 flex items-center justify-center p-6">
-        <div class="w-full max-w-md bg-white dark:bg-gray-800 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
-            <!-- Card Header -->
-            <div class="bg-indigo-600 px-8 py-7 text-center">
-                <div class="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                    <ion-icon name="shield-checkmark-outline" style="font-size:1.8rem;color:white;"></ion-icon>
-                </div>
-                <h1 class="text-2xl font-bold text-white">Verify Identity</h1>
-                <p class="text-indigo-100 text-sm mt-1">Enter the 6-digit code sent to your device</p>
-            </div>
+      <!-- Card Body -->
+      <div class="p-8 space-y-5 text-center">
+        <form id="mfaForm" class="space-y-4">
+          <input type="text" id="codeInput" maxlength="6" required placeholder="000 000" value="111111"
+              class="w-full bg-semantic-surface dark:bg-semantic-surface border-2 border-semantic-border dark:border-semantic-border rounded-xl px-4 py-4 text-3xl text-center font-bold tracking-[0.5em] text-semantic-text dark:text-semantic-text focus:outline-none focus:border-semantic-accent focus:ring-4 focus:ring-semantic-accent dark:focus:ring-semantic-accent/30 transition-all">
 
-            <!-- Card Body -->
-            <div class="p-8 space-y-5 text-center">
-                <form id="mfaForm" class="space-y-4">
-                    <input type="text" id="codeInput" maxlength="6" required placeholder="000 000" value="111111"
-                           class="w-full bg-gray-50 dark:bg-gray-700 border-2 border-gray-100 dark:border-gray-600 rounded-xl px-4 py-4 text-3xl text-center font-bold tracking-[0.5em] text-gray-800 dark:text-gray-100 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 dark:focus:ring-indigo-900/30 transition-all">
+          <div id="codeError" class="hidden bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-700 text-sm rounded-xl px-4 py-2.5">Please enter the 6-digit code</div>
+          <div id="successMessage" class="hidden bg-semantic-accent dark:bg-semantic-accent/30 text-[var(--color-ink-navy)] dark:text-[var(--color-ink-navy)] border border-[var(--color-mint-aqua)] dark:border-[var(--color-royal-blue)] text-sm rounded-xl px-4 py-2.5">Code sent successfully!</div>
 
-                    <div id="codeError" class="hidden bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-700 text-sm rounded-xl px-4 py-2.5">Please enter the 6-digit code</div>
-                    <div id="successMessage" class="hidden bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-700 text-sm rounded-xl px-4 py-2.5">Code sent successfully!</div>
+          <button type="submit" class="w-full bg-semantic-cta hover:bg-semantic-ctaHover text-white font-bold py-3.5 rounded-xl shadow-md shadow-xl  transition-all transform active:scale-95">
+            Verify Code
+          </button>
+     <button type="button" id="resendButton" class="w-full bg-semantic-bg dark:bg-semantic-surface hover:bg-semantic-surface dark:hover:bg-semantic-surface text-semantic-cta dark:text-semantic-accent border-2 border-semantic-border dark:border-semantic-border font-semibold py-3.5 rounded-xl transition-all">
+            Resend Code
+          </button>
+        </form>
 
-                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl shadow-md shadow-indigo-200 dark:shadow-none transition-all transform active:scale-95">
-                        Verify Code
-                    </button>
-                    <button type="button" id="resendButton" class="w-full bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 text-indigo-600 dark:text-indigo-400 border-2 border-gray-100 dark:border-gray-600 font-semibold py-3.5 rounded-xl transition-all">
-                        Resend Code
-                    </button>
-                </form>
-
-                <div class="text-sm text-gray-400">
-                    <a href="login.html" class="text-indigo-600 dark:text-indigo-400 hover:underline font-medium">← Back to Login</a>
-                </div>
-            </div>
+        <div class="text-sm text-semantic-text">
+     <a href="login.html" class="text-semantic-cta dark:text-semantic-accent hover:underline font-medium">← Back to Login</a>
         </div>
-    </main>
+      </div>
+    </div>
+  </main>
 
-    <script src="../js/auth.js"></script>
-    <script>
-        window.addEventListener('load', function() { document.getElementById('codeInput').focus(); });
+  <script src="../js/auth.js"></script>
+  <script>
+    window.addEventListener('load', function() { document.getElementById('codeInput').focus(); });
 
-        document.getElementById('codeInput').addEventListener('input', function() {
-            this.value = this.value.replace(/\D/g, '');
-        });
+    document.getElementById('codeInput').addEventListener('input', function() {
+      this.value = this.value.replace(/\D/g, '');
+    });
 
-        document.getElementById('mfaForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const codeError = document.getElementById('codeError');
-            const enteredCode = document.getElementById('codeInput').value;
-            codeError.classList.add('hidden');
+    document.getElementById('mfaForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const codeError = document.getElementById('codeError');
+      const enteredCode = document.getElementById('codeInput').value;
+      codeError.classList.add('hidden');
 
-            if (enteredCode !== '111111') {
-                codeError.textContent = 'Invalid code. Please enter 111111';
-                codeError.classList.remove('hidden');
-                return;
-            }
+      if (enteredCode !== '111111') {
+        codeError.textContent = 'Invalid code. Please enter 111111';
+        codeError.classList.remove('hidden');
+        return;
+      }
 
-            const formData = new URLSearchParams();
-            formData.append('verify_mfa', 'true');
+      const formData = new URLSearchParams();
+      formData.append('verify_mfa', 'true');
 
-            fetch('../php/auth.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                credentials: 'same-origin',
-                body: formData.toString()
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    const userRole = localStorage.getItem('user_role');
-                    if (userRole === 'doctor')      window.location.href = '../dashboards/doctor_dashboard.html';
-                    else if (userRole === 'admin')  window.location.href = '../dashboards/admin_dashboard.html';
-                    else                            window.location.href = '../dashboards/patient_dashboard.html';
-                } else {
-                    codeError.textContent = data.message || 'Verification failed. Please try again.';
-                    codeError.classList.remove('hidden');
-                }
-            });
-        });
+      fetch('../php/auth.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        credentials: 'same-origin',
+        body: formData.toString()
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'success') {
+          const userRole = localStorage.getItem('user_role');
+          if (userRole === 'doctor')   window.location.href = '../dashboards/doctor_dashboard.html';
+          else if (userRole === 'admin') window.location.href = '../dashboards/admin_dashboard.html';
+          else              window.location.href = '../dashboards/patient_dashboard.html';
+        } else {
+          codeError.textContent = data.message || 'Verification failed. Please try again.';
+          codeError.classList.remove('hidden');
+        }
+      });
+    });
 
-        document.getElementById('resendButton').addEventListener('click', function() {
-            const banner = document.getElementById('successMessage');
-            banner.classList.remove('hidden');
-            setTimeout(() => banner.classList.add('hidden'), 10000);
-        });
-    </script>
+    document.getElementById('resendButton').addEventListener('click', function() {
+      const banner = document.getElementById('successMessage');
+      banner.classList.remove('hidden');
+      setTimeout(() => banner.classList.add('hidden'), 10000);
+    });
+  </script>
 </body>
 </html>

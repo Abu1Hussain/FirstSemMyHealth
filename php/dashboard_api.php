@@ -551,10 +551,11 @@ $response['invoices'] = $invoices;
    ═══════════════════════════════ */
 $family_members = [];
 $stmt = $conn->prepare(
-    "SELECT member_id, relationship, first_name, last_name, cpr, date_of_birth, gender, blood_type, phone, email
-     FROM family_members
-     WHERE primary_user_id = ?
-     ORDER BY member_id DESC"
+    "SELECT f.member_id, f.relationship, p.first_name, p.last_name, p.cpr, p.date_of_birth, p.gender, p.blood_type, p.phone, p.email
+     FROM family_members f
+     JOIN patients p ON f.dependent_user_id = p.user_id
+     WHERE f.primary_user_id = ?
+     ORDER BY f.member_id DESC"
 );
 if ($stmt) {
     $stmt->bind_param("i", $userId);

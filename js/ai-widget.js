@@ -1,1031 +1,456 @@
+
 /**
- * AI Care Navigator Widget — Multi-State Edition
+ * AI Care Navigator Widget — Vanilla JS Edition
  * ================================================
  * Standalone floating AI assistant for MyHealth dashboards.
- * Self-injects React 18, ReactDOM, and builds the widget.
- * Connects to Gemini API for text chat.
- *
+ * 
  * State Machine (4 phases):
- *   MINIMIZED   → Slim tab flush against bottom-right edge
- *   CORNER_IDLE → Floating robot icon in bottom-right corner
- *   WALKING     → Robot physically moves to center with wiggle animation
- *   MODAL_OPEN  → Full chat modal with blurred backdrop
+ *  MINIMIZED  → Slim tab flush against bottom-right edge
+ *  CORNER_IDLE → Floating robot icon in bottom-right corner
+ *  WALKING   → Robot physically moves to center with wiggle animation
+ *  MODAL_OPEN → Full chat modal with blurred backdrop
  */
 (function () {
-  "use strict";
+ "use strict";
 
-  /* -- Config -- */
-  const GEMINI_API_KEY = "AIzaSyDhLYX0y12fw4Sri1YDIUfLTP8iXX-7f_s";
-  const GEMINI_TEXT_MODEL = "gemini-2.5-flash";
+ /* -- Config -- */
+ const GEMINI_API_KEY = "AIzaSyDhLYX0y12fw4Sri1YDIUfLTP8iXX-7f_s";
+ const GEMINI_TEXT_MODEL = "gemini-2.5-flash";
 
-  // Fallback system prompt used ONLY if the server proxy is unreachable
-  const FALLBACK_SYSTEM_PROMPT =
-    "You are a helpful navigation assistant for a healthcare website called MyHealth. Help users navigate to Dashboard, Appointments, Medical Records, Prescriptions, or Profile. If asked a medical question, politely redirect them to book an appointment with a doctor.";
+ const FALLBACK_SYSTEM_PROMPT =
+  "You are a helpful navigation assistant for a healthcare website called MyHealth. Help users navigate to Dashboard, Appointments, Medical Records, Prescriptions, or Profile. If asked a medical question, politely redirect them to book an appointment with a doctor.";
 
-  // Whether to use server-side proxy (enables deep context, role-based prompts, emergency detection)
-  const USE_SERVER_PROXY = true;
-  const SERVER_PROXY_URL = "../Ai/ai_chat.php";
+ const USE_SERVER_PROXY = true;
+ const SERVER_PROXY_URL = "../Ai/ai_chat.php";
 
-  /* -- Helpers: load external scripts -- */
-  function loadScript(src) {
-    return new Promise((resolve, reject) => {
-      if (document.querySelector(`script[src="${src}"]`)) return resolve();
-      const s = document.createElement("script");
-      s.src = src;
-      s.crossOrigin = "anonymous";
-      s.onload = resolve;
-      s.onerror = reject;
-      document.head.appendChild(s);
+ /* -- State Machine -- */
+ const STATE = {
+  MINIMIZED:  'MINIMIZED',
+  CORNER_IDLE: 'CORNER_IDLE',
+  WALKING:   'WALKING',
+  MODAL_OPEN: 'MODAL_OPEN',
+ };
+
+ let widgetState = STATE.CORNER_IDLE;
+ let messages = [
+  {
+   role: "model",
+   text: "Hello! 👋 I'm your Care Navigator. I can help you find your way around MyHealth. What are you looking for?",
+  },
+ ];
+ let loading = false;
+ let isRecording = false;
+ let walkTimer = null;
+ let recognition = null;
+ 
+ let rootEl = null;
+
+ /* -- Setup Speech Recognition -- */
+ const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+ if (SpeechRec) {
+  recognition = new SpeechRec();
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.lang = 'en-US';
+
+  recognition.onresult = (event) => {
+   const transcript = event.results[0][0].transcript;
+   sendMessageText(transcript);
+  };
+  recognition.onerror = (event) => {
+   console.error("Speech recognition error", event.error);
+   stopRecording();
+  };
+  recognition.onend = () => {
+   stopRecording();
+  };
+ }
+
+ /* -- CSS Styles -- */
+ function injectStyles() {
+  const styleEl = document.createElement("style");
+  styleEl.innerHTML = `
+   .ai-fab-slide-in { animation: ai-fab-slide-in .4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+   @keyframes ai-fab-slide-in {
+    0%  { transform: translateY(100px) scale(0.5); opacity: 0; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+   }
+   .ai-modal-reveal { animation: ai-modal-reveal .4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+   @keyframes ai-modal-reveal {
+    0%  { opacity: 0; transform: scale(0.95) translateY(20px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+   }
+   .ai-backdrop-in { animation: ai-backdrop-in .3s ease forwards; }
+   @keyframes ai-backdrop-in {
+    0%  { opacity: 0; backdrop-filter: blur(0px); }
+    100% { opacity: 1; backdrop-filter: blur(4px); }
+   }
+   .ai-walking { animation: ai-walk-to-center 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+   @keyframes ai-walk-to-center {
+    0%  { bottom: 32px; right: 32px; transform: scale(1); }
+    100% { bottom: 50%; right: 50%; transform: translate(50%, 50%) scale(1.5); }
+   }
+   .ai-walking-wiggle-inner { animation: ai-walking-wiggle 1.2s linear forwards; }
+   @keyframes ai-walking-wiggle {
+    0%, 100% { transform: rotate(0deg); }
+    15% { transform: rotate(-15deg); }
+    30% { transform: rotate(15deg); }
+    45% { transform: rotate(-15deg); }
+    60% { transform: rotate(15deg); }
+    75% { transform: rotate(-15deg); }
+    90% { transform: rotate(15deg); }
+   }
+   .ai-ring-pulse { animation: ai-ring-pulse 2s infinite; }
+   @keyframes ai-ring-pulse {
+    0%  { box-shadow: 0 0 0 0 rgba(59,130,246,.4); }
+    70% { box-shadow: 0 0 0 18px rgba(59,130,246,0); }
+    100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
+   }
+   .ai-chat-scroll::-webkit-scrollbar { width:6px; }
+   .ai-chat-scroll::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:10px; }
+   .ai-chat-scroll::-webkit-scrollbar-track { background:transparent; }
+   .markdown-body p { margin-bottom: 0.5em; }
+   .markdown-body strong { font-weight: bold; }
+  `;
+  document.head.appendChild(styleEl);
+ }
+
+ /* -- API & Logic -- */
+ function handleAIAction(action) {
+  if (!action) return;
+  if (action.type === 'navigate' && action.target) {
+   if (typeof window.showSection === 'function') {
+    window.showSection(action.target);
+   }
+  }
+  if (action.type === 'book_appointment') {
+   if (typeof window.showSection === 'function') {
+    window.showSection('appointments');
+   }
+  }
+  if (action.type === 'emergency_alert') {
+   if (typeof Swal !== 'undefined') {
+    Swal.fire({
+     icon: 'error',
+     title: '🚨 Emergency Detected',
+     html: '<p style="font-size:16px;">Please <strong>call emergency services (999/911)</strong> immediately or go to the nearest Emergency Room.</p>',
+     confirmButtonText: 'I understand',
+     confirmButtonColor: '#dc2626',
+     allowOutsideClick: false,
     });
+   }
   }
+ }
 
-  /* -- Boot -- */
-  async function boot() {
-    // Load React + ReactDOM via CDN
-    await loadScript(
-      "../js/react.production.min.js"
-    );
-    await loadScript(
-      "../js/react-dom.production.min.js"
-    );
-
-    // Create mount point
-    const root = document.createElement("div");
-    root.id = "ai-widget-root";
-    document.body.appendChild(root);
-
-    // Render
-    const R = window.React;
-    const RD = window.ReactDOM;
-    const h = R.createElement;
-
-    /* -- SVG Icons as components -- */
-    const BotIcon = () =>
-      h(
-        "svg",
-        {
-          xmlns: "http://www.w3.org/2000/svg",
-          width: 32,
-          height: 32,
-          viewBox: "0 0 24 24",
-          fill: "none",
-          stroke: "currentColor",
-          strokeWidth: 2,
-          strokeLinecap: "round",
-          strokeLinejoin: "round",
-        },
-        h("path", { d: "M12 8V4H8" }),
-        h("rect", { width: 16, height: 12, x: 4, y: 8, rx: 2 }),
-        h("path", { d: "m2 14 2 2 2-2" }),
-        h("path", { d: "m22 14-2 2-2-2" }),
-        h("path", { d: "M9.5 13a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0Z" }),
-        h("path", { d: "M15.5 13a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0Z" })
-      );
-
-    const SendIcon = () =>
-      h(
-        "svg",
-        {
-          xmlns: "http://www.w3.org/2000/svg",
-          width: 20,
-          height: 20,
-          viewBox: "0 0 24 24",
-          fill: "none",
-          stroke: "currentColor",
-          strokeWidth: 2,
-          strokeLinecap: "round",
-          strokeLinejoin: "round",
-        },
-        h("path", { d: "m22 2-7 20-4-9-9-4Z" }),
-        h("path", { d: "M22 2 11 13" })
-      );
-
-    const XIcon = ({ size = 18 }) =>
-      h(
-        "svg",
-        {
-          xmlns: "http://www.w3.org/2000/svg",
-          width: size,
-          height: size,
-          viewBox: "0 0 24 24",
-          fill: "none",
-          stroke: "currentColor",
-          strokeWidth: 2,
-          strokeLinecap: "round",
-          strokeLinejoin: "round",
-        },
-        h("path", { d: "M18 6 6 18" }),
-        h("path", { d: "m6 6 12 12" })
-      );
-
-    const ChevronLeftIcon = () =>
-      h(
-        "svg",
-        {
-          xmlns: "http://www.w3.org/2000/svg",
-          width: 20,
-          height: 20,
-          viewBox: "0 0 24 24",
-          fill: "none",
-          stroke: "currentColor",
-          strokeWidth: 2,
-          strokeLinecap: "round",
-          strokeLinejoin: "round",
-        },
-        h("path", { d: "m15 18-6-6 6-6" })
-      );
-
-    const MsgIcon = () =>
-      h(
-        "svg",
-        {
-          xmlns: "http://www.w3.org/2000/svg",
-          width: 18,
-          height: 18,
-          viewBox: "0 0 24 24",
-          fill: "none",
-          stroke: "currentColor",
-          strokeWidth: 2,
-          strokeLinecap: "round",
-          strokeLinejoin: "round",
-        },
-        h("path", {
-          d: "M7.9 20A9 9 0 1 0 4 16.1L2 22Z",
-        })
-      );
-
-    const MicIcon = () =>
-      h(
-        "svg",
-        {
-          xmlns: "http://www.w3.org/2000/svg",
-          width: 18,
-          height: 18,
-          viewBox: "0 0 24 24",
-          fill: "none",
-          stroke: "currentColor",
-          strokeWidth: 2,
-          strokeLinecap: "round",
-          strokeLinejoin: "round",
-        },
-        h("path", { d: "M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" }),
-        h("path", { d: "M19 10v2a7 7 0 0 1-14 0v-2" }),
-        h("line", { x1: 12, x2: 12, y1: 19, y2: 22 })
-      );
-
-    const MicLargeIcon = ({ size = 48 }) =>
-      h(
-        "svg",
-        {
-          xmlns: "http://www.w3.org/2000/svg",
-          width: size,
-          height: size,
-          viewBox: "0 0 24 24",
-          fill: "none",
-          stroke: "currentColor",
-          strokeWidth: 1.5,
-          strokeLinecap: "round",
-          strokeLinejoin: "round",
-        },
-        h("path", { d: "M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" }),
-        h("path", { d: "M19 10v2a7 7 0 0 1-14 0v-2" }),
-        h("line", { x1: 12, x2: 12, y1: 19, y2: 22 })
-      );
-
-    const StopIcon = () =>
-      h(
-        "svg",
-        {
-          xmlns: "http://www.w3.org/2000/svg",
-          width: 48,
-          height: 48,
-          viewBox: "0 0 24 24",
-          fill: "currentColor",
-          stroke: "none",
-        },
-        h("rect", { x: 6, y: 6, width: 12, height: 12, rx: 2 })
-      );
-
-    /* -- Handle AI Action Triggers -- */
-    function handleAIAction(action) {
-      if (!action) return;
-      if (action.type === 'navigate' && action.target) {
-        // Try to navigate using the showSection function available in dashboards
-        if (typeof window.showSection === 'function') {
-          window.showSection(action.target);
-        }
-      }
-      if (action.type === 'book_appointment') {
-        // Navigate to appointments section and highlight the specialty
-        if (typeof window.showSection === 'function') {
-          window.showSection('appointments');
-        }
-      }
-      if (action.type === 'emergency_alert') {
-        // Show a full-screen emergency alert
-        if (typeof Swal !== 'undefined') {
-          Swal.fire({
-            icon: 'error',
-            title: '🚨 Emergency Detected',
-            html: '<p style="font-size:16px;">Please <strong>call emergency services (999/911)</strong> immediately or go to the nearest Emergency Room.</p>',
-            confirmButtonText: 'I understand',
-            confirmButtonColor: '#dc2626',
-            allowOutsideClick: false,
-          });
-        }
-      }
-    }
-
-    /* -- Server-Side Proxy API Call -- */
-    async function sendToServerProxy(messages) {
-      const res = await fetch(SERVER_PROXY_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages }),
-      });
-      const data = await res.json();
-      if (data.status === 'success') {
-        // Handle action triggers
-        if (data.action) {
-          setTimeout(() => handleAIAction(data.action), 500);
-        }
-        return data.reply || "I'm sorry, I couldn't process that right now.";
-      }
-      return "I'm sorry, I couldn't process that right now.";
-    }
-
-    /* -- Direct Gemini API Call (Fallback) -- */
-    async function sendToGeminiFallback(messages) {
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_TEXT_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
-      const contents = messages.map((m) => ({
-        role: m.role === "user" ? "user" : "model",
-        parts: [{ text: m.text }],
-      }));
-
-      const res = await fetch(apiUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: FALLBACK_SYSTEM_PROMPT }] },
-          contents,
-        }),
-      });
-      const data = await res.json();
-      return (
-        data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-        "I'm sorry, I couldn't process that right now."
-      );
-    }
-
-    /* -- Unified Send Function -- */
-    async function sendToGemini(messages) {
-      if (USE_SERVER_PROXY) {
-        try {
-          return await sendToServerProxy(messages);
-        } catch (e) {
-          console.warn("AI Proxy unreachable, falling back to direct Gemini:", e);
-          return await sendToGeminiFallback(messages);
-        }
-      }
-      return await sendToGeminiFallback(messages);
-    }
-
-    /* ═══════════════════════════════════════════
-       Inject Widget CSS — State Machine Animations
-       ═══════════════════════════════════════════ */
-    const styleEl = document.createElement("style");
-    styleEl.textContent = `
-      #ai-widget-root * { box-sizing: border-box; }
-
-      /* ── State transition animations ── */
-
-      /* Corner FAB slide in/out */
-      @keyframes ai-fab-slide-in {
-        from { opacity: 0; transform: translateX(80px) scale(0.5); }
-        to   { opacity: 1; transform: translateX(0) scale(1); }
-      }
-      @keyframes ai-fab-slide-out {
-        from { opacity: 1; transform: translateX(0) scale(1); }
-        to   { opacity: 0; transform: translateX(80px) scale(0.5); }
-      }
-
-      /* Minimized tab slide in/out */
-      @keyframes ai-tab-slide-in {
-        from { transform: translateX(100%); }
-        to   { transform: translateX(0); }
-      }
-      @keyframes ai-tab-slide-out {
-        from { transform: translateX(0); }
-        to   { transform: translateX(100%); }
-      }
-
-      /* Walking: spring-physics move from corner to center */
-      @keyframes ai-walk-to-center {
-        0%   { 
-          bottom: 32px; right: 32px; 
-          transform: scale(1); 
-        }
-        25%  { 
-          transform: scale(1.2); 
-        }
-        60%  { 
-          bottom: calc(50vh - 32px); right: calc(50vw - 32px); 
-          transform: scale(1.05); 
-        }
-        80%  { 
-          bottom: calc(50vh - 38px); right: calc(50vw - 38px); 
-          transform: scale(1.15); 
-        }
-        90%  {
-          bottom: calc(50vh - 28px); right: calc(50vw - 28px);
-          transform: scale(0.95);
-        }
-        100% { 
-          bottom: calc(50vh - 32px); right: calc(50vw - 32px); 
-          transform: scale(1); 
-        }
-      }
-
-      /* Walking wiggle effect */
-      @keyframes ai-walking-wiggle {
-        0%, 100% { transform: rotate(0deg) translateY(0); }
-        12.5%    { transform: rotate(-14deg) translateY(-7px); }
-        25%      { transform: rotate(0deg) translateY(0); }
-        37.5%    { transform: rotate(14deg) translateY(-7px); }
-        50%      { transform: rotate(0deg) translateY(0); }
-        62.5%    { transform: rotate(-14deg) translateY(-7px); }
-        75%      { transform: rotate(0deg) translateY(0); }
-        87.5%    { transform: rotate(14deg) translateY(-7px); }
-      }
-
-      /* Modal fade in/out */
-      @keyframes ai-modal-reveal {
-        from { opacity: 0; transform: scale(0.85) translateY(20px); }
-        to   { opacity: 1; transform: scale(1) translateY(0); }
-      }
-      @keyframes ai-modal-dismiss {
-        from { opacity: 1; transform: scale(1) translateY(0); }
-        to   { opacity: 0; transform: scale(0.85) translateY(20px); }
-      }
-
-      /* Backdrop fade */
-      @keyframes ai-backdrop-in {
-        from { opacity: 0; }
-        to   { opacity: 1; }
-      }
-      @keyframes ai-backdrop-out {
-        from { opacity: 1; }
-        to   { opacity: 0; }
-      }
-
-      /* Ring pulse on idle FAB */
-      @keyframes ai-ring-pulse {
-        0%   { box-shadow: 0 0 0 0 rgba(59,130,246,.4); }
-        70%  { box-shadow: 0 0 0 18px rgba(59,130,246,0); }
-        100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
-      }
-
-      /* Applied classes */
-      .ai-fab-enter   { animation: ai-fab-slide-in .4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-      .ai-fab-exit    { animation: ai-fab-slide-out .3s ease forwards; }
-      .ai-tab-enter   { animation: ai-tab-slide-in .3s ease forwards; }
-      .ai-tab-exit    { animation: ai-tab-slide-out .25s ease forwards; }
-      .ai-modal-enter { animation: ai-modal-reveal .4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-      .ai-modal-exit  { animation: ai-modal-dismiss .25s ease forwards; }
-      .ai-backdrop-enter { animation: ai-backdrop-in .3s ease forwards; }
-      .ai-backdrop-exit  { animation: ai-backdrop-out .25s ease forwards; }
-
-      .ai-walking {
-        animation: ai-walk-to-center 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-      }
-      .ai-walking-wiggle-inner {
-        animation: ai-walking-wiggle 1.2s linear forwards;
-      }
-
-      /* Chat scroll */
-      .ai-chat-scroll::-webkit-scrollbar { width:6px; }
-      .ai-chat-scroll::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:10px; }
-      .ai-chat-scroll::-webkit-scrollbar-track { background:transparent; }
-    `;
-    document.head.appendChild(styleEl);
-
-    /* ═══════════════════════════════════════════
-       STATE MACHINE CONSTANTS
-       ═══════════════════════════════════════════ */
-    const STATE = {
-      MINIMIZED:   'MINIMIZED',
-      CORNER_IDLE: 'CORNER_IDLE',
-      WALKING:     'WALKING',
-      MODAL_OPEN:  'MODAL_OPEN',
-    };
-
-    /* ═══════════════════════════════════════════
-       Main Widget Component
-       ═══════════════════════════════════════════ */
-    function AIWidget() {
-      const [widgetState, setWidgetState] = R.useState(STATE.CORNER_IDLE);
-      const [prevState, setPrevState] = R.useState(null);
-      const walkTimerRef = R.useRef(null);
-
-      // Expose global opener so sidebar can trigger it directly
-      R.useEffect(() => {
-        window.openAIWidget = () => {
-          if (widgetState === STATE.MODAL_OPEN) return;
-          startWalking();
-        };
-        return () => { delete window.openAIWidget; };
-      }, [widgetState]);
-
-      const [messages, setMessages] = R.useState([
-        {
-          role: "model",
-          text: "Hello! 👋 I'm your Care Navigator. I can help you find your way around MyHealth. What are you looking for?",
-        },
-      ]);
-      const [input, setInput] = R.useState("");
-      const [loading, setLoading] = R.useState(false);
-      const chatRef = R.useRef(null);
-
-      // Dark mode detection - re-check on every render
-      const isDark = document.documentElement.classList.contains("dark");
-
-      // Also listen for class changes on <html>
-      const [, forceUpdate] = R.useState(0);
-      R.useEffect(() => {
-        const obs = new MutationObserver(() => forceUpdate(n => n + 1));
-        obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-        return () => obs.disconnect();
-      }, []);
-
-      // Scroll chat to bottom on new messages
-      R.useEffect(() => {
-        if (chatRef.current) {
-          chatRef.current.scrollTop = chatRef.current.scrollHeight;
-        }
-      }, [messages]);
-
-      // Lock body scroll when modal open
-      R.useEffect(() => {
-        if (widgetState === STATE.MODAL_OPEN) {
-          document.body.style.overflow = "hidden";
-        } else {
-          document.body.style.overflow = "";
-        }
-        return () => {
-          document.body.style.overflow = "";
-        };
-      }, [widgetState]);
-
-      // Cleanup walk timer
-      R.useEffect(() => {
-        return () => { if (walkTimerRef.current) clearTimeout(walkTimerRef.current); };
-      }, []);
-
-      /* ── State Transitions ── */
-      function startWalking() {
-        setPrevState(widgetState);
-        setWidgetState(STATE.WALKING);
-        walkTimerRef.current = setTimeout(() => {
-          setWidgetState(STATE.MODAL_OPEN);
-          walkTimerRef.current = null;
-        }, 1200);
-      }
-
-      function closeToMinimized() {
-        setPrevState(STATE.MODAL_OPEN);
-        setWidgetState(STATE.MINIMIZED);
-      }
-
-      function closeToCorner() {
-        setPrevState(STATE.MODAL_OPEN);
-        setWidgetState(STATE.CORNER_IDLE);
-      }
-
-      function restoreFromMinimized() {
-        setPrevState(STATE.MINIMIZED);
-        setWidgetState(STATE.CORNER_IDLE);
-      }
-
-      function hideFabToMinimized() {
-        setPrevState(STATE.CORNER_IDLE);
-        setWidgetState(STATE.MINIMIZED);
-      }
-
-      /* -- Text chat send -- */
-      async function sendMessage() {
-        if (!input.trim() || loading) return;
-        const userMsg = { role: "user", text: input.trim() };
-        const newMsgs = [...messages, userMsg];
-        setMessages(newMsgs);
-        setInput("");
-        setLoading(true);
-        try {
-          const reply = await sendToGemini(newMsgs);
-          setMessages((prev) => [...prev, { role: "model", text: reply }]);
-        } catch (e) {
-          setMessages((prev) => [
-            ...prev,
-            {
-              role: "model",
-              text: "Sorry, I had trouble connecting. Please try again.",
-            },
-          ]);
-        }
-        setLoading(false);
-      }
-
-      function handleKeyDown(e) {
-        if (e.key === "Enter" && !e.shiftKey) {
-          e.preventDefault();
-          sendMessage();
-        }
-      }
-
-      /* ═══════════════════════════════════════
-         RENDER: MINIMIZED STATE
-         Slim tab flush against bottom-right edge
-         ═══════════════════════════════════════ */
-      const minimizedTab = widgetState === STATE.MINIMIZED && h(
-        "button",
-        {
-          onClick: restoreFromMinimized,
-          className: "ai-tab-enter",
-          style: {
-            position: "fixed",
-            bottom: 32,
-            right: 0,
-            zIndex: 9999,
-            width: 28,
-            height: 64,
-            background: "linear-gradient(135deg, #2563eb, #3b82f6)",
-            color: "#fff",
-            border: "none",
-            borderRadius: "14px 0 0 14px",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            boxShadow: "-4px 4px 16px rgba(37,99,235,.3)",
-            transition: "width .2s",
-            fontSize: 16,
-          },
-          onMouseEnter: (e) => { e.currentTarget.style.width = "36px"; },
-          onMouseLeave: (e) => { e.currentTarget.style.width = "28px"; },
-          title: "Show AI assistant",
-        },
-        h(ChevronLeftIcon, null)
-      );
-
-      /* ═══════════════════════════════════════
-         RENDER: CORNER IDLE STATE
-         Floating robot FAB in bottom-right corner
-         ═══════════════════════════════════════ */
-      const cornerFab = widgetState === STATE.CORNER_IDLE && h(
-        "div",
-        {
-          className: "ai-fab-enter",
-          style: {
-            position: "fixed",
-            bottom: 32,
-            right: 32,
-            zIndex: 9999,
-          },
-        },
-        // Close mini-button (sends to minimized)
-        h(
-          "button",
-          {
-            onClick: (e) => {
-              e.stopPropagation();
-              hideFabToMinimized();
-            },
-            style: {
-              position: "absolute",
-              top: -4,
-              right: -4,
-              width: 22,
-              height: 22,
-              borderRadius: "50%",
-              background: "#1e293b",
-              color: "#fff",
-              border: "2px solid #fff",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 10,
-              zIndex: 2,
-              padding: 0,
-            },
-            title: "Hide assistant",
-          },
-          h(XIcon, { size: 12 })
-        ),
-        // Red notification dot
-        h("div", {
-          style: {
-            position: "absolute",
-            top: 2,
-            right: 2,
-            width: 14,
-            height: 14,
-            background: "#ef4444",
-            borderRadius: "50%",
-            border: "2px solid #fff",
-            zIndex: 1,
-          },
-        }),
-        // Main FAB — click triggers walking
-        h(
-          "button",
-          {
-            onClick: startWalking,
-            style: {
-              width: 64,
-              height: 64,
-              borderRadius: "50%",
-              background: "linear-gradient(135deg, #2563eb, #3b82f6)",
-              color: "#fff",
-              border: "none",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: "0 8px 32px rgba(37,99,235,.45)",
-              transition: "transform .2s, box-shadow .2s",
-              position: "relative",
-              animation: "ai-ring-pulse 2s infinite",
-            },
-            onMouseEnter: (e) => {
-              e.currentTarget.style.transform = "scale(1.1)";
-              e.currentTarget.style.boxShadow = "0 12px 40px rgba(37,99,235,.55)";
-            },
-            onMouseLeave: (e) => {
-              e.currentTarget.style.transform = "scale(1)";
-              e.currentTarget.style.boxShadow = "0 8px 32px rgba(37,99,235,.45)";
-            },
-            title: "AI Care Navigator",
-          },
-          h(BotIcon, null)
-        )
-      );
-
-      /* ═══════════════════════════════════════
-         RENDER: WALKING STATE
-         Robot physically moves to center with wiggle
-         ═══════════════════════════════════════ */
-      const walkingRobot = widgetState === STATE.WALKING && h(
-        "div",
-        {
-          className: "ai-walking",
-          style: {
-            position: "fixed",
-            bottom: 32,
-            right: 32,
-            zIndex: 10001,
-            pointerEvents: "none",
-          },
-        },
-        h(
-          "div",
-          {
-            className: "ai-walking-wiggle-inner",
-            style: {
-              width: 64,
-              height: 64,
-              borderRadius: "50%",
-              background: "linear-gradient(135deg, #2563eb, #3b82f6)",
-              color: "#fff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: "0 12px 40px rgba(37,99,235,.5)",
-            },
-          },
-          h(BotIcon, null)
-        )
-      );
-
-      /* ═══════════════════════════════════════
-         RENDER: MODAL OPEN STATE
-         Full chat modal with blurred backdrop
-         ═══════════════════════════════════════ */
-      const modal = widgetState === STATE.MODAL_OPEN && h(
-        "div",
-        {
-          style: {
-            position: "fixed",
-            inset: 0,
-            zIndex: 10000,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          },
-        },
-        // Backdrop — clicking goes back to corner idle
-        h("div", {
-          onClick: closeToCorner,
-          className: "ai-backdrop-enter",
-          style: {
-            position: "absolute",
-            inset: 0,
-            background: isDark ? "rgba(0,0,0,.55)" : "rgba(15,23,42,.45)",
-            backdropFilter: "blur(6px)",
-            WebkitBackdropFilter: "blur(6px)",
-          },
-        }),
-        // Widget container
-        h(
-          "div",
-          {
-            className: "ai-modal-enter",
-            style: {
-              position: "relative",
-              width: "92%",
-              maxWidth: 420,
-              height: 520,
-              maxHeight: "85vh",
-              background: isDark ? "#1f2937" : "#fff",
-              borderRadius: 20,
-              boxShadow: isDark ? "0 25px 60px rgba(0,0,0,.5)" : "0 25px 60px rgba(0,0,0,.25)",
-              overflow: "hidden",
-              display: "flex",
-              flexDirection: "column",
-              zIndex: 1,
-            },
-          },
-          // Header
-          h(
-            "div",
-            {
-              style: {
-                background: "linear-gradient(135deg, #1d4ed8, #3b82f6)",
-                color: "#fff",
-                padding: "14px 18px",
-                flexShrink: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              },
-            },
-            h(
-              "div",
-              {
-                style: {
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                },
-              },
-              h(
-                "div",
-                {
-                  style: {
-                    width: 36,
-                    height: 36,
-                    borderRadius: 10,
-                    background: "rgba(255,255,255,.2)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  },
-                },
-                h(
-                  "svg",
-                  {
-                    xmlns: "http://www.w3.org/2000/svg",
-                    width: 22,
-                    height: 22,
-                    viewBox: "0 0 24 24",
-                    fill: "none",
-                    stroke: "currentColor",
-                    strokeWidth: 2,
-                    strokeLinecap: "round",
-                    strokeLinejoin: "round",
-                  },
-                  h("path", { d: "M12 8V4H8" }),
-                  h("rect", { width: 16, height: 12, x: 4, y: 8, rx: 2 }),
-                  h("path", { d: "M9.5 13a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0Z" }),
-                  h("path", { d: "M15.5 13a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0Z" })
-                )
-              ),
-              h(
-                "div",
-                null,
-                h(
-                  "div",
-                  {
-                    style: {
-                      fontSize: 16,
-                      fontWeight: 700,
-                      letterSpacing: "-.3px",
-                    },
-                  },
-                  "Care Navigator"
-                ),
-                h(
-                  "div",
-                  {
-                    style: {
-                      fontSize: 11,
-                      opacity: 0.8,
-                      marginTop: 1,
-                    },
-                  },
-                  "Always here to help"
-                )
-              )
-            ),
-            // X close button — sends to MINIMIZED
-            h(
-              "button",
-              {
-                onClick: closeToMinimized,
-                style: {
-                  width: 32,
-                  height: 32,
-                  borderRadius: "50%",
-                  background: "rgba(255,255,255,.2)",
-                  color: "#fff",
-                  border: "none",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  transition: "background .2s",
-                  flexShrink: 0,
-                },
-                onMouseEnter: (e) => { e.currentTarget.style.background = "rgba(255,255,255,.35)"; },
-                onMouseLeave: (e) => { e.currentTarget.style.background = "rgba(255,255,255,.2)"; },
-                title: "Close",
-              },
-              h(XIcon, { size: 16 })
-            )
-          ),
-          // Chat content area
-          h(
-            R.Fragment,
-            null,
-                // Messages
-                h(
-                  "div",
-                  {
-                    ref: chatRef,
-                    className: "ai-chat-scroll",
-                    style: {
-                      flex: 1,
-                      overflowY: "auto",
-                      padding: 16,
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 12,
-                    },
-                  },
-                  messages.map((m, i) =>
-                    h(
-                      "div",
-                      {
-                        key: i,
-                        style: {
-                          display: "flex",
-                          justifyContent:
-                            m.role === "user" ? "flex-end" : "flex-start",
-                        },
-                      },
-                      h(
-                        "div",
-                        {
-                          style: {
-                            maxWidth: "80%",
-                            padding: "10px 14px",
-                            borderRadius:
-                              m.role === "user"
-                                ? "16px 16px 4px 16px"
-                                : "16px 16px 16px 4px",
-                            background:
-                              m.role === "user"
-                                ? "linear-gradient(135deg, #2563eb, #3b82f6)"
-                                : (isDark ? "#374151" : "#f1f5f9"),
-                            color: m.role === "user" ? "#fff" : (isDark ? "#e5e7eb" : "#1e293b"),
-                            fontSize: 14,
-                            lineHeight: 1.5,
-                            whiteSpace: "pre-wrap",
-                            wordBreak: "break-word",
-                            boxShadow:
-                              m.role === "user"
-                                ? "0 2px 8px rgba(37,99,235,.2)"
-                                : (isDark ? "0 1px 4px rgba(0,0,0,.2)" : "0 1px 4px rgba(0,0,0,.06)"),
-                          },
-                        },
-                        m.text
-                      )
-                    )
-                  ),
-                  loading &&
-                    h(
-                      "div",
-                      {
-                        style: {
-                          display: "flex",
-                          justifyContent: "flex-start",
-                        },
-                      },
-                      h(
-                        "div",
-                        {
-                          style: {
-                            padding: "10px 18px",
-                            borderRadius: "16px 16px 16px 4px",
-                            background: isDark ? "#374151" : "#f1f5f9",
-                            color: isDark ? "#9ca3af" : "#94a3b8",
-                            fontSize: 14,
-                          },
-                        },
-                        "Thinking..."
-                      )
-                    )
-                ),
-                // Input bar
-                h(
-                  "div",
-                  {
-                    style: {
-                      padding: "10px 14px",
-                      borderTop: isDark ? "1px solid #374151" : "1px solid #e2e8f0",
-                      display: "flex",
-                      gap: 8,
-                      alignItems: "center",
-                      flexShrink: 0,
-                      background: isDark ? "#1f2937" : "#fff",
-                    },
-                  },
-                  h("input", {
-                    value: input,
-                    onChange: (e) => setInput(e.target.value),
-                    onKeyDown: handleKeyDown,
-                    placeholder: window.location.pathname.includes('doctor_dashboard') ? "Ask about patient data, clinical insights, or summaries..." : "Ask me anything about MyHealth...",
-                    disabled: loading,
-                    style: {
-                      flex: 1,
-                      border: isDark ? "1px solid #4b5563" : "1px solid #e2e8f0",
-                      borderRadius: 12,
-                      padding: "10px 14px",
-                      fontSize: 14,
-                      outline: "none",
-                      color: isDark ? "#f3f4f6" : "#1e293b",
-                      background: isDark ? "#111827" : "#f8fafc",
-                      transition: "border-color .2s",
-                    },
-                    onFocus: (e) => {
-                      e.target.style.borderColor = "#3b82f6";
-                    },
-                    onBlur: (e) => {
-                      e.target.style.borderColor = isDark ? "#4b5563" : "#e2e8f0";
-                    },
-                  }),
-                  h(
-                    "button",
-                    {
-                      onClick: sendMessage,
-                      disabled: loading || !input.trim(),
-                      style: {
-                        width: 40,
-                        height: 40,
-                        borderRadius: 12,
-                        background:
-                          !input.trim() || loading ? (isDark ? "#4b5563" : "#cbd5e1") : "#2563eb",
-                        color: "#fff",
-                        border: "none",
-                        cursor:
-                          !input.trim() || loading
-                            ? "not-allowed"
-                            : "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        transition: "background .2s",
-                        flexShrink: 0,
-                      },
-                    },
-                    h(SendIcon, null)
-                  )
-                )
-              )
-
-        )
-      );
-
-      return h(R.Fragment, null, minimizedTab, cornerFab, walkingRobot, modal);
-    }
-
-    /* -- Mount -- */
-    RD.createRoot(root).render(h(AIWidget, null));
+ async function sendToServerProxy(msgs) {
+  const res = await fetch(SERVER_PROXY_URL, {
+   method: "POST",
+   headers: { "Content-Type": "application/json" },
+   body: JSON.stringify({ messages: msgs }),
+  });
+  const data = await res.json();
+  if (data.status === 'success') {
+   if (data.action) setTimeout(() => handleAIAction(data.action), 500);
+   return data.reply;
   }
+  throw new Error(data.message || "Proxy error");
+ }
 
-  // Start after DOM ready
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", boot);
+ async function sendToGeminiFallback(msgs) {
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_TEXT_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+  const contents = msgs.map((m) => ({
+   role: m.role,
+   parts: [{ text: m.text }],
+  }));
+  contents.unshift({ role: "user", parts: [{ text: FALLBACK_SYSTEM_PROMPT }] });
+  contents.unshift({ role: "model", parts: [{ text: "Understood." }] });
+
+  const res = await fetch(apiUrl, {
+   method: "POST",
+   headers: { "Content-Type": "application/json" },
+   body: JSON.stringify({ contents }),
+  });
+  const data = await res.json();
+  if (data.candidates && data.candidates.length> 0) {
+   return data.candidates[0].content.parts[0].text;
+  }
+  throw new Error("Invalid API response");
+ }
+
+ async function sendToGemini(msgs) {
+  if (USE_SERVER_PROXY) {
+   try {
+    return await sendToServerProxy(msgs);
+   } catch (e) {
+    console.warn("Server proxy failed, falling back to direct API", e);
+   }
+  }
+  return await sendToGeminiFallback(msgs);
+ }
+
+ async function sendMessageText(text) {
+  if (!text.trim() || loading) return;
+  const userMsg = { role: "user", text: text.trim() };
+  messages.push(userMsg);
+  loading = true;
+  render();
+  
+  try {
+   const reply = await sendToGemini(messages);
+   messages.push({ role: "model", text: reply });
+  } catch (e) {
+   messages.push({ role: "model", text: "Sorry, I had trouble connecting. Please try again." });
+  }
+  loading = false;
+  render();
+ }
+
+ function toggleRecording() {
+  if (!recognition) return;
+  if (isRecording) {
+   stopRecording();
   } else {
-    boot();
+   isRecording = true;
+   recognition.start();
+   render();
   }
+ }
+
+ function stopRecording() {
+  isRecording = false;
+  if (recognition) recognition.stop();
+  render();
+ }
+
+ /* -- Render Engine -- */
+ function render() {
+  if (!rootEl) return;
+  const isDark = document.documentElement.classList.contains("dark");
+  
+  // Clear root
+  rootEl.innerHTML = '';
+  
+  if (widgetState === STATE.MINIMIZED) {
+   const btn = document.createElement("button");
+   btn.className = "ai-tab-enter";
+   btn.style.cssText = `position:fixed; bottom:32px; right:0; z-index:9999; width:28px; height:64px; background:linear-gradient(135deg, #2563eb, #3b82f6); color:#fff; border:none; border-radius:14px 0 0 14px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:-4px 4px 16px rgba(37,99,235,.3); font-size:16px; transition:width 0.2s;`;
+   btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>`;
+   btn.onmouseenter = () => btn.style.width = "36px";
+   btn.onmouseleave = () => btn.style.width = "28px";
+   btn.onclick = () => { widgetState = STATE.CORNER_IDLE; render(); };
+   rootEl.appendChild(btn);
+  } 
+  else if (widgetState === STATE.CORNER_IDLE) {
+   const container = document.createElement("div");
+   container.className = "ai-fab-slide-in";
+   container.style.cssText = `position:fixed; bottom:32px; right:32px; z-index:9999;`;
+   
+   const closeBtn = document.createElement("button");
+   closeBtn.style.cssText = `position:absolute; top:-6px; right:-6px; width:22px; height:22px; border-radius:50%; background:#ef4444; color:white; border:2px solid white; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:10; box-shadow:0 2px 4px rgba(0,0,0,0.1);`;
+   closeBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
+   closeBtn.onclick = (e) => { e.stopPropagation(); widgetState = STATE.MINIMIZED; render(); };
+   
+   const fabBtn = document.createElement("button");
+   fabBtn.className = "ai-ring-pulse";
+   fabBtn.style.cssText = `width:64px; height:64px; border-radius:50%; background:linear-gradient(135deg, #2563eb, #3b82f6); border:none; color:white; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 10px 25px -5px rgba(37,99,235,0.4);`;
+   fabBtn.innerHTML = `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="m2 14 2 2 2-2"/><path d="m22 14-2 2-2-2"/><path d="M9.5 13a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0Z"/><path d="M15.5 13a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0Z"/></svg>`;
+   fabBtn.onclick = () => { 
+    widgetState = STATE.WALKING; 
+    render();
+    walkTimer = setTimeout(() => {
+     widgetState = STATE.MODAL_OPEN;
+     render();
+    }, 1200);
+   };
+   
+   container.appendChild(closeBtn);
+   container.appendChild(fabBtn);
+   rootEl.appendChild(container);
+  }
+  else if (widgetState === STATE.WALKING) {
+   const container = document.createElement("div");
+   container.className = "ai-walking";
+   container.style.cssText = `position:fixed; z-index:10000; pointer-events:none;`;
+   
+   const inner = document.createElement("div");
+   inner.className = "ai-walking-wiggle-inner";
+   
+   const fab = document.createElement("div");
+   fab.style.cssText = `width:64px; height:64px; border-radius:50%; background:linear-gradient(135deg, #2563eb, #3b82f6); color:white; display:flex; align-items:center; justify-content:center; box-shadow:0 15px 35px -5px rgba(37,99,235,0.6);`;
+   fab.innerHTML = `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="m2 14 2 2 2-2"/><path d="m22 14-2 2-2-2"/><path d="M9.5 13a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0Z"/><path d="M15.5 13a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0Z"/></svg>`;
+   
+   inner.appendChild(fab);
+   container.appendChild(inner);
+   
+   const backdrop = document.createElement("div");
+   backdrop.className = "ai-backdrop-in";
+   backdrop.style.cssText = `position:fixed; inset:0; background:rgba(0,0,0,0.3); z-index:9999; pointer-events:none;`;
+   
+   rootEl.appendChild(backdrop);
+   rootEl.appendChild(container);
+  }
+  else if (widgetState === STATE.MODAL_OPEN) {
+   const backdrop = document.createElement("div");
+   backdrop.className = "ai-backdrop-in";
+   backdrop.style.cssText = `position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9998;`;
+   backdrop.onclick = () => { widgetState = STATE.CORNER_IDLE; render(); };
+   
+   const modalContainer = document.createElement("div");
+   modalContainer.style.cssText = `position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; padding:16px; pointer-events:none;`;
+   
+   const modal = document.createElement("div");
+   modal.className = "ai-modal-reveal";
+   modal.style.cssText = `width:100%; max-width:500px; height:85vh; max-height:800px; background:${isDark ? '#1f2937' : '#ffffff'}; border-radius:24px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); display:flex; flex-direction:column; overflow:hidden; pointer-events:auto; border:1px solid ${isDark ? '#374151' : '#f3f4f6'};`;
+   
+   // Header
+   const header = document.createElement("div");
+   header.style.cssText = `padding:20px; border-bottom:1px solid ${isDark ? '#374151' : '#f3f4f6'}; display:flex; justify-content:space-between; align-items:center; background:${isDark ? '#111827' : '#f8fafc'};`;
+   header.innerHTML = `
+    <div style="display:flex; align-items:center; gap:12px;">
+     <div style="width:40px; height:40px; border-radius:10px; background:linear-gradient(135deg, #2563eb, #3b82f6); display:flex; align-items:center; justify-content:center; color:white;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="m2 14 2 2 2-2"/><path d="m22 14-2 2-2-2"/><path d="M9.5 13a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0Z"/><path d="M15.5 13a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0Z"/></svg>
+     </div>
+     <div>
+      <h2 style="margin:0; font-size:16px; font-weight:700; color:${isDark ? '#fff' : '#111827'};">Care Navigator</h2>
+      <div style="display:flex; align-items:center; gap:6px;">
+       <span style="width:8px; height:8px; border-radius:50%; background:#22c55e;"></span>
+       <span style="font-size:12px; color:${isDark ? '#9ca3af' : '#6b7280'};">Online</span>
+      </div>
+     </div>
+    </div>
+   `;
+   const closeBtn = document.createElement("button");
+   closeBtn.style.cssText = `width:36px; height:36px; border-radius:50%; border:none; background:${isDark ? '#374151' : '#e5e7eb'}; color:${isDark ? '#d1d5db' : '#4b5563'}; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:background 0.2s;`;
+   closeBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
+   closeBtn.onclick = () => { widgetState = STATE.CORNER_IDLE; render(); };
+   header.appendChild(closeBtn);
+   
+   // Chat area
+   const chatArea = document.createElement("div");
+   chatArea.className = "ai-chat-scroll";
+   chatArea.style.cssText = `flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:16px; background:${isDark ? '#1f2937' : '#ffffff'};`;
+   
+   messages.forEach(msg => {
+    const isUser = msg.role === 'user';
+    const msgRow = document.createElement("div");
+    msgRow.style.cssText = `display:flex; justify-content:${isUser ? 'flex-end' : 'flex-start'}; width:100%;`;
+    
+    const bubble = document.createElement("div");
+    if (isUser) {
+     bubble.style.cssText = `max-width:80%; padding:12px 16px; border-radius:20px 20px 4px 20px; background:#2563eb; color:white; font-size:14px; line-height:1.5; box-shadow:0 2px 4px rgba(37,99,235,0.2);`;
+    } else {
+     bubble.className = "markdown-body";
+     bubble.style.cssText = `max-width:85%; padding:16px; border-radius:20px 20px 20px 4px; background:${isDark ? '#374151' : '#f1f5f9'}; color:${isDark ? '#f3f4f6' : '#1e293b'}; font-size:14px; line-height:1.6; box-shadow:0 1px 2px rgba(0,0,0,0.05);`;
+    }
+    
+    // Basic markdown parser
+    let htmlText = msg.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    htmlText = htmlText.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    htmlText = htmlText.replace(/`(.*?)`/g, '<code style="background:rgba(128,128,128,0.2);padding:2px 4px;border-radius:4px;">$1</code>');
+    htmlText = htmlText.replace(/\n/g, '<br>');
+    
+    bubble.innerHTML = htmlText;
+    msgRow.appendChild(bubble);
+    chatArea.appendChild(msgRow);
+   });
+   
+   if (loading) {
+    const loadRow = document.createElement("div");
+    loadRow.style.cssText = `display:flex; justify-content:flex-start; width:100%;`;
+    loadRow.innerHTML = `<div style="padding:16px; border-radius:20px; background:${isDark ? '#374151' : '#f1f5f9'}; color:${isDark ? '#9ca3af' : '#6b7280'}; font-size:14px; display:flex; gap:6px; align-items:center;">
+     <span style="animation:pulse 1s infinite;">●</span><span style="animation:pulse 1s 0.2s infinite;">●</span><span style="animation:pulse 1s 0.4s infinite;">●</span>
+    </div>`;
+    chatArea.appendChild(loadRow);
+   }
+   
+   // Footer
+   const footer = document.createElement("div");
+   footer.style.cssText = `padding:16px; border-top:1px solid ${isDark ? '#374151' : '#f3f4f6'}; background:${isDark ? '#1f2937' : '#ffffff'};`;
+   
+   const inputWrap = document.createElement("div");
+   inputWrap.style.cssText = `display:flex; align-items:center; gap:8px; padding:8px 16px; background:${isDark ? '#374151' : '#f8fafc'}; border-radius:24px; border:1px solid ${isDark ? '#4b5563' : '#e2e8f0'};`;
+   
+   const inputEl = document.createElement("input");
+   inputEl.type = "text";
+   inputEl.placeholder = "Type your question...";
+   inputEl.style.cssText = `flex:1; background:transparent; border:none; outline:none; font-size:15px; color:${isDark ? '#fff' : '#111827'}; min-width:0; padding:4px 0;`;
+   inputEl.onkeydown = (e) => {
+    if (e.key === 'Enter') {
+     sendMessageText(inputEl.value);
+    }
+   };
+   
+   const micBtn = document.createElement("button");
+   micBtn.style.cssText = `width:36px; height:36px; border-radius:50%; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; background:${isRecording ? '#ef4444' : 'transparent'}; color:${isRecording ? '#fff' : (isDark ? '#9ca3af' : '#6b7280')}; transition:all 0.2s;`;
+   if (isRecording) {
+    micBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>`;
+   } else {
+    micBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>`;
+   }
+   micBtn.onclick = toggleRecording;
+   
+   const sendBtn = document.createElement("button");
+   sendBtn.style.cssText = `width:36px; height:36px; border-radius:50%; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; background:#2563eb; color:white; transition:background 0.2s;`;
+   sendBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>`;
+   sendBtn.onclick = () => sendMessageText(inputEl.value);
+   
+   inputWrap.appendChild(inputEl);
+   inputWrap.appendChild(micBtn);
+   inputWrap.appendChild(sendBtn);
+   footer.appendChild(inputWrap);
+   
+   modal.appendChild(header);
+   modal.appendChild(chatArea);
+   modal.appendChild(footer);
+   modalContainer.appendChild(modal);
+   
+   rootEl.appendChild(backdrop);
+   rootEl.appendChild(modalContainer);
+   
+   // Auto-scroll
+   setTimeout(() => chatArea.scrollTop = chatArea.scrollHeight, 50);
+   
+   // Focus input
+   setTimeout(() => inputEl.focus(), 100);
+   
+   // Handle body scroll lock
+   document.body.style.overflow = "hidden";
+  }
+  
+  if (widgetState !== STATE.MODAL_OPEN) {
+   document.body.style.overflow = "";
+  }
+ }
+
+ /* -- Setup Global Opener -- */
+ window.openAIWidget = () => {
+  if (widgetState === STATE.MODAL_OPEN) return;
+  widgetState = STATE.WALKING;
+  render();
+  setTimeout(() => {
+   widgetState = STATE.MODAL_OPEN;
+   render();
+  }, 1200);
+ };
+
+ /* -- Initialize -- */
+ function boot() {
+  injectStyles();
+  rootEl = document.createElement("div");
+  rootEl.id = "ai-widget-root";
+  document.body.appendChild(rootEl);
+  
+  // Listen for dark mode toggle to re-render
+  const obs = new MutationObserver(() => render());
+  obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+  
+  render();
+ }
+
+ if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", boot);
+ } else {
+  boot();
+ }
+
 })();

@@ -1,9 +1,12 @@
 <?php
 // php/nutrition_api.php
-header("Access-Control-Allow-Origin: *");
+session_start();
 header("Content-Type: application/json; charset=UTF-8");
 
-// DUMMY CREDENTIALS - USER MUST SWAP THESE LATER for full access
+if (!isset($_SESSION['user_id'])) {
+    echo json_encode(['status' => 'error', 'message' => 'Unauthorized access.']);
+    exit();
+}
 // Google sources their data from USDA, which Edamam also aggregates with high quality data.
 $EDAMAM_APP_ID = "YOUR_EDAMAM_APP_ID";
 $EDAMAM_APP_KEY = "YOUR_EDAMAM_APP_KEY";

@@ -30,7 +30,7 @@
  * ═══════════════════════════════════════════════════════════
  */
 
-require_once 'utils/license_generator.php';
+require_once '../php/utils/license_generator.php';
 
 /* ── Database credentials (same as db_connect.php) ── */
 $servername = "localhost";

@@ -1,12 +1,347 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MyHealth - Doctor Dashboard</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MyHealth - Doctor Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+  <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <script>
+    if (localStorage.getItem('darkMode') === 'enabled') {
+      document.documentElement.classList.add('dark');
+    }
+    tailwind.config = { 
+      darkMode: 'class',
+      theme: {
+        extend: {
+
+          fontFamily: {
+            sans: ['Carbona', 'Inter', 'sans-serif']
+          },
+
+          
+          colors: {
+            semantic: {
+              bg: 'var(--bg-primary)',
+              surface: 'var(--bg-secondary)',
+              text: 'var(--text-primary)',
+              cta: 'var(--cta-primary)',
+              ctaHover: 'var(--cta-hover)',
+              brand: 'var(--brand-element)',
+              accent: 'var(--accent)',
+              border: 'var(--border-color)'
+            },
+
+            
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+
+  /* Brand Semantic Palette */
+  :root {
+    --color-ink-navy: #160C50;
+    --color-royal-blue: #00269A;
+    --color-pale-lavender: #B8CAFF;
+    --color-mint-aqua: #94EDEA;
+    --color-bright-blue: #1A55FC;
+    
+    --bg-primary: #ffffff;
+    --bg-secondary: var(--color-pale-lavender);
+    --text-primary: var(--color-ink-navy);
+    --cta-primary: var(--color-bright-blue);
+    --cta-hover: #1448d6;
+    --brand-element: var(--color-royal-blue);
+    --accent: var(--color-mint-aqua);
+    --border-color: rgba(22, 12, 80, 0.1);
+  }
+  .dark {
+    --bg-primary: var(--color-ink-navy);
+    --bg-secondary: color-mix(in srgb, var(--color-ink-navy) 88%, white);
+    --text-primary: var(--color-pale-lavender);
+    --cta-primary: var(--color-royal-blue);
+    --cta-hover: var(--color-bright-blue);
+    --brand-element: var(--color-royal-blue);
+    --accent: var(--color-mint-aqua);
+    --border-color: rgba(184, 202, 255, 0.1);
+  }
+  
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Carbona', 'Inter', sans-serif;
+  }
+
+    body { font-family: 'Inter', sans-serif; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #555; }
+    .dark ::-webkit-scrollbar-track { background: #2d3748; }
+    .dark ::-webkit-scrollbar-thumb { background: #4a5568; }
+    .dark ::-webkit-scrollbar-thumb:hover { background: #718096; }
+
+    .sidebar { width: 16rem; transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1); overflow: hidden; position: relative; }
+    .sidebar.sidebar-closed { width: 0; }
+    .sidebar-inner { min-width: 16rem; width: 16rem; display: flex; flex-direction: column; height: 100%; }
+    
+    .sidebar-edge-toggle {
+      position: absolute !important; top: 50%; left: 100%; transform: translateY(-50%); z-index: 999;
+      width: 28px; height: 64px; background: linear-gradient(135deg, #2563eb, #3b82f6); color: #fff;
+      border: none; border-radius: 0 10px 10px 0; cursor: pointer; display: flex; align-items: center;
+      justify-content: center; font-size: 16px; font-weight: 700; box-shadow: 4px 0 12px rgba(37, 99, 235, 0.25);
+      transition: width 0.2s ease; padding: 0;
+    }
+    .sidebar-edge-toggle:hover { width: 36px; }
+    .sidebar-wrapper { position: relative; flex-shrink: 0; }
+    #mainContent { transition: margin-left 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
+    .content-section { display: none; }
+    .content-section.active { display: block; }
+    
+    #loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.85); z-index: 9999; display: flex; justify-content: center; align-items: center; }
+    .dark #loading-overlay { background: rgba(17,24,39,0.85); }
+    .spinner { border: 4px solid #e5e7eb; border-top: 4px solid #3b82f6; border-radius: 50%; width: 44px; height: 44px; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .appt-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .appt-table thead th { padding: 12px 14px; text-align: left; font-weight: 600; font-size: 12px; text-transform: uppercase; color: #374151; border-bottom: 1px solid #e5e7eb; }
+    .dark .appt-table thead th { color: #d1d5db; border-bottom-color: #374151; }
+    .appt-table tbody td { padding: 12px 14px; border-bottom: 1px solid #f3f4f6; color: #374151; }
+    .dark .appt-table tbody td { border-bottom-color: #374151; color: #d1d5db; }
+    .appt-table tbody tr:hover { background: #f9fafb; }
+    .dark .appt-table tbody tr:hover td { background: #1f2937; color: #fff; }
+
+    .badge { padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+    .badge-green { background: #dcfce7; color: #166534; }
+    .badge-red { background: #fee2e2; color: #991b1b; }
+    .badge-orange { background: #ffedd5; color: #9a3412; }
+    .badge-blue { background: #dbeafe; color: #1e40af; }
+    .badge-gray { background: #f3f4f6; color: #374151; }
+    
+    .sidebar-link { transition: all 0.2s; }
+    .sidebar-link:hover { transform: translateX(8px); background: #4f46e5 !important; color: white !important; }
+    .sidebar-link.active { background: #4f46e5 !important; color: white !important; box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3); }
+    .sidebar-link.active ion-icon, .sidebar-link:hover ion-icon { color: white !important; }
+
+    .dark .swal2-popup { background: #1f2937 !important; color: #f3f4f6 !important; border-radius: 1rem !important; }
+    .dark .swal2-title { color: #f9fafb !important; }
+    .dark .swal2-html-container { color: #d1d5db !important; }
+    
+    .stat-card-premium:hover { transform: translateY(-4px); box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); }
+  </style>
 </head>
-<body>
-    <!-- Clean slate: ready for your new dashboard -->
-    <div id="root"></div>
+<body class="flex flex-col h-screen overflow-hidden bg-semantic-surface dark:bg-semantic-bg text-semantic-text dark:text-semantic-text transition-colors duration-300">
+
+  <!-- Loading Overlay -->
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- HEADER -->
+  <header class="h-20 w-full flex-shrink-0 bg-semantic-bg dark:bg-semantic-bg border-b border-semantic-border dark:border-semantic-border flex items-center justify-between px-6 z-50">
+    <div class="flex items-center gap-6">
+      <a href="../index.html" class="flex items-center gap-3">
+        <img src="../image/HealthcareNewIcon-removebg-preview.png" class="h-10 w-auto" />
+        <span class="text-2xl font-extrabold hidden md:block">MyHealth Doctor</span>
+      </a>
+      
+      <!-- Presence Toggle -->
+      <div class="hidden md:flex items-center ml-8 bg-semantic-surface dark:bg-semantic-surface p-1 rounded-full border border-semantic-border dark:border-semantic-border">
+        <select id="presence-select" onchange="updatePresence(this.value)" class="bg-transparent border-none text-sm font-bold text-semantic-text opacity-90 dark:text-semantic-text dark:opacity-90 focus:ring-0 cursor-pointer pl-3 pr-8">
+          <option value="on_duty">🟢 On Duty</option>
+          <option value="in_consultation">🔴 In Consultation</option>
+          <option value="on_break">🟡 On Break</option>
+          <option value="off_shift">⚪ Off Shift</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="flex items-center space-x-6">
+      <button id="darkModeToggle" class="p-2 rounded-full hover:bg-semantic-surface dark:hover:bg-semantic-surface transition-colors">
+        <ion-icon name="moon-outline" id="darkModeIcon" class="text-2xl"></ion-icon>
+      </button>
+      
+      <!-- Notifications -->
+      <div class="relative">
+        <button id="notificationMenuButton" onclick="toggleNotificationMenu(event)" class="relative p-2 rounded-full hover:bg-semantic-surface dark:hover:bg-semantic-surface transition-colors">
+          <ion-icon name="notifications-outline" class="text-2xl"></ion-icon>
+          <span id="header-notif-badge" class="hidden absolute top-1.5 right-1.5 h-2.5 w-2.5 bg-red-500 rounded-full border border-white dark:border-semantic-border"></span>
+        </button>
+        <div id="notificationMenu" class="absolute right-0 mt-4 w-72 bg-semantic-bg dark:bg-semantic-surface rounded-xl shadow-lg p-4 hidden z-50 border border-semantic-border dark:border-semantic-border">
+          <h4 class="text-xs font-bold mb-2">Latest Notifications</h4>
+          <div id="latest-notification-container"><p class="text-xs text-semantic-text opacity-70">None</p></div>
+        </div>
+      </div>
+
+      <!-- User Menu -->
+      <div class="relative">
+        <button id="userMenuButton" class="flex items-center gap-3 p-1.5 pr-3 rounded-full hover:bg-semantic-surface dark:hover:bg-semantic-surface">
+          <img id="user-initial-header" src="../image/default_user.png" class="h-9 w-9 rounded-full object-cover border border-semantic-border dark:border-semantic-border">
+          <div class="hidden md:flex flex-col items-start">
+            <span id="header-user-name" class="text-sm font-bold leading-none">Doctor</span>
+            <span id="header-user-spec" class="text-xs text-semantic-text opacity-70 mt-1">Specialty</span>
+          </div>
+        </button>
+        <div id="userMenu" class="absolute right-0 mt-4 w-48 bg-semantic-bg dark:bg-semantic-surface rounded-xl shadow-lg py-2 hidden z-50 border border-semantic-border dark:border-semantic-border">
+          <a href="javascript:void(0)" onclick="handleLogout()" class="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30">
+            <ion-icon name="log-out-outline" class="text-lg"></ion-icon> Logout
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="flex flex-1 overflow-hidden">
+    <!-- SIDEBAR -->
+    <div class="sidebar-wrapper hidden md:block">
+      <aside id="sidebar" class="sidebar bg-semantic-bg dark:bg-semantic-surface shadow-xl border-r border-semantic-border dark:border-semantic-border h-full overflow-y-auto">
+        <div class="sidebar-inner">
+          <nav class="flex-grow px-2 space-y-1 pt-4">
+            <a href="#" data-view="dashboard" class="sidebar-link active flex items-center py-2.5 px-4 rounded-lg hover:bg-semantic-cta hover:text-white group text-semantic-text opacity-90 dark:text-semantic-text dark:opacity-90">
+              <ion-icon name="grid-outline" class="text-xl group-hover:text-white"></ion-icon>
+              <span class="ml-3 text-sm font-medium">Overview</span>
+            </a>
+            <a href="#" data-view="today" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-semantic-cta hover:text-white group text-semantic-text opacity-90 dark:text-semantic-text dark:opacity-90">
+              <ion-icon name="people-outline" class="text-xl group-hover:text-white"></ion-icon>
+              <span class="ml-3 text-sm font-medium">Today's Patients</span>
+            </a>
+            <a href="#" data-view="appointments" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-semantic-cta hover:text-white group text-semantic-text opacity-90 dark:text-semantic-text dark:opacity-90">
+              <ion-icon name="calendar-outline" class="text-xl group-hover:text-white"></ion-icon>
+              <span class="ml-3 text-sm font-medium">Appointments</span>
+            </a>
+            <a href="#" data-view="records" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-semantic-cta hover:text-white group text-semantic-text opacity-90 dark:text-semantic-text dark:opacity-90">
+              <ion-icon name="document-text-outline" class="text-xl group-hover:text-white"></ion-icon>
+              <span class="ml-3 text-sm font-medium">Medical Records</span>
+            </a>
+            <a href="#" data-view="prescriptions" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-semantic-cta hover:text-white group text-semantic-text opacity-90 dark:text-semantic-text dark:opacity-90">
+              <ion-icon name="flask-outline" class="text-xl group-hover:text-white"></ion-icon>
+              <span class="ml-3 text-sm font-medium">Prescriptions</span>
+            </a>
+            <a href="#" data-view="staff" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-semantic-cta hover:text-white group text-semantic-text opacity-90 dark:text-semantic-text dark:opacity-90">
+              <ion-icon name="medical-outline" class="text-xl group-hover:text-white"></ion-icon>
+              <span class="ml-3 text-sm font-medium">Staff Directory</span>
+            </a>
+          </nav>
+        </div>
+      </aside>
+      <button id="sidebarToggle" class="sidebar-edge-toggle">&#8249;</button>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <main id="mainContent" class="flex-1 overflow-x-hidden overflow-y-auto p-6">
+      
+      <!-- VIEW: OVERVIEW -->
+      <div id="view-dashboard" class="content-section active space-y-6">
+        <h1 class="text-3xl font-bold">Doctor Overview</h1>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="stat-card-premium bg-semantic-bg dark:bg-semantic-surface rounded-2xl p-6 shadow-sm border border-semantic-border dark:border-semantic-border flex justify-between items-center transition-all">
+            <div>
+              <p class="text-sm text-semantic-text opacity-70">Patients Seen (Total)</p>
+       <p id="stat-patients" class="text-3xl font-bold text-semantic-cta dark:text-semantic-text">0</p>
+            </div>
+      <div class="p-3 bg-semantic-surface dark:bg-semantic-brand/30 rounded-xl"><ion-icon name="people" class="text-2xl text-semantic-cta dark:text-semantic-accent"></ion-icon></div>
+          </div>
+          <div class="stat-card-premium bg-semantic-bg dark:bg-semantic-surface rounded-2xl p-6 shadow-sm border border-semantic-border dark:border-semantic-border flex justify-between items-center transition-all">
+            <div>
+              <p class="text-sm text-semantic-text opacity-70">Today's Appointments</p>
+              <p id="stat-today" class="text-3xl font-bold text-semantic-accent">0</p>
+            </div>
+            <div class="p-3 bg-semantic-accent dark:bg-semantic-accent/30 rounded-xl"><ion-icon name="calendar" class="text-2xl text-semantic-accent"></ion-icon></div>
+          </div>
+          <div class="stat-card-premium bg-semantic-bg dark:bg-semantic-surface rounded-2xl p-6 shadow-sm border border-semantic-border dark:border-semantic-border flex justify-between items-center transition-all">
+            <div>
+              <p class="text-sm text-semantic-text opacity-70">Pending Reviews</p>
+              <p id="stat-pending" class="text-3xl font-bold text-[var(--color-ink-navy)]">0</p>
+            </div>
+            <div class="p-3 bg-[var(--color-pale-lavender)] dark:bg-[var(--color-ink-navy)] rounded-xl"><ion-icon name="time" class="text-2xl text-[var(--color-ink-navy)]"></ion-icon></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW: TODAY'S PATIENTS -->
+      <div id="view-today" class="content-section space-y-6">
+        <h2 class="text-2xl font-bold">Today's Patients</h2>
+        <div class="bg-semantic-bg dark:bg-semantic-surface rounded-2xl shadow-sm border border-semantic-border dark:border-semantic-border overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="appt-table w-full">
+              <thead class="bg-semantic-surface dark:bg-semantic-bg/50">
+                <tr>
+                  <th>Time / Queue</th>
+                  <th>Patient Name</th>
+                  <th>Reason / AI Priority</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="today-patients-tbody">
+                <!-- JS Injected -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW: APPOINTMENTS -->
+      <div id="view-appointments" class="content-section space-y-6">
+        <h2 class="text-2xl font-bold">Appointment History</h2>
+        <div class="bg-semantic-bg dark:bg-semantic-surface rounded-2xl shadow-sm border border-semantic-border dark:border-semantic-border p-6">
+          <div class="flex gap-4 mb-4 border-b border-semantic-border dark:border-semantic-border">
+      <button class="pb-2 px-1 border-b-2 font-bold text-semantic-cta dark:text-semantic-accent border-semantic-accent" id="tab-today" onclick="switchApptTab('today')">Today</button>
+            <button class="pb-2 px-1 border-b-2 font-medium text-semantic-text opacity-70 border-transparent hover:text-semantic-text opacity-90" id="tab-upcoming" onclick="switchApptTab('upcoming')">Upcoming</button>
+            <button class="pb-2 px-1 border-b-2 font-medium text-semantic-text opacity-70 border-transparent hover:text-semantic-text opacity-90" id="tab-past" onclick="switchApptTab('past')">Past</button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="appt-table w-full">
+              <thead><tr><th>Date & Time</th><th>Patient</th><th>Type</th><th>Status</th></tr></thead>
+              <tbody id="appointments-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW: RECORDS -->
+      <div id="view-records" class="content-section space-y-6">
+        <h2 class="text-2xl font-bold">Medical Records Authored</h2>
+        <div class="bg-semantic-bg dark:bg-semantic-surface rounded-2xl shadow-sm border border-semantic-border dark:border-semantic-border overflow-hidden">
+          <table class="appt-table w-full">
+            <thead class="bg-semantic-surface dark:bg-semantic-bg/50"><tr><th>Date</th><th>Patient</th><th>Type</th><th>Summary</th></tr></thead>
+            <tbody id="records-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- VIEW: PRESCRIPTIONS -->
+      <div id="view-prescriptions" class="content-section space-y-6">
+        <h2 class="text-2xl font-bold">Prescriptions Issued</h2>
+        <div class="bg-semantic-bg dark:bg-semantic-surface rounded-2xl shadow-sm border border-semantic-border dark:border-semantic-border overflow-hidden">
+          <table class="appt-table w-full">
+            <thead class="bg-semantic-surface dark:bg-semantic-bg/50"><tr><th>Date</th><th>Patient</th><th>Medication</th><th>Dosage & Frequency</th></tr></thead>
+            <tbody id="prescriptions-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- VIEW: STAFF DIRECTORY -->
+      <div id="view-staff" class="content-section space-y-6">
+        <h2 class="text-2xl font-bold">Staff Directory</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="staff-grid">
+          <!-- JS Injected -->
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="../js/dashboard.js"></script>
+  <script src="../js/doctor-dashboard.js"></script>
 </body>
 </html>

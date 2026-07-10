@@ -306,8 +306,16 @@ CREATE TABLE IF NOT EXISTS feedback_reports (
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-
--- TICKETS
+-- FAMILY_MEMBERS
+CREATE TABLE IF NOT EXISTS `family_members` (
+  `member_id` INT NOT NULL AUTO_INCREMENT,
+  `primary_user_id` INT NOT NULL,
+  `dependent_user_id` INT NOT NULL,
+  `relationship` VARCHAR(50) NOT NULL,
+  PRIMARY KEY (`member_id`),
+  FOREIGN KEY (`primary_user_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE,
+  FOREIGN KEY (`dependent_user_id`) REFERENCES `users`(`user_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;-- TICKETS
 CREATE TABLE IF NOT EXISTS tickets (
     ticket_id      INT AUTO_INCREMENT PRIMARY KEY,
     patient_id     INT UNSIGNED NOT NULL,
