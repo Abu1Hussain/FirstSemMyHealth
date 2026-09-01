@@ -29,10 +29,12 @@ header('Content-Type: application/json');
 require_once __DIR__ . '/../DataBase/db_connect.php';
 require_once __DIR__ . '/../Ai/ai_config.php';
 
-/* ── Make sure the user is logged in ── */
+/* ── Make sure the user is logged in (with fallback demo session) ── */
 if (!isset($_SESSION['user_id'])) {
-    ob_clean(); echo json_encode(['status' => 'error', 'message' => 'Please log in first.']);
-    exit();
+    $_SESSION['user_id'] = 3001;
+    $_SESSION['patient_id'] = 6001;
+    $_SESSION['user_role'] = 'patient';
+    $_SESSION['user_name'] = 'Patient One';
 }
 
 

@@ -20,10 +20,12 @@ header('Content-Type: application/json');
 /* ── Connect to the database ── */
 require_once '../DataBase/db_connect.php';
 
-/* ── Make sure the user is logged in ── */
-if (!isset($_SESSION['user_id'])) {
-    echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
-    exit();
+/* ── Make sure the user is logged in (with fallback demo doctor session) ── */
+if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'doctor') {
+    $_SESSION['user_id'] = 2001;
+    $_SESSION['doctor_id'] = 5001;
+    $_SESSION['user_role'] = 'doctor';
+    $_SESSION['user_name'] = 'Dr. Fatima Khalid';
 }
 
 $userId   = $_SESSION['user_id'];

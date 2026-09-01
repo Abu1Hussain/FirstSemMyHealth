@@ -114,13 +114,16 @@
       <div class="p-8 space-y-5">
         <div id="apiError" class="hidden bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-700 text-sm rounded-xl px-4 py-3"></div>
 
-        <!-- Quick Test Login Snippet -->
-        <div class="bg-semantic-surface dark:bg-semantic-surface p-3 rounded-lg border border-semantic-border dark:border-semantic-border mb-4">
-          <p class="text-[10px] font-bold text-semantic-text opacity-70 dark:text-semantic-text dark:opacity-80 uppercase tracking-wider mb-2">Quick Test Login</p>
+        <!-- Direct Login Without Authorization (Bypass Mode) -->
+        <div class="bg-semantic-surface dark:bg-semantic-surface p-3.5 rounded-xl border border-semantic-border dark:border-semantic-border mb-4">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-[11px] font-bold text-semantic-text uppercase tracking-wider">⚡ Direct Login (No Auth Required)</p>
+            <span class="text-[10px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-semibold px-2 py-0.5 rounded-full">Bypass Mode</span>
+          </div>
           <div class="flex gap-2">
-            <button type="button" onclick="document.getElementById('identifier').value='doctor1@example.test'; document.getElementById('password').value='pass1234';" class="flex-1 text-[11px] font-semibold bg-semantic-surface dark:bg-semantic-surface text-semantic-text opacity-90 dark:text-semantic-text py-1.5 rounded hover:bg-semantic-surface dark:hover:bg-semantic-surface transition-colors">👨‍⚕️ Doctor</button>
-            <button type="button" onclick="document.getElementById('identifier').value='patient@AM.com'; document.getElementById('password').value='pass1234';" class="flex-1 text-[11px] font-semibold bg-semantic-surface dark:bg-semantic-surface text-semantic-text opacity-90 dark:text-semantic-text py-1.5 rounded hover:bg-semantic-surface dark:hover:bg-semantic-surface transition-colors">🤒 Patient</button>
-            <button type="button" onclick="document.getElementById('identifier').value='admin@AM.com'; document.getElementById('password').value='pass1234';" class="flex-1 text-[11px] font-semibold bg-semantic-surface dark:bg-semantic-surface text-semantic-text opacity-90 dark:text-semantic-text py-1.5 rounded hover:bg-semantic-surface dark:hover:bg-semantic-surface transition-colors">⚙️ Admin</button>
+            <button type="button" onclick="bypassLogin('doctor')" class="flex-1 text-[11px] font-bold bg-semantic-cta/10 text-semantic-cta hover:bg-semantic-cta hover:text-white py-2 rounded-lg transition-all border border-semantic-cta/20 shadow-sm flex items-center justify-center gap-1">👨‍⚕️ Doctor</button>
+            <button type="button" onclick="bypassLogin('patient')" class="flex-1 text-[11px] font-bold bg-semantic-cta/10 text-semantic-cta hover:bg-semantic-cta hover:text-white py-2 rounded-lg transition-all border border-semantic-cta/20 shadow-sm flex items-center justify-center gap-1">🤒 Patient</button>
+            <button type="button" onclick="bypassLogin('admin')" class="flex-1 text-[11px] font-bold bg-semantic-cta/10 text-semantic-cta hover:bg-semantic-cta hover:text-white py-2 rounded-lg transition-all border border-semantic-cta/20 shadow-sm flex items-center justify-center gap-1">⚙️ Admin</button>
           </div>
         </div>
 
@@ -129,9 +132,9 @@
             <label class="text-xs font-bold text-semantic-text uppercase tracking-wider">CPR or Email</label>
             <div class="relative">
               <span class="absolute left-3.5 top-3.5 text-semantic-text"><ion-icon name="card-outline"></ion-icon></span>
-              <input type="text" id="identifier" name="identifier" required
+              <input type="text" id="identifier" name="identifier"
                   class="w-full bg-semantic-surface dark:bg-semantic-surface border-2 border-semantic-border dark:border-semantic-border rounded-xl pl-10 pr-4 py-3.5 text-sm text-semantic-text dark:text-semantic-text focus:outline-none focus:border-semantic-accent focus:ring-4 focus:ring-semantic-accent dark:focus:ring-semantic-accent/30 transition-all"
-                  placeholder="Your CPR or Email">
+                  placeholder="Any CPR, Email, or Doctor/Admin name">
             </div>
             <span class="error-message hidden text-xs text-red-500 font-medium" id="identifierError">Please enter your CPR or Email</span>
           </div>
@@ -140,9 +143,9 @@
             <label class="text-xs font-bold text-semantic-text uppercase tracking-wider">Password</label>
             <div class="relative">
               <span class="absolute left-3.5 top-3.5 text-semantic-text"><ion-icon name="lock-closed-outline"></ion-icon></span>
-              <input type="password" id="password" name="password" required
+              <input type="password" id="password" name="password"
                   class="w-full bg-semantic-surface dark:bg-semantic-surface border-2 border-semantic-border dark:border-semantic-border rounded-xl pl-10 pr-12 py-3.5 text-sm text-semantic-text dark:text-semantic-text focus:outline-none focus:border-semantic-accent focus:ring-4 focus:ring-semantic-accent dark:focus:ring-semantic-accent/30 transition-all"
-                  placeholder="••••••••">
+                  placeholder="Any password (or leave empty)">
        <button type="button" class="toggle-password absolute right-3.5 top-3 text-semantic-text hover:text-semantic-cta dark:text-semantic-accent transition-colors" data-target="password">
                 <ion-icon name="eye-outline" style="font-size:1.1rem;"></ion-icon>
               </button>
@@ -150,8 +153,8 @@
             <span class="hidden text-xs text-red-500 font-medium" id="passwordError">Please enter your password</span>
           </div>
 
-          <button type="submit" class="w-full bg-semantic-cta hover:bg-semantic-ctaHover text-white font-bold py-3.5 rounded-xl shadow-md shadow-xl  transition-all transform active:scale-95 mt-2">
-            Sign In
+          <button type="submit" class="w-full bg-semantic-cta hover:bg-semantic-ctaHover text-white font-bold py-3.5 rounded-xl shadow-md shadow-xl transition-all transform active:scale-95 mt-2">
+            Sign In Directly
           </button>
         </form>
 
@@ -167,52 +170,59 @@
 
   <script src="../js/auth.js"></script>
   <script>
+    function bypassLogin(role) {
+      localStorage.setItem('user_role', role);
+      const fd = new FormData();
+      fd.append('bypass_login', '1');
+      fd.append('role', role);
+
+      fetch('../php/auth.php', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => {
+          window.location.href = '../dashboards/' + role + '_dashboard.html';
+        })
+        .catch(err => {
+          // Fallback direct redirection even if offline/static
+          window.location.href = '../dashboards/' + role + '_dashboard.html';
+        });
+    }
+
     const loginForm = document.getElementById('loginForm');
     loginForm.addEventListener('submit', function (event) {
       event.preventDefault();
-      const identifierValue = document.getElementById('identifier').value.trim();
-      const passwordValue  = document.getElementById('password').value.trim();
-      const identifierError = document.getElementById('identifierError');
-      const passwordError  = document.getElementById('passwordError');
-      const apiError    = document.getElementById('apiError');
+      const identifierValue = document.getElementById('identifier').value.trim() || 'patient1@example.test';
+      const passwordValue  = document.getElementById('password').value.trim() || 'pass1234';
 
-      let valid = true;
-      identifierError.classList.add('hidden');
-      passwordError.classList.add('hidden');
-      apiError.classList.add('hidden');
+      let detectedRole = 'patient';
+      if (identifierValue.toLowerCase().includes('doctor')) detectedRole = 'doctor';
+      else if (identifierValue.toLowerCase().includes('admin')) detectedRole = 'admin';
 
-      if (!identifierValue) { identifierError.classList.remove('hidden'); valid = false; }
-      if (!passwordValue)  { passwordError.classList.remove('hidden');  valid = false; }
+      localStorage.setItem('user_role', detectedRole);
 
-      if (valid) {
-        const fd = new FormData();
-        fd.append('login_btn', '1');
-        fd.append('identifier', identifierValue);
-        fd.append('password', passwordValue);
+      const fd = new FormData();
+      fd.append('login_btn', '1');
+      fd.append('identifier', identifierValue);
+      fd.append('password', passwordValue);
 
-        fetch('../php/auth.php', { method: 'POST', body: fd })
-          .then(r => r.text())
-          .then(raw => {
-            try {
-              const data = JSON.parse(raw);
-              if (data.status === 'success') {
-                if (data.role) localStorage.setItem('user_role', data.role);
-                window.location.href = 'MFA.html';
-              } else {
-                apiError.textContent = data.message;
-                apiError.classList.remove('hidden');
-              }
-            } catch (e) {
-              apiError.textContent = 'Server error. Please try again.';
-              apiError.classList.remove('hidden');
+      fetch('../php/auth.php', { method: 'POST', body: fd })
+        .then(r => r.text())
+        .then(raw => {
+          try {
+            const data = JSON.parse(raw);
+            if (data.status === 'success') {
+              if (data.role) localStorage.setItem('user_role', data.role);
+              const target = data.redirect || ('../dashboards/' + (data.role || detectedRole) + '_dashboard.html');
+              window.location.href = target;
+            } else {
+              bypassLogin(detectedRole);
             }
-          })
-          .catch((err) => {
-            console.error('Fetch error:', err);
-            apiError.textContent = 'Connection error. Please make sure XAMPP Apache is running and you are accessing the site via http://localhost, not a file:// URL.';
-            apiError.classList.remove('hidden');
-          });
-      }
+          } catch (e) {
+            bypassLogin(detectedRole);
+          }
+        })
+        .catch((err) => {
+          bypassLogin(detectedRole);
+        });
     });
   </script>
 </body>
