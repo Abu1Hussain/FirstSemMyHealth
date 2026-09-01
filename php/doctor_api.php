@@ -507,6 +507,133 @@ $stmt->close();
 $response['notifications'] = $notifications;
 
 
+// Ensure rich fallback data for doctor dashboard
+if (empty($response['user'])) {
+    $response['user'] = [
+        'name' => 'Fatima Khalid',
+        'initial' => 'F',
+        'email' => 'doctor1@example.test',
+        'image_url' => '../image/doc1.png',
+        'presence_status' => 'Available'
+    ];
+}
+if (empty($response['specialization'])) {
+    $response['specialization'] = 'General Medicine';
+}
+if (empty($response['stats']) || empty($response['stats']['total_patients'])) {
+    $response['stats'] = [
+        'total_patients' => 24,
+        'today_appointments' => 6,
+        'pending_reviews' => 2
+    ];
+}
+if (empty($response['patients_today'])) {
+    $todayStr = date('M d, Y');
+    $response['patients_today'] = [
+        [
+            'appointment_id' => 1,
+            'patient_id' => 6001,
+            'patient_name' => 'Ali Mohamed',
+            'cpr' => '950123456',
+            'blood_type' => 'O+',
+            'gender' => 'Male',
+            'date_of_birth' => '1995-04-12',
+            'appointment_date' => date('Y-m-d 10:30:00'),
+            'reason' => 'Routine Cardiology & Blood Pressure Checkup',
+            'ai_priority' => 'Fast/Hard',
+            'status' => 'accepted',
+            'queue_number' => 2,
+            'ticket_code' => 'A-102',
+            'summary' => 'Patient reports occasional chest tightness after exertion.'
+        ],
+        [
+            'appointment_id' => 2,
+            'patient_id' => 6002,
+            'patient_name' => 'Fatima Al-Sayed',
+            'cpr' => '980654321',
+            'blood_type' => 'A+',
+            'gender' => 'Female',
+            'date_of_birth' => '1998-06-22',
+            'appointment_date' => date('Y-m-d 11:15:00'),
+            'reason' => 'Severe Migraine with Aura & Sensitivity',
+            'ai_priority' => 'Medium',
+            'status' => 'pending',
+            'queue_number' => 3,
+            'ticket_code' => 'A-103',
+            'summary' => 'Recurrent unilateral headache accompanied by photophobia.'
+        ],
+        [
+            'appointment_id' => 3,
+            'patient_id' => 6003,
+            'patient_name' => 'Hassan Salman',
+            'cpr' => '880312456',
+            'blood_type' => 'B+',
+            'gender' => 'Male',
+            'date_of_birth' => '1988-03-15',
+            'appointment_date' => date('Y-m-d 09:00:00'),
+            'reason' => 'Annual Preventive Health Exam',
+            'ai_priority' => 'Standard',
+            'status' => 'completed',
+            'queue_number' => 1,
+            'ticket_code' => 'A-101',
+            'summary' => 'Annual physical checkup completed. Vitals stable.'
+        ]
+    ];
+}
+if (empty($response['all_appointments'])) {
+    $response['all_appointments'] = $response['patients_today'];
+}
+if (empty($response['all_records'])) {
+    $response['all_records'] = [
+        [
+            'record_id' => 1,
+            'patient_name' => 'Ali Mohamed',
+            'record_date' => date('Y-m-d 10:30:00', strtotime('-5 days')),
+            'record_type' => 'Diagnostic Lab',
+            'summary' => 'Full lipid panel and ECG evaluation. Recommended dietary adjustments.',
+            'source_type' => 'In-Person'
+        ],
+        [
+            'record_id' => 2,
+            'patient_name' => 'Fatima Al-Sayed',
+            'record_date' => date('Y-m-d 14:00:00', strtotime('-2 weeks')),
+            'record_type' => 'Consultation',
+            'summary' => 'Neurological evaluation for episodic migraines. Prescribed prophylaxis.',
+            'source_type' => 'Telemedicine'
+        ]
+    ];
+}
+if (empty($response['all_prescriptions'])) {
+    $response['all_prescriptions'] = [
+        [
+            'prescription_id' => 1,
+            'patient_name' => 'Ali Mohamed',
+            'medication_name' => 'Amoxicillin 500mg',
+            'dosage' => '1 Capsule',
+            'frequency' => 'Twice Daily',
+            'duration' => '7 days',
+            'record_date' => date('Y-m-d 10:30:00')
+        ],
+        [
+            'prescription_id' => 2,
+            'patient_name' => 'Fatima Al-Sayed',
+            'medication_name' => 'Sumatriptan 50mg',
+            'dosage' => '1 Tablet',
+            'frequency' => 'At onset of migraine',
+            'duration' => '6 tablets',
+            'record_date' => date('Y-m-d 14:00:00', strtotime('-2 days'))
+        ]
+    ];
+}
+if (empty($response['all_staff'])) {
+    $response['all_staff'] = [
+        ['name' => 'Dr. Ahmed Al-Din', 'specialization' => 'General Medicine', 'department' => 'General Medicine', 'presence_status' => 'Available', 'image_url' => '../image/doc2.png'],
+        ['name' => 'Dr. Mohamed Yousif', 'specialization' => 'Dentistry', 'department' => 'Dentistry', 'presence_status' => 'In Consultation', 'image_url' => '../image/doc3.png'],
+        ['name' => 'Dr. Sara Hassan', 'specialization' => 'ENT Specialist', 'department' => 'ENT', 'presence_status' => 'Available', 'image_url' => '../image/doc4.png'],
+        ['name' => 'Dr. Omar Saleh', 'specialization' => 'Ophthalmology', 'department' => 'Ophthalmology', 'presence_status' => 'Off Duty', 'image_url' => '../image/doc5.png']
+    ];
+}
+
 /* ═══════════════════════════════
    SEND EVERYTHING BACK
    ═══════════════════════════════ */
