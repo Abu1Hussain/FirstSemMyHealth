@@ -14,11 +14,13 @@ document.addEventListener("DOMContentLoaded", function () {
  const sidebarToggle = document.getElementById("sidebarToggle");
  const sidebar = document.getElementById("sidebar");
  const mainContent = document.getElementById("mainContent");
+ const mobileOverlay = document.getElementById("mobile-overlay");
 
  if (sidebarToggle && sidebar && mainContent) {
   sidebarToggle.addEventListener("click", () => {
    if (window.innerWidth <= 768) {
-    sidebar.classList.toggle("mobile-open");
+    const isOpen = sidebar.classList.toggle("mobile-open");
+    if (mobileOverlay) mobileOverlay.classList.toggle("active", isOpen);
    } else {
     sidebar.classList.toggle("sidebar-collapsed");
     sidebar.classList.toggle("sidebar-expanded");
@@ -31,6 +33,13 @@ document.addEventListener("DOMContentLoaded", function () {
     }
    }
   });
+
+  if (mobileOverlay) {
+   mobileOverlay.addEventListener("click", () => {
+    sidebar.classList.remove("mobile-open");
+    mobileOverlay.classList.remove("active");
+   });
+  }
   
   // Handle window resize cleanly
   window.addEventListener("resize", () => {
@@ -38,10 +47,13 @@ document.addEventListener("DOMContentLoaded", function () {
     sidebar.classList.remove("sidebar-collapsed", "sidebar-expanded");
     mainContent.classList.remove("ml-[4.5rem]", "ml-64");
    } else {
-    sidebar.classList.remove("mobile-open");
-    if (!sidebar.classList.contains("sidebar-collapsed")) {
-     sidebar.classList.add("sidebar-expanded");
-     mainContent.classList.add("ml-64");
+    if (mobileOverlay) mobileOverlay.classList.remove("active");
+    if (sidebar.classList.contains("sidebar-collapsed")) {
+      mainContent.classList.add("ml-[4.5rem]");
+      mainContent.classList.remove("ml-64");
+    } else {
+      mainContent.classList.add("ml-64");
+      mainContent.classList.remove("ml-[4.5rem]");
     }
    }
   });

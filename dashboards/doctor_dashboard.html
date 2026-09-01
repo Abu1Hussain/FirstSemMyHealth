@@ -43,6 +43,7 @@
       }
     };
   </script>
+  <link rel="stylesheet" href="../css/global-polish.css">
   <style>
 
   /* Brand Semantic Palette */
@@ -92,14 +93,6 @@
     .sidebar.sidebar-closed { width: 0; }
     .sidebar-inner { min-width: 16rem; width: 16rem; display: flex; flex-direction: column; height: 100%; }
     
-    .sidebar-edge-toggle {
-      position: absolute !important; top: 50%; left: 100%; transform: translateY(-50%); z-index: 999;
-      width: 28px; height: 64px; background: linear-gradient(135deg, #2563eb, #3b82f6); color: #fff;
-      border: none; border-radius: 0 10px 10px 0; cursor: pointer; display: flex; align-items: center;
-      justify-content: center; font-size: 16px; font-weight: 700; box-shadow: 4px 0 12px rgba(37, 99, 235, 0.25);
-      transition: width 0.2s ease; padding: 0;
-    }
-    .sidebar-edge-toggle:hover { width: 36px; }
     .sidebar-wrapper { position: relative; flex-shrink: 0; }
     #mainContent { transition: margin-left 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
     .content-section { display: none; }
@@ -138,6 +131,8 @@
   </style>
 </head>
 <body class="flex flex-col h-screen overflow-hidden bg-semantic-surface dark:bg-semantic-bg text-semantic-text dark:text-semantic-text transition-colors duration-300">
+  <a href="#mainContent" class="skip-link">Skip to main content</a>
+  <div id="mobile-overlay" class="mobile-drawer-backdrop"></div>
 
   <!-- Loading Overlay -->
   <div id="loading-overlay">
@@ -231,7 +226,7 @@
           </nav>
         </div>
       </aside>
-      <button id="sidebarToggle" class="sidebar-edge-toggle">&#8249;</button>
+      <button id="sidebarToggle" class="sidebar-edge-toggle" aria-label="Toggle navigation sidebar" title="Toggle sidebar">&#8249;</button>
     </div>
 
     <!-- MAIN CONTENT -->
@@ -269,7 +264,7 @@
       <div id="view-today" class="content-section space-y-6">
         <h2 class="text-2xl font-bold">Today's Patients</h2>
         <div class="bg-semantic-bg dark:bg-semantic-surface rounded-2xl shadow-sm border border-semantic-border dark:border-semantic-border overflow-hidden">
-          <div class="overflow-x-auto">
+          <div class="table-responsive">
             <table class="appt-table w-full">
               <thead class="bg-semantic-surface dark:bg-semantic-bg/50">
                 <tr>
@@ -297,7 +292,7 @@
             <button class="pb-2 px-1 border-b-2 font-medium text-semantic-text opacity-70 border-transparent hover:text-semantic-text opacity-90" id="tab-upcoming" onclick="switchApptTab('upcoming')">Upcoming</button>
             <button class="pb-2 px-1 border-b-2 font-medium text-semantic-text opacity-70 border-transparent hover:text-semantic-text opacity-90" id="tab-past" onclick="switchApptTab('past')">Past</button>
           </div>
-          <div class="overflow-x-auto">
+          <div class="table-responsive">
             <table class="appt-table w-full">
               <thead><tr><th>Date & Time</th><th>Patient</th><th>Type</th><th>Status</th></tr></thead>
               <tbody id="appointments-tbody"></tbody>
@@ -310,10 +305,12 @@
       <div id="view-records" class="content-section space-y-6">
         <h2 class="text-2xl font-bold">Medical Records Authored</h2>
         <div class="bg-semantic-bg dark:bg-semantic-surface rounded-2xl shadow-sm border border-semantic-border dark:border-semantic-border overflow-hidden">
-          <table class="appt-table w-full">
-            <thead class="bg-semantic-surface dark:bg-semantic-bg/50"><tr><th>Date</th><th>Patient</th><th>Type</th><th>Summary</th></tr></thead>
-            <tbody id="records-tbody"></tbody>
-          </table>
+          <div class="table-responsive">
+            <table class="appt-table w-full">
+              <thead class="bg-semantic-surface dark:bg-semantic-bg/50"><tr><th>Date</th><th>Patient</th><th>Type</th><th>Summary</th></tr></thead>
+              <tbody id="records-tbody"></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -321,10 +318,12 @@
       <div id="view-prescriptions" class="content-section space-y-6">
         <h2 class="text-2xl font-bold">Prescriptions Issued</h2>
         <div class="bg-semantic-bg dark:bg-semantic-surface rounded-2xl shadow-sm border border-semantic-border dark:border-semantic-border overflow-hidden">
-          <table class="appt-table w-full">
-            <thead class="bg-semantic-surface dark:bg-semantic-bg/50"><tr><th>Date</th><th>Patient</th><th>Medication</th><th>Dosage & Frequency</th></tr></thead>
-            <tbody id="prescriptions-tbody"></tbody>
-          </table>
+          <div class="table-responsive">
+            <table class="appt-table w-full">
+              <thead class="bg-semantic-surface dark:bg-semantic-bg/50"><tr><th>Date</th><th>Patient</th><th>Medication</th><th>Dosage & Frequency</th></tr></thead>
+              <tbody id="prescriptions-tbody"></tbody>
+            </table>
+          </div>
         </div>
       </div>
 

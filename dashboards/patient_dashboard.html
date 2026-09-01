@@ -47,6 +47,7 @@
     };
   </script>
   <link rel="stylesheet" href="../css/patient-dashboard.css">
+  <link rel="stylesheet" href="../css/global-polish.css">
 <style>
 
   /* Brand Semantic Palette */
@@ -86,6 +87,8 @@
   </style>
 </head>
 <body class="flex flex-col h-screen overflow-hidden bg-semantic-surface dark:bg-semantic-bg text-semantic-text dark:text-semantic-text transition-colors duration-300">
+  <a href="#mainContent" class="skip-link">Skip to main content</a>
+  <div id="mobile-overlay" class="mobile-drawer-backdrop"></div>
 
 
 
@@ -218,7 +221,7 @@
     </div><!-- /.sidebar-inner -->
   </aside>
   <!-- Edge-Attached Sidebar Toggle -->
-  <button id="sidebarToggle" class="sidebar-edge-toggle" title="Toggle sidebar">&#8249;</button>
+  <button id="sidebarToggle" class="sidebar-edge-toggle" aria-label="Toggle navigation sidebar" title="Toggle sidebar">&#8249;</button>
   </div><!-- /.sidebar-wrapper -->
 
   <!-- Mobile Sidebar (hidden on desktop, slides in on mobile) -->

@@ -8,6 +8,45 @@ let docData = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   fetchDoctorData();
+
+  // Unified Sidebar Edge Toggle (< & >) logic across all screen sizes
+  const sidebar = document.getElementById('sidebar');
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  const mobileOverlay = document.getElementById('mobile-overlay');
+
+  if (sidebarToggle && sidebar) {
+    sidebarToggle.addEventListener('click', () => {
+      if (window.innerWidth < 768) {
+        const isOpening = sidebar.classList.contains('closed') || !sidebar.classList.contains('sidebar-mobile-drawer');
+        if (isOpening) {
+          sidebar.classList.add('sidebar-mobile-drawer');
+          sidebar.classList.remove('closed');
+          if (mobileOverlay) mobileOverlay.classList.add('active');
+          sidebarToggle.innerHTML = '&#8249;';
+          sidebarToggle.classList.remove('mobile-edge-btn-anchored');
+        } else {
+          sidebar.classList.add('closed');
+          if (mobileOverlay) mobileOverlay.classList.remove('active');
+          sidebarToggle.innerHTML = '&#8250;';
+          sidebarToggle.classList.add('mobile-edge-btn-anchored');
+        }
+      } else {
+        const isClosed = sidebar.classList.toggle('sidebar-closed');
+        sidebarToggle.innerHTML = isClosed ? '&#8250;' : '&#8249;';
+      }
+    });
+  }
+
+  if (mobileOverlay && sidebar) {
+    mobileOverlay.addEventListener('click', () => {
+      sidebar.classList.add('closed');
+      mobileOverlay.classList.remove('active');
+      if (sidebarToggle) {
+        sidebarToggle.innerHTML = '&#8250;';
+        sidebarToggle.classList.add('mobile-edge-btn-anchored');
+      }
+    });
+  }
 });
 
 function fetchDoctorData() {

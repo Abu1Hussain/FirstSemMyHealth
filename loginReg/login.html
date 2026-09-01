@@ -41,6 +41,7 @@
       }
     };
   </script>
+  <link rel="stylesheet" href="../css/global-polish.css">
   <style>
 
   /* Brand Semantic Palette */
@@ -80,7 +81,8 @@
    body { font-family: 'Inter', sans-serif; }
   </style>
 </head>
-<body class="bg-semantic-bg min-height-screen flex flex-col" style="min-height:100vh;">
+<body class="bg-semantic-bg min-h-dvh flex flex-col" style="min-height:100dvh;">
+  <a href="#loginForm" class="skip-link">Skip to login form</a>
 
   <!-- ═══ Navbar ═══ -->
   <nav class="bg-semantic-bg/80 dark:bg-semantic-bg/80 backdrop-blur-md border-b border-semantic-border dark:border-semantic-border px-6 py-4 flex items-center justify-between sticky top-0 z-50">
@@ -92,7 +94,7 @@
    <a href="register.html" class="text-sm font-medium text-semantic-text opacity-70 dark:text-semantic-text dark:opacity-90 hover:text-semantic-cta dark:text-semantic-accent dark:hover:text-semantic-cta dark:text-semantic-accent px-3 py-1.5 rounded-lg transition-colors">Register</a>
       <a href="login.html" class="text-sm font-semibold bg-semantic-cta text-white px-4 py-1.5 rounded-lg shadow-sm hover:bg-semantic-ctaHover transition-colors">Login</a>
       <!-- Dark Mode Toggle -->
-      <button id="darkModeToggle" class="w-9 h-9 flex items-center justify-center rounded-full bg-semantic-surface dark:bg-semantic-surface text-semantic-text opacity-70 dark:text-semantic-text dark:opacity-90 hover:bg-semantic-cta dark:hover:bg-semantic-brand/40 transition-colors">
+      <button id="darkModeToggle" aria-label="Toggle Dark Mode" class="w-9 h-9 flex items-center justify-center rounded-full bg-semantic-surface dark:bg-semantic-surface text-semantic-text opacity-70 dark:text-semantic-text dark:opacity-90 hover:bg-semantic-cta dark:hover:bg-semantic-brand/40 transition-colors">
         <ion-icon id="darkModeIcon" name="moon-outline" style="font-size:1.1rem;"></ion-icon>
       </button>
     </div>

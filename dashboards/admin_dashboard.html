@@ -33,6 +33,8 @@
    nomodule
    src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"
  ></script>
+  <link rel="stylesheet" href="../css/admin-dashboard.css" />
+  <link rel="stylesheet" href="../css/global-polish.css" />
 
   <script>
    if (localStorage.getItem('darkMode') === 'enabled') {
@@ -66,8 +68,7 @@
       }
     };
   </script>
-  <link rel="stylesheet" href="../css/admin-dashboard.css">
- <style>
+  <style>
 
   /* Brand Semantic Palette */
   :root {
@@ -108,6 +109,8 @@
  <body
   class="flex flex-col h-screen overflow-hidden bg-semantic-surface dark:bg-semantic-bg text-semantic-text dark:text-semantic-text transition-colors duration-300"
 >
+  <a href="#mainContent" class="skip-link">Skip to main content</a>
+  <div id="mobile-overlay" class="mobile-drawer-backdrop"></div>
 
 
   
