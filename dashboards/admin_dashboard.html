@@ -389,6 +389,21 @@
     >
     </a>
 
+    <a
+     href="javascript:void(0)"
+     onclick="showSection('settings')"
+     data-view="settings"
+     class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-semantic-cta hover:text-white dark:hover:bg-semantic-cta group transition-all"
+   >
+     <ion-icon
+      name="settings-outline"
+      class="text-xl text-semantic-text opacity-70 dark:text-semantic-text dark:opacity-80 group-hover:text-white"
+    ></ion-icon>
+     <span class="sidebar-text ml-3 text-sm font-medium"
+     >System Settings</span
+    >
+    </a>
+
    </nav>
 
    <!-- Bottom: User Info + Logout -->
@@ -1345,29 +1360,35 @@
     document
      .querySelectorAll(".content-section")
      .forEach((sec) => sec.classList.remove("active"));
-    const target = document.getElementById(sectionId + "-section");
+    const cleanId = (sectionId || "dashboard").replace("-section", "");
+    const target = document.getElementById(cleanId + "-section");
     if (target) target.classList.add("active");
-    else
-     document.getElementById("dashboard-section").classList.add("active");
+    else {
+      const defaultSec = document.getElementById("dashboard-section");
+      if (defaultSec) defaultSec.classList.add("active");
+    }
 
     document
      .querySelectorAll(".sidebar-link")
      .forEach((link) => link.classList.remove("active"));
     const activeLink =
-     document.querySelector(`.sidebar-link[data-view="${sectionId}"]`) ||
+     document.querySelector(`.sidebar-link[data-view="${cleanId}"]`) ||
      document.querySelector(`.sidebar-link[data-view="dashboard"]`);
     if (activeLink) activeLink.classList.add("active");
 
-    const title = sectionId
+    const title = cleanId
      .replace("-", " ")
      .replace(/\b\w/g, (l) => l.toUpperCase());
     const breadcrumb = document.getElementById("breadcrumbTitle");
     if (breadcrumb) breadcrumb.textContent = title + " View";
 
-    if (window.location.hash !== "#" + sectionId) {
-     history.replaceState(null, null, "#" + sectionId);
+    if (window.location.hash !== "#" + cleanId) {
+     history.replaceState(null, null, "#" + cleanId);
     }
-    if (window.innerWidth < 1024) sidebar.classList.remove("active");
+    const sidebarEl = document.getElementById("sidebar");
+    if (sidebarEl && window.innerWidth <= 768) {
+      sidebarEl.classList.remove("mobile-open");
+    }
    }
 
    function syncViewWithHash() {

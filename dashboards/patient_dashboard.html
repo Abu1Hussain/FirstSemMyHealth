@@ -159,7 +159,7 @@
   ====================================== -->
   <!-- Sidebar Mobile Overlay -->
   <div id="mobile-overlay" class="fixed inset-0 bg-black/50 z-30 hidden transition-opacity"></div>
-  <div class="sidebar-wrapper hidden md:block">
+  <div class="sidebar-wrapper">
   <aside id="sidebar" class="sidebar bg-semantic-bg dark:bg-semantic-surface shadow-xl border-r border-semantic-border dark:border-semantic-border h-full overflow-y-auto">
     <div class="sidebar-inner">
     <!-- Nav Links -->
@@ -223,38 +223,6 @@
   <!-- Edge-Attached Sidebar Toggle -->
   <button id="sidebarToggle" class="sidebar-edge-toggle" aria-label="Toggle navigation sidebar" title="Toggle sidebar">&#8249;</button>
   </div><!-- /.sidebar-wrapper -->
-
-  <!-- Mobile Sidebar (hidden on desktop, slides in on mobile) -->
-  <aside id="sidebar-mobile" class="sidebar bg-semantic-bg dark:bg-semantic-surface shadow-xl border-r border-semantic-border dark:border-semantic-border fixed inset-y-0 left-0 z-40 overflow-y-auto transform -translate-x-full transition-transform duration-300 md:hidden" style="width:16rem; top: 5rem;">
-    <div class="sidebar-inner">
-    <nav class="flex-grow px-2 space-y-1 pt-2">
-      <a href="javascript:void(0)" data-view="dashboard" class="sidebar-link active flex items-center py-2.5 px-4 rounded-lg hover:bg-semantic-cta hover:text-white group transition-all">
-        <ion-icon name="grid-outline" class="text-xl text-semantic-text opacity-70 dark:text-semantic-text dark:opacity-80 group-hover:text-white"></ion-icon>
-        <span class="sidebar-text ml-3 text-sm font-medium">Dashboard</span>
-      </a>
-      <a href="javascript:void(0)" data-view="appointments" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-semantic-cta hover:text-white group transition-all">
-        <ion-icon name="calendar-outline" class="text-xl text-semantic-text opacity-70 dark:text-semantic-text dark:opacity-80 group-hover:text-white"></ion-icon>
-        <span class="sidebar-text ml-3 text-sm font-medium">Appointments</span>
-      </a>
-      <a href="javascript:void(0)" data-view="records" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-semantic-cta hover:text-white group transition-all">
-        <ion-icon name="document-text-outline" class="text-xl text-semantic-text opacity-70 dark:text-semantic-text dark:opacity-80 group-hover:text-white"></ion-icon>
-        <span class="sidebar-text ml-3 text-sm font-medium">Health Records</span>
-      </a>
-      <a href="javascript:void(0)" data-view="prescriptions" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-semantic-cta hover:text-white group transition-all">
-        <ion-icon name="flask-outline" class="text-xl text-semantic-text opacity-70 dark:text-semantic-text dark:opacity-80 group-hover:text-white"></ion-icon>
-        <span class="sidebar-text ml-3 text-sm font-medium">Prescriptions</span>
-      </a>
-      <a href="javascript:void(0)" data-view="notifications" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-semantic-cta hover:text-white group transition-all">
-        <ion-icon name="notifications-outline" class="text-xl text-semantic-text opacity-70 dark:text-semantic-text dark:opacity-80 group-hover:text-white"></ion-icon>
-        <span class="sidebar-text ml-3 text-sm font-medium">Notifications</span>
-      </a>
-      <a href="javascript:void(0)" data-view="profile" class="sidebar-link flex items-center py-2.5 px-4 rounded-lg hover:bg-semantic-cta hover:text-white group transition-all">
-        <ion-icon name="person-outline" class="text-xl text-semantic-text opacity-70 dark:text-semantic-text dark:opacity-80 group-hover:text-white"></ion-icon>
-        <span class="sidebar-text ml-3 text-sm font-medium">My Profile</span>
-      </a>
-    </nav>
-    </div>
-  </aside>
 
   <!-- = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
      MAIN CONTENT
@@ -584,7 +552,7 @@
       <!-- ===============================
          VIEW: AI LAB ANALYZER
       =============================== -->
-      <div id="view-lab-analyzer" class="content-section space-y-6 hidden" data-aos="fade-up">
+      <div id="view-lab-analyzer" class="content-section space-y-6" data-aos="fade-up">
         <h1 class="text-3xl font-bold text-semantic-text dark:text-semantic-text flex items-center gap-3">
      <ion-icon name="scan-circle" class="text-semantic-cta dark:text-semantic-accent "></ion-icon> 
           AI Lab Analyzer

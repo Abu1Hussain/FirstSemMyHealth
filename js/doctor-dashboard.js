@@ -8,6 +8,7 @@ let docData = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   fetchDoctorData();
+  syncViewWithHash();
 
   // Unified Sidebar Edge Toggle (< & >) logic across all screen sizes
   const sidebar = document.getElementById('sidebar');
@@ -47,7 +48,133 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  // Sidebar navigation click handlers
+  document.querySelectorAll('.sidebar-link[data-view]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const view = link.dataset.view;
+      if (view) window.showSection(view);
+    });
+  });
+
+  // Dark Mode Toggle
+  const darkModeToggle = document.getElementById('darkModeToggle');
+  const darkModeIcon = document.getElementById('darkModeIcon');
+  if (darkModeToggle) {
+    darkModeToggle.addEventListener('click', () => {
+      const isDark = document.documentElement.classList.toggle('dark');
+      if (darkModeIcon) {
+        darkModeIcon.setAttribute('name', isDark ? 'sunny-outline' : 'moon-outline');
+      }
+      localStorage.setItem('darkMode', isDark ? 'enabled' : 'disabled');
+    });
+    if (localStorage.getItem('darkMode') === 'enabled' && darkModeIcon) {
+      darkModeIcon.setAttribute('name', 'sunny-outline');
+    }
+  }
+
+  // User Dropdown Menu
+  const userMenuButton = document.getElementById('userMenuButton');
+  const userMenu = document.getElementById('userMenu');
+  if (userMenuButton && userMenu) {
+    userMenuButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      userMenu.classList.toggle('hidden');
+    });
+  }
+
+  // Global click to close popups
+  document.addEventListener('click', (e) => {
+    if (userMenuButton && userMenu && !userMenuButton.contains(e.target) && !userMenu.contains(e.target)) {
+      userMenu.classList.add('hidden');
+    }
+    const notifBtn = document.getElementById('notificationMenuButton');
+    const notifMenu = document.getElementById('notificationMenu');
+    if (notifBtn && notifMenu && !notifBtn.contains(e.target) && !notifMenu.contains(e.target)) {
+      notifMenu.classList.add('hidden');
+    }
+  });
 });
+
+// Section Navigation
+window.showSection = function(viewId) {
+  const sections = document.querySelectorAll(".content-section");
+  const navLinks = document.querySelectorAll(".sidebar-link[data-view]");
+
+  sections.forEach((s) => s.classList.remove("active"));
+  const targetId = viewId.startsWith("view-") ? viewId : "view-" + viewId;
+  const el = document.getElementById(targetId);
+  const cleanViewId = targetId.replace("view-", "");
+
+  if (el) {
+    el.classList.add("active");
+    if (window.location.hash !== "#" + cleanViewId) {
+      history.replaceState(null, null, "#" + cleanViewId);
+    }
+    navLinks.forEach((link) => {
+      if (link.dataset.view === cleanViewId) {
+        link.classList.add("active");
+      } else {
+        link.classList.remove("active");
+      }
+    });
+  } else {
+    const defaultEl = document.getElementById("view-dashboard");
+    if (defaultEl) defaultEl.classList.add("active");
+  }
+
+  // Close mobile sidebar if open
+  const sidebar = document.getElementById('sidebar');
+  const mobileOverlay = document.getElementById('mobile-overlay');
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  if (window.innerWidth < 768 && sidebar) {
+    sidebar.classList.add('closed');
+    sidebar.classList.remove('sidebar-mobile-drawer');
+    if (mobileOverlay) mobileOverlay.classList.remove('active');
+    if (sidebarToggle) {
+      sidebarToggle.innerHTML = '&#8250;';
+      sidebarToggle.classList.add('mobile-edge-btn-anchored');
+    }
+  }
+};
+
+function syncViewWithHash() {
+  const hash = window.location.hash.substring(1) || "dashboard";
+  window.showSection(hash);
+}
+
+window.addEventListener("hashchange", syncViewWithHash);
+window.addEventListener("load", syncViewWithHash);
+
+// Logout Handler
+window.handleLogout = function() {
+  if (typeof Swal !== 'undefined') {
+    Swal.fire({
+      title: 'Logout?',
+      text: 'Are you sure you want to log out of the Doctor Portal?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#1A55FC',
+      confirmButtonText: 'Yes, logout'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        window.location.href = '../php/logout.php';
+      }
+    });
+  } else {
+    if (confirm('Are you sure you want to logout?')) {
+      window.location.href = '../php/logout.php';
+    }
+  }
+};
+
+// Notification Menu Toggle
+window.toggleNotificationMenu = function(e) {
+  if (e) e.stopPropagation();
+  const notifMenu = document.getElementById('notificationMenu');
+  if (notifMenu) notifMenu.classList.toggle('hidden');
+};
 
 function fetchDoctorData() {
   const loadingOverlay = document.getElementById("loading-overlay");

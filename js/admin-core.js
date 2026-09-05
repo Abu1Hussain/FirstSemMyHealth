@@ -52,11 +52,15 @@ document.addEventListener("DOMContentLoaded", function () {
    mainContent.classList.remove("ml-[4.5rem]", "ml-64");
   }
 
-  // Close sidebar on mobile when a link is clicked
+  // Close sidebar on mobile when a link is clicked and switch view
   const sidebarLinks = sidebar.querySelectorAll(".sidebar-link");
   sidebarLinks.forEach(link => {
-   link.addEventListener("click", () => {
-     if(window.innerWidth <= 768) {
+   link.addEventListener("click", (e) => {
+     const view = link.dataset.view;
+     if (view && typeof showSection === "function") {
+       showSection(view);
+     }
+     if (window.innerWidth <= 768) {
        sidebar.classList.remove("mobile-open");
      }
    });

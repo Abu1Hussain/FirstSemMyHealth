@@ -181,15 +181,21 @@ if (sidebarToggle) {
  
  sidebarToggle.addEventListener("click", () => {
   if (window.innerWidth < 768) {
-   // Mobile behavior: slide in the mobile sidebar
+   // Mobile behavior
    if (mobileSidebar) {
     mobileSidebar.classList.toggle("-translate-x-full");
     if (mobileOverlay) mobileOverlay.classList.toggle("hidden");
+   } else if (sidebar) {
+    const isClosed = sidebar.classList.toggle("sidebar-closed");
+    if (mobileOverlay) mobileOverlay.classList.toggle("hidden", isClosed);
+    sidebarToggle.innerHTML = isClosed ? '&#8250;' : '&#8249;';
    }
   } else {
    // Desktop behavior: zero-width collapse
-   const isClosed = sidebar.classList.toggle("sidebar-closed");
-   sidebarToggle.innerHTML = isClosed ? '&#8250;' : '&#8249;';
+   if (sidebar) {
+    const isClosed = sidebar.classList.toggle("sidebar-closed");
+    sidebarToggle.innerHTML = isClosed ? '&#8250;' : '&#8249;';
+   }
   }
  });
 
@@ -197,7 +203,9 @@ if (sidebarToggle) {
  if (mobileOverlay) {
   mobileOverlay.addEventListener("click", () => {
    if (mobileSidebar) mobileSidebar.classList.add("-translate-x-full");
+   if (sidebar) sidebar.classList.add("sidebar-closed");
    mobileOverlay.classList.add("hidden");
+   if (sidebarToggle) sidebarToggle.innerHTML = '&#8250;';
   });
  }
 
@@ -287,6 +295,16 @@ window.showSection = function (viewId) {
    }
   });
 
+  // Close mobile sidebar if open
+  if (window.innerWidth < 768) {
+   const mobileSidebar = document.getElementById("sidebar-mobile");
+   const mobileOverlay = document.getElementById("mobile-overlay");
+   if (mobileSidebar) mobileSidebar.classList.add("-translate-x-full");
+   if (sidebar) sidebar.classList.add("sidebar-closed");
+   if (mobileOverlay) mobileOverlay.classList.add("hidden");
+   if (sidebarToggle) sidebarToggle.innerHTML = '&#8250;';
+  }
+
   // Toggle Global Ticket Anchor visibility
   const globalTicketAnchor = document.getElementById("global-ticket-anchor");
   if (globalTicketAnchor) {
@@ -297,7 +315,7 @@ window.showSection = function (viewId) {
    }
   }
 
-  if (viewId === "appointments") {
+  if (viewId === "appointments" && typeof loadAvailabilityTimeline === "function") {
    loadAvailabilityTimeline();
   }
  }
@@ -816,9 +834,9 @@ function renderPatientDashboard(responseData) {
       appointment.status +
       "</span>" +
       "</td>" +
-      "<td>" +
+      '<td>' +
       '<div class="flex items-center gap-2">' +
-   '<div class="h-8 w-8 rounded-lg bg-semantic-cta dark:bg-semantic-brand flex items-center justify-center text-semantic-cta dark:text-semantic-text font-bold">' +
+      '<div class="h-8 w-8 rounded-lg bg-semantic-cta dark:bg-semantic-brand flex items-center justify-center text-semantic-cta dark:text-semantic-text font-bold">' +
       appointment.ticket_code +
       "</div>" +
       '<span class="text-xs text-semantic-text opacity-70">~' +
@@ -826,6 +844,10 @@ function renderPatientDashboard(responseData) {
       "m</span>" +
       "</div>" +
       "</td>" +
+      '<td><div class="flex items-center gap-2">';
+
+     if (
+      appointment.appointment_type &&
       appointment.appointment_type.toLowerCase().includes('telehealth') &&
       ["pending", "accepted", "delayed"].includes(appointment.status.toLowerCase())
      ) {
