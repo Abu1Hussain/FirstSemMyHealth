@@ -1,0 +1,1 @@
+{"name":"myhealth-showcase","version":"2.0.0","private":true,"description":"myhealth marketing website; no installation needed","scripts":{"build":"node build.cjs","check":"node check.cjs","preview":"node preview.cjs"},"engines":{"node":">=18"}}

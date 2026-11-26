@@ -1,0 +1,30 @@
+{
+  "index": {
+    "key": "home",
+    "title": "One place for your health"
+  },
+  "about": {
+    "key": "about",
+    "title": "Our story and team"
+  },
+  "services": {
+    "key": "services",
+    "title": "Solutions for patients and clinics"
+  },
+  "features": {
+    "key": "features",
+    "title": "Product features"
+  },
+  "demo": {
+    "key": "demo",
+    "title": "Explore the demo"
+  },
+  "contact": {
+    "key": "contact",
+    "title": "Contact the team"
+  },
+  "project-details": {
+    "key": "details",
+    "title": "Project details and roadmap"
+  }
+}

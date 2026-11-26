@@ -1,0 +1,2703 @@
+<PARSED TEXT FOR PAGE: 1 / 61>
+               University of Bahrain
+        College of Information Technology
+Department of Computer Science/Information Systems
+
+
+
+
+            MyHealth Care
+
+                   Prepared by
+    Ali Mohamed Jaafar Mohamed         202208244
+    Mohammed A. Redha Meftah           202209027
+  Sayed Hussain Ali Shubbar Hasan       202208355
+
+
+                       For
+                    ITCC 498
+                  Senior Project
+       Academic Year 2026-2027-Semester 1
+
+
+        Project Supervisor: Dr. Amal Ghanim
+        Date of Submission: To be confirmed
+<PARSED TEXT FOR PAGE: 2 / 61>
+                                              Abstract
+
+Management of Medical Records and Clinic Tasks
+Medical documentation, medical appointments, and day-to-day management of your clinic are often
+done via different channels. Patients may not be able to monitor their medical documentation in a clear
+way. The clinic staff will not able to work on the same documentation of the patients. MyHealth Care
+is a prototype of a health-care-management system, developed using Flutter and Dart, during a senior
+project at the University of Bahrain. The MyHealth Care app has separate interfaces for the patients,
+the doctors, and the admin, allowing them to view medical histories, upload records, book
+appointments, record consultation notes, manage prescribed medications, and manage admin and
+doctor staff tasks. It also has the right-to-left interface with dual language (English/Arabic) support.
+The app employs Riverpod for state management and effectively isolates screens and business logic
+from the repository interfaces. Local data persistence relies on Drift and SQLite, with the version-35
+database (reviewed, here) containing 69 related tables with migrations, foreign keys, and some, but not
+all, integrity controls. A separate Node.js API underpins the limited shared-server pilot, but it does not,
+yet, support all workflows. The project also includes rule-based clinical flags, demonstration AI
+summaries, and a logistic-regression predictive model of appointment no-shows, but these are all
+currently disabled for live clinical use, as they have not yet been clinically validated.
+Integrity and foreign-key errors were not found on an inspection of the supplied synthetic SQLite
+database. The repository has many automated tests, but I was unable to execute the whole Flutter test
+suited to completion during my technical review. Overall, this project demonstrates how all aspects of
+patient data and clinic operation can be brought together in one app. Care should be taken to
+understand that this is an academic prototype created using synthetic information and is not a system
+that should be used for any actual patient care. Future work would include user testing, shared
+deployment, and formal review before any clinical deployment.
+
+
+
+
+                                                                                                           ii
+<PARSED TEXT FOR PAGE: 3 / 61>
+                                    Acknowledgments
+
+The authors also wish to extend their sincere thanks to Dr. Amal Ghanim, project supervisor, for her
+academic and professional guidance and advice during the planning and implementation stages of this
+senior project. Moreover, the authors wish to thank the staff of the College of Information Technology
+at the University of Bahrain for giving them the academic, technical, and professional experience that
+they gained throughout their studies. The authors also thank classmates, reviewers, families, and
+everybody who supported them throughout their education and helped them enhance the presentation
+and accessibility of this project. Any error in the implementation, evaluation, or report will be beyond
+the authors' scope.
+
+
+
+
+                                                                                                       iii
+<PARSED TEXT FOR PAGE: 4 / 61>
+                                                                  Table of Contents
+
+ABSTRACT...........................................................................................................................................................................II
+ACKNOWLEDGMENTS................................................................................................................................................ III
+LIST OF TABLES............................................................................................................................................................. VI
+LIST OF FIGURES..........................................................................................................................................................VII
+CHAPTER 1 INTRODUCTION......................................................................................................................1
+     1.1 Problem Statement..........................................................................................................................................................1
+     1.2 Project Objectives...........................................................................................................................................................2
+     1.3 Relevance/Significance of the Project............................................................................................................................ 3
+     1.4 Report Outline................................................................................................................................................................ 3
+CHAPTER 2 LITERATURE REVIEW......................................................................................................... 4
+     2.1 Introduction to Digital Healthcare Management Systems..............................................................................................4
+     2.2 Digital Transformation and Electronic Health Records................................................................................................. 4
+     2.3 Patient Portals, Mobile Health and Patient Engagement................................................................................................ 4
+     2.4 Appointment Scheduling, No-Show Behavior and Reminder Systems.........................................................................5
+     2.5 Artificial Intelligence, Predictive Analytics and Health Summarization.......................................................................5
+     2.6 Clinical Decision Support and Staff Workflow Coordination........................................................................................6
+     2.7 Health Information Interoperability and Data Standardization......................................................................................6
+     2.8 Healthcare Information Security, Privacy and Ethical Governance...............................................................................7
+     2.9 Usability, Accessibility and Bilingual Healthcare Interfaces......................................................................................... 7
+     2.10 Challenges in Existing Solutions and Research Gaps.................................................................................................. 7
+     2.11 Summary of Literature Review.................................................................................................................................... 8
+CHAPTER 3 PROJECT MANAGEMENT................................................................................................... 9
+     3.1 Process Model.................................................................................................................................................................9
+     3.2 Risk Management......................................................................................................................................................... 10
+     3.3 Project Activities Plan.................................................................................................................................................. 12
+     3.4 Chapter Summary......................................................................................................................................................... 14
+CHAPTER 4 REQUIREMENT COLLECTION AND ANALYSIS.......................................................15
+     4.1 Requirement Elicitation................................................................................................................................................ 15
+     4.2 System Requirements................................................................................................................................................... 15
+     4.3 Personas........................................................................................................................................................................ 18
+     4.4 System Models (Object-Oriented Approach)............................................................................................................... 19
+     4.5 Chapter Summary......................................................................................................................................................... 24
+CHAPTER 5 SYSTEM DESIGN................................................................................................................... 25
+     5.1 Software Architectural Style.........................................................................................................................................25
+     5.2 Architectural Diagrams / Package Structure.................................................................................................................26
+     5.3 Database Design / Schema............................................................................................................................................29
+     5.4 User Interface Design................................................................................................................................................... 32
+     5.5 Chapter Summary......................................................................................................................................................... 35
+CHAPTER 6 SYSTEM IMPLEMENTATION AND TESTING.............................................................36
+     6.1 System Implementation Details....................................................................................................................................36
+     6.2 Testing & Results......................................................................................................................................................... 39
+     6.3 Strengths and Weaknesses............................................................................................................................................46
+     6.4 Chapter Summary......................................................................................................................................................... 47
+CHAPTER 7 CONCLUSION AND FUTURE WORK..............................................................................48
+     7.1 Introduction...................................................................................................................................................................48
+     7.2 Summary of the Project................................................................................................................................................ 48
+     7.3 Key Findings and Results............................................................................................................................................. 48
+
+
+
+
+                                                                                                                                                                                           iv
+<PARSED TEXT FOR PAGE: 5 / 61>
+    7.4 Significance of the Project............................................................................................................................................48
+    7.5 Limitations of the System.............................................................................................................................................48
+    7.6 Implications of the Project............................................................................................................................................48
+    7.7 Future Work..................................................................................................................................................................49
+    7.8 Conclusion.................................................................................................................................................................... 50
+REFERENCES..................................................................................................................................................51
+
+
+
+
+                                                                                                                                                                                            v
+<PARSED TEXT FOR PAGE: 6 / 61>
+                                                       List of Tables
+Table 3.1: Project risk register........................................................................................................10
+Table 3.2: Planned activities, outputs and verification...................................................................12
+Table 4.1: Functional requirements and implementation traceability............................................15
+Table 4.2: Non-functional requirements and measurable acceptance criteria................................17
+Table 4.3: Use case catalogue and relationships............................................................................19
+Table 4.4: Core class/interface responsibilities and relationships..................................................24
+Table 5.1: Package/folder architecture map................................................................................... 26
+Table 5.2: Major entity relationships and application rules...........................................................30
+Table 5.3: Core database entities and representative fields............................................................31
+Table 5.4: Role-dependent navigation and screen hierarchy..........................................................33
+Table 6.1: Actual implementation technology inventory...............................................................36
+Table 6.2: Observed and reported verification evidence................................................................40
+Table 6.3: Test scenario, input, expected output, actual evidence and status................................40
+Table 6.4: Engineering strengths and outstanding limitations.......................................................46
+
+
+
+
+                                                                                                                                             vi
+<PARSED TEXT FOR PAGE: 7 / 61>
+                                                   List of Figures
+Figure 3.1: Proposed 16-week project activity schedule (relative project weeks).........................13
+Figure 4.1: MyHealth Care UML use-case overview by actor.......................................................21
+Figure 4.2: Representative UML class and repository interaction model......................................24
+Figure 5.1: Layered system architecture.........................................................................................26
+Figure 5.2: Level 1 data flow — identities, scheduling, records, staff and operations..................28
+Figure 5.3: Level 2 data flow — conflict-aware and replay-safe appointment booking................29
+Figure 5.4: Core relational model and principal entity cardinalities..............................................30
+Figure 5.5: Booking state progression through authorized repository operations..........................33
+Figure 6.1: Patient home dashboard and longitudinal medical-record timeline.............................44
+Figure 6.2: Clinician discovery and appointment booking entry...................................................44
+Figure 6.3: Doctor scheduling workspace and reception operations..............................................45
+Figure 6.4: Nursing-intake form and pharmacy workspace...........................................................45
+Figure 6.5: Administrator appointment and operational dashboard...............................................46
+
+
+
+
+                                                                                                                                     vii
+<PARSED TEXT FOR PAGE: 8 / 61>
+                                          Chapter 1
+                                         Introduction
+Health systems are responsible for keeping the information correct but also allow for the day-to-day
+operations that need to be performed, such as scheduling appointments, checking results, and saving
+notes from a consult. These operations are likely to be far more complex if medical history,
+appointment information and staff activity are stored separately. Patients may struggle to access
+historical records, doctors may need to search across multiple locations prior to seeing a patient, and
+administrators will need to follow-up with users on things like booking requests and operational
+instructions. MyHealth Care was created to research how this kind of operation could be performed as
+simply as possible in a single application, while accommodating different roles and permissions.
+The original project proposal focused on three key questions: how can medical records be displayed in
+a way that makes a helpful patient summary (RQ1); how can scheduling appointments and predicting
+no-shows be done, and what steps might be improved (RQ2); and how can staff be helped to identify,
+prioritize and structure tasks that matter (RQ3). These questions therefore provided the overall design
+direction. The end system, while comprising extra support functions, are not documented herein and
+what the code and the available testing evidence support should not be assumed to already mean that a
+functioning university prototype has resulted in improved clinical results.
+
+1.1 Problem Statement
+Sub-problem 1 — Incomplete medical history. A patient probably has consultation notes, lab
+results, prescriptions, vitals, as well as reports that are uploaded at disparate points of time. The
+objects displayed on separate screens or locations makes the history difficult to follow. By specifying
+Medical Records to Lab Values, Document Files and review information and showing in the timeline
+Medical Records, Data imported/ stored in or imported from the prototype along with their origins and
+review status is displayed. The prototype demonstrates Medical Records integration and does not
+interface or connect to the hospital records outside of the prototype.
+Sub-problem 2 — Appointment Scheduling. The system needs to determine if the selected doctor is
+available given their schedule and exceptions, it is not enough to simply display an empty time slot
+since another user can request the same slot before user confirmation. MyHealth Care determines
+available time slots based on the schedule and exceptions and also assesses the appointment request
+based on these. It sends an idempotency key to prevent double booking if the same request is
+performed twice. Confirmed appointments may be message queued but the reduction in actual no-
+shows and the delivery to a sleepy app has not been proven.
+Sub-problem 3 — coordination amongst clinical staff. Doctors, nurses, receptionists and
+administrators each perform specific tasks and should not necessarily have access to the same set of
+medical data. Therefore the webapp includes a role-specific workspaces and verifies access to relevant
+
+
+
+                                                                                                      1
+<PARSED TEXT FOR PAGE: 9 / 61>
+patient data and tasks. It also has rule-based validation of some selected observations to produce flags
+and follow-up tasks. Staff can view who is responsible for tasks and task progression. These are role-
+specific processes, but the rules have not been approved to allow for diagnosis or clinical triage. The
+project is therefore confined to a role-based demonstration of record set, appointment set and tasks to
+staff, with clear boundaries to data accessibility and data storage and automated process.
+
+1.2 Project Objectives
+The main goal is to create and test a health-care-management prototype that allows the patients to get
+their information and help clinic staff in handling appointments and day-to-day management. The
+objectives are summarized in functions that can be verified by the code and corresponding test cases:
+  1.    Patient-centered data modeling: the users, patients, staff, departments, appointments,
+        records, laboratory values, prescriptions, consultation, and billing data were organized
+        systematically in a well-structured manner into different associated tables in the database. The
+        relationships can be verified through schema, migration, and foreign-key check.
+  2.    Role-separated experience: The GoRouter acts as a community resource for each user
+        (patient, staff, administrator) and screens for an active session and additional permissions to
+        use protected routes or view certain records.
+  3.    Records management: The app shows the clinical records in chronological order and allows
+        patients to upload supported files. It uses SHA-256 fingerprints to detect duplicate files and
+        keep track of whether a clinician has already viewed an imported record.
+  4.    Appointment management: User can find any doctor, check the availability of slots, fix an
+        appointment, and track the status. The system should check for the limits on schedule,
+        duplicate bookings, and multiple attempts.
+  5.    Consultation and pharmacy workflows: Clinicians can save draft consultations and
+        complete signed notes and medication orders using controlled database operations but will
+        also have a record of all subsequent changes made.
+  6.    Staff coordination: The system automatically detects the various risk conditions based on the
+        existing rules and generates the relevant tasks that are capable of task assignment, escalation
+        and completion with history.
+  7.    AI research: AI Research The platform shows offline summaries and performs no-show
+        prediction experiment. We ask you to report inputs and synthetic evaluation results, but not
+        including them as evidence of clinical validity.
+  8.    Usability: The application provides interfaces in both English and Arabic and supports right-
+        to-left flow and flexible layout on multiple screens. The key user flows are observed on
+        Mobile and Desktop.
+
+
+
+
+                                                                                                        2
+<PARSED TEXT FOR PAGE: 10 / 61>
+  9.    Quality assurance: Maintains integrity of unit, widget, database, integration and back-end
+        tests within the development process. It is important to note which tests were directly run and
+        which were the result of reports from previous repositories.
+Project scope. The sanctioned demonstration runs in Chromium using synthetic data stored on the
+device. Although native app files and a shared Node.js server pilot have been included, multi-device
+operation is incomplete, and the Demonstration will not prove hospital record exchange, or real bank
+card processing, or certify a clinical decision. These areas will need development and certification.
+
+1.3 Relevance/Significance of the Project
+Patient experience. One patient workspace helps you find appointments, captured observations, and
+documents. To share with family, access is controlled with specific links and permissions. A link will
+specify if access is to be by way of a representative on the software, but this does not specify the
+legally appointed guardian.
+Clinical operations. Booking checks, consultation states and staff task history improve the
+traceability and testability of each operation step and are likely to diminish the inconsistencies in
+application states. Whether they less average waiting times, or help decrease clinical errors, would be
+another study, with real users, and a sanctioned methodology.
+Software engineering. The app specifies each of the Flutter screens, Riverpod providers, repository
+interfaces, and database implementations. This architecture allows for testing core rules even without
+depending exclusively on the interface, as well as for future changes in storage or services. It also
+complies with the guidelines of dividing responsibilities of the application in Flutter guide and ISO
+software quality model (Flutter, n.d.; ISO/IEC, 2023). The choice of disabling unvalidated AI features
+is an intentional preference for safety.
+Broader relevance. Digital health solutions could increase access to information and facilitate
+connectivity if issues related to privacy, interoperability, and institutional support are also incorporated
+into development of technology (World Health Organization, 2021b, 2025). MyHealth Care explores
+how this could be achieved with an English/Arabic university prototype. To make a meaningful
+contribution, the project will demonstrate a viable design, content, and implementation, not increase in
+health outcomes.
+
+1.4 Report Outline
+Chapter 2 describes the survey of related research in electronic records, patient portal, scheduling,
+decision support, interoperability and privacy issues. Chapter 3 explains the development process,
+defines risks involved in the project and proposes the items to be done. Chapter 4 stipulates
+requirements, personas and models of the system. Chapter 5 states the architecture, database schema
+and interface design. Chapter 6 introduces implementation process and the results of testing. Chapter 7
+
+
+
+
+                                                                                                          3
+<PARSED TEXT FOR PAGE: 11 / 61>
+makes a conclusion, addresses the limitations and factors for future work. List of references is
+presented after the last chapter.
+
+
+
+
+                                                                                                   4
+<PARSED TEXT FOR PAGE: 12 / 61>
+                                        Chapter 2
+                                    Literature Review
+2.1 Introduction to Digital Healthcare Management Systems
+Digital systems for healthcare management are used for storing clinical data and for tasks like booking
+appointments, assessing results and communicating with patients. For a system to be usable it needs to
+do more than simply store files digitally; it should present information in an understandable way, be
+available to those who need to access it and be part of normal everyday activities. Earlier studies have
+explored these issues in several contexts such as electronic health records, patient portals, reminders
+and clinical decision support systems. The MyHealth Care prototype combines certain functionalities
+from these fields within a common, university-based example.
+This chapter looks at each relevant field according to the project criteria and looks at and summarizes
+each peer-reviewed academic article and technical standard that is relevant to each theme of the
+project. For each theme the techniques used, the results obtained and the shortcomings of the
+techniques, results and conclusions presented by the previous researchers are summarized. Emphasis
+will be placed upon evidence relevant to the three aims of the project: care record presentation;
+appointments management and staff facilitation.
+Studies made in a hospital environment or on dedicated clinical platforms cannot be directly
+extrapolated to this project. MyHealth Care uses synthetic data and has not been tested on regular
+patient care environments. The existing literature helps clarify design decisions and provides suitable
+testing methods, rather than claiming a similar outcome for this application.
+
+2.2 Digital Transformation and Electronic Health Records
+Electronic health records (EHRs) are a collection of diagnoses, prescriptions and tests, all of which are
+stored electronically. In an analysis and systematic review of 62 individual studies Campanella et al.
+(2016) found some measures of health care quality increased following EHR implementation. But the
+effect of EHR adoption differed from one individual measure to another and is important: storing data
+electronically doesn't automatically indicate that the data implementation was effective at improving
+clinical decision-making.
+Kruse et al (2018) examined the use of EHRs for population health, finding benefits and real-world
+challenges of EHR adoption and data utilization for population health. On another review, Kruse et al
+(2016) discovered reasons for poor EHR adoption, including cost, technical issues and staff resistance.
+Both papers seem to suggest that a database and interface is only part of an EHR project, as
+organizations need working workflows, data accuracy and organizational change support.
+MyHealth Care addresses one aspect of the bigger picture. Its Medical Records, Lab Values, and
+uploaded files are related to patient records and are viewable in a timeline view. The benefit shown
+here is the ability to access these records in an easy-to-view way in the application. There is no
+confirmed importation from a hospital EHR, and the project has not measured any change in quality of
+clinical care. Literature provides strong evidence for the reasonableness of developing a single,
+cohesive view of the record, and at the same time shows that interoperability and acceptance are still
+problems.
+
+
+
+
+                                                                                                       5
+<PARSED TEXT FOR PAGE: 13 / 61>
+2.3 Patient Portals, Mobile Health and Patient Engagement
+One way that patient portals help ease the burden is that they offer a different way for people to access
+health information and some services without necessarily having to reach out to a clinic for each
+individual item or task. According to Irizarry et al. (2015), "simply providing access isn't enough:
+users have very different levels of digital skills, health literacy, and motivation to engage online, and
+what may work well for an advanced user might challenge a user who is uncomfortable with
+physician-designed vocabulary and computer questions."
+Goldzweig et al. (2013) investigated the evidence for electronic patient portals. While many studies
+had reported benefits with individual features, the evidence regarding overall improvements in health
+outcomes was disappointing and inconsistent. This is important to MyHealth Care as while a timeline,
+booking page and notification view will bring all services together, the report must not state that
+patients would have a better knowledge of their conditions until the evidence is obtained by testing the
+use of the product.
+Mobile apps also have their own set of complexities regarding usability, content, and privacy
+considerations. Marcolino et al. (2018) conducted a systematic review of systematic reviews of mobile
+health solutions and found that there were benefits with their use in some circumstances, but the
+review process and outcomes were heterogeneous. Nouri et al. (2018) showed that a user-centred
+approach to the evaluation of a mobile health application requires more than simply focusing on its
+surface characteristics. These findings suggest that in addition to responsive layout, accessible record
+details, and providing bilingual (Arabic and English) display messages, MyHealth Care should address
+an evidence gap by conducting a usability study with representative patients (including older patients
+and those with disabilities who rely on assistive technology) with this prototype.
+
+
+
+2.4 Appointment Scheduling, No-Show Behavior and Reminder Systems
+Absence from a scheduled appointment results in the inefficient use of available clinic slots and in
+some circumstances delays in follow-up treatment. Dantas et al. (2018) reviewed 105 outpatient no-
+show studies and found an average non-attendance rate of around 23% in the reviewed studies.
+Anamnesis of past missed appointments and longer waiting times between booking and appointment
+time were the most cited factors. While this data offers some relevant background, it is not a recorded
+rate for Bahrain or for the MyHealth Care members.
+Reminders consider the problem from a different angle. Hasvold and Wootton (2011) reviewed
+research pertaining to SMS and telephone reminders, and the majority of studies have shown that
+reminders improved attendance, but that the effects and cost benefits will be dependent on a particular
+environment. A prediction score can flag an appointment as likely to be missed, and a simple reminder
+or an easily rescheduled option is a response the patient can make. The current research has not
+supported that an in-app reminder will notify the patient after the application has been closed, the
+delivery system itself will need separate validation.
+Moreover, MyHealth Care has a technical scheduling problem that is different from predicting no-
+shows. The booking repository needs to validate the schedule so overlapping bookings don't occur,
+even when a user makes duplicate bookings of the same user input. Appointment Repository
+Impl.book() validates the schedule and accounts for exceptions and existing schedule intervals in a
+transaction with an idempotent result. A predictive model has been trained to predict no-shows using
+
+
+
+
+                                                                                                       6
+<PARSED TEXT FOR PAGE: 14 / 61>
+logistic regression, but it is not yet enabled for operational use. Subsequent tests should focus on
+validating the booking, reminder delivery, and prediction accuracy as a simple performance indicator.
+
+
+
+2.5 Artificial Intelligence, Predictive Analytics and Health Summarization
+Clinical data is a valuable source for prediction and information extraction. Shickel et al. (2018)
+survey of deep-learning research in medical data using electronic health record data, various potential
+clinical uses of this include prediction and patient representation. They note that challenges also arise
+from noisy, sparse data, as well as low interpretability, a wide variety of datasets. This research scan
+offers valuable contextual information from a technical perspective, but one should bear in mind that a
+model that is successful in one study sample will not necessarily be successful in other medical
+environments or patient populations.
+In addition, researchers are studying the use of large language models in answering medical questions
+and creating summaries. Singhal et al. (2023) measured medical knowledge and responses with three
+multiple choice datasets and a panel of physicians. While the results were encouraging under certain
+test conditions, neither they nor the team demonstrated overall clinical safety. Ghassemi et al. (2021)
+wrote that a "fluent language system may make a medical AI explanation seem more credible even if it
+is inaccurate, indicating that these systems can generate fluent but not medically correct summaries".
+In addition, choice of training data and prediction targets is very important. Obermeyer et al. (2019)
+showed that a healthcare algorithm produced inaccurate results when using healthcare expenditure as a
+surrogate for illness. Wiens et al. (2019) listed four components of responsible medical machine
+learning, including appropriate evaluation, continuous monitoring, and careful design of workflows.
+MyHealth Care's no show prediction model was based on synthetic appointments. It is unknown
+whether this can validate fairness or accuracies in real patient populations, or whether it can is
+effective in decreasing missed appointments. It is wise to leave the tool and other live clinical AI off
+until these questions are definitively solved.
+
+
+
+2.6 Clinical Decision Support and Staff Workflow Coordination
+Clinical decision support systems uses or models are used by clinical decision support systems to
+deliver contextually appropriate information to clinicians. Sutton et al. (2020) reviewed the emerging
+benefits and dangers of failed implementation, which focused on too many alerts and an
+overdependence on machine-based suggestions. A warning is only useful if it is sent to the right
+person who can respond to it. This highlights the need for simple to understand rules and for staff to be
+empowered to make and record the ultimate decision.
+Sittig and Singh (2010) delineated a sociotechnical model, which impels the consideration of
+healthcare software with users, tasks, and organization within which this software operates. Their
+model comprises concepts, but not rigorous evaluation of a particular application. It explains the
+concept of a correct laboratory threshold: helpful alerts require correct input, lack of ownership,
+escalation procedures, and documentation of the subsequent steps.
+MyHealth Care uses the Risk Detection Service to run predefined checks on the selected observations,
+whereas Task Repository Impl performs the corresponding tasks. Every task has an owner, state and
+history; access is role and care relationship based to ensure it is as constrained as possible for audit-
+trail concerns (Sutton et al. 2020). The threshold values have not yet been clinically validated nor have
+
+
+
+                                                                                                       7
+<PARSED TEXT FOR PAGE: 15 / 61>
+these alerts been cross-examined for fatigue. Subsequent testing should include a review of each rule
+by a qualified individual, and consideration of both missed alerts and false alarms.
+
+2.7 Health Information Interoperability and Data Standardization
+Even if it is well-structured, however, an internal database may be solved in a way that prevents it
+from interacting with other healthcare systems. Lehne et al. (2019) examined the concept of
+interoperability in digital medicine and acknowledged that differences in data formats and semantics
+can severely restrict data interoperability. While placing a patient's data in such structured SQLite
+tables makes them easy to use in MyHealth Care, they would not be automatically understandable by
+the hospital's EHR system.
+Mandel et al. (2016), allows healthcare applications to connect to electronic records by providing
+standard web-based interfaces. This is an example of a technically feasible solution that could help
+overcome some of the barriers described by Lehne et al. (2019). It should be kept in mind that
+standards do not solve all these issues, and organizations will have to agree on how they identify users,
+what users can access what records, and how they interpret information from other sources.
+MyHealth Care is using local Drift/SQLite and has a trial API in a different Node.js implementation. It
+does not have a verified SMART on FHIR connection to a clinical provider. At some point in the
+future, we may start out with a set of FHIR Patient, Appointment, Encounter, and Observation
+resources with source identifiers and review status, before exchanging real patient data we will also
+need good patient matching, authorization, consent, and clinical data validation procedures in place.
+
+2.8 Healthcare Information Security, Privacy and Ethical Governance
+Protecting medical records There is much more in protecting medical records than just password
+screens. Keshta and Odeh (2021) summarized the security and privacy issues in electronic health
+record (EHR) systems, including violations to confidentiality and data control. In the MyHealth Care
+system, every time access to a page should be validated, data are also validated when queried or saved.
+Therefore, distinguishing local demonstration data from a server where real patient's data would be
+stored is the crux of its security.
+In addition, the use of artificial intelligence (AI) raises another responsibility. Wiens et al. (2019) have
+argued that medical machine-learning algorithms should have "well-specified goals, adequate
+evaluation, and continued monitoring." The bias found by Obermeyer et al. (2019), which has been
+confirmed by our third example, demonstrates how one total metric of accuracy can hide differences
+between groups of individual patients. These have not occurred even in the simple case of using the
+model only to rank tasks.
+The public MyHealth Care program should continue to focus on using synthetic data. Its shared-server
+pilot program is unfinished, and it has yet to gain approval to host real patient information. Although
+the Health Insurance Portability and Accountability Act is an example of US health care standards, it
+does not specify the rules in Bahrain. A real implementation would require an audit of local
+legislation, organizational policies, security procedures and clinical duties.
+
+2.9 Usability, Accessibility and Bilingual Healthcare Interfaces
+Healthcare screens can be susceptible to usability issues due to unfamiliar terminology, date,
+measurements and what may be to one action could have different weightings of importance. Zahabi et
+al. (2015) completed a review of research on the usability of electronic medical record interfaces, and
+identified common themes related to consistency, display of information, errors and mental workload.
+
+
+                                                                                                          8
+<PARSED TEXT FOR PAGE: 16 / 61>
+They concluded that an ideal screen would help users find important information rapidly and clearly
+describe the outcomes of any actions.
+Nouri et al. (2018) identify many aspects of mobile health quality, whereas Irizarry et al. (2015) focus
+on inequities in users' ability to make use of digital services. Together, these works support interaction
+with effective tasks rather than assessing the interface's design. For example, users need to be able to
+find laboratory results, find out whether the imported record has been approved, and correct recording
+errors when booking.
+MyHealth Care are available in English and Arabic with right to left formatting. These are a good first
+step for Bahrain, but simply having a version does not mean Arabic medical terms will be understood
+or mixed Arabic / English numbers, dates and screen-reader focus are working properly. It would be
+worth testing the main patient and staff journeys in both languages, including large text and keyboard
+only.
+
+
+
+2.10 Challenges in Existing Solutions and Research Gaps
+Results of studies in this review, mostly good, generally show that ease of access to health information
+is supported but the literature suggests the successful installation of software does not necessarily lead
+to a successful implementation. Campanella et al. (2016) found improvements in some EHR-related
+measures and Kruse et al. (2016) found it can be a barrier to adoption; Goldzweig et al. (2013) have
+weak evidence of specific outcomes for Patient Portals. All these findings make sense as it may be
+helpful technology in some cases but can also be problematic.
+Second, the studies highlight the separation between prediction and intervention. For instance, Dantas
+et al. (2018) lists predictors for missed visits while Hasvold and Wootton (2011) list reminder
+intervention but neither suggests that using a risk score can act as an intervention to stop a missed
+visit. Similarly, Shickel et al. (2018) and Singhal et al. (2023) propose the promise of AI and then
+Ghassemi et al. (2021), Obermeyer et al. (2019), and Wiens et al. (2019) describe the need for a
+careful evaluation of the AI's effectiveness and detection of bias before putting it to the use.
+A further concern, or at least potential problem, exists in systems interoperability and who is
+responsible for decisions. Fragmented health data (Lehne et al., 2019), standards-based integration
+(Mandel et al., 2016), and the human and organizational context of safety (Sittig & Singh, 2010) are
+discussed. MyHealth Care doesn't have the solutions for all these ongoing problems, but it does serve
+to demonstrate a unified structure for patient records, appointment validation, access policies, and staff
+accountability within one role-based prototype.
+The sources use varied research methods, which will color their conclusions. Meta-analyses boil down
+what is found in other sources, however, are limited by their underpinning studies. Technical and
+standards-based literature will suggest a way of working that could be adopted without evidence of a
+change in outcomes for patients. Work on bias will explore possible ways of failure, but the measured
+effects may be different in some contexts. For this reason, this review will use literature to support
+design choices and highlight questions that remain, rather than attempting to claim generalizability to
+MyHealth Care.
+
+
+
+
+                                                                                                        9
+<PARSED TEXT FOR PAGE: 17 / 61>
+2.11 Summary of Literature Review
+Other evidence shows both the value and the issues of digital medicine. Electronic records have the
+potential to help structuring clinical data, but worries remain over uptake, usability, and connectivity
+(Campanella et al., 2016; Kruse et al., 2016; Lehne et al., 2019). Patient portals and mobile apps can
+simplify access to healthcare, but the research on their outcomes is not consistent (Goldzweig et al.,
+2013; Marcolino et al., 2018). Digital medicine studies on missed visits recommend on-going
+assessment of scheduling and reminder systems to improve attendance (Dantas et al., 2018; Hasvold
+and Wootton, 2011), and studies on clinical artificial intelligence call for thoughtful processes for
+realizing technology's full potential (Obermeyer et al., 2019; Wiens et al., 2019).
+The results align with MyHealth Care's three main goals: bringing together information, providing
+rock-solid schedule booking, and helping staff manage later tasks. MyHealth Care illustrates all three
+with its bilingual Flutter app and its local relational database. The experiments with predictions and
+the AI showcases act as research tools, not yet as officially sanctioned clinical services. Additional
+development is needed in practical user evaluation, secure shared deployment, legacy/connected
+interoperability, and medical review.
+
+
+
+
+                                                                                                     10
+<PARSED TEXT FOR PAGE: 18 / 61>
+                                      Chapter 3
+                                 Project Management
+The application was constructed in phases, with features being implemented and tested as the
+application matured. The proposal, source code and project checklists are evidence of this. Despite the
+lack of formal Scrum meeting minutes and completed sprint reports, these documents enable the
+nature of the work to be described as an iterative development. This chapter explains the development
+methodology, key risks and activities.
+
+3.1 Process Model
+3.1.1 Iterative and Incremental Development Approach
+The incremental method takes a big task and divides it into little, doable portions. The primary
+dependencies for MyHealth Care were for consumer roles, navigation, and information associations.
+We used those to construct patient information and reservation making features, then added the
+clinical and administrative workflows. With every addition, we needed to confirm the validation,
+authorization, and database behaviors that accompanied that capability. It felt like we did the right
+factor because the different displays relied on the same customers, appointments, and scientific
+information.
+The repository outlines 6 broad phases of work; first, the flutter app set-up with routing, sharing of
+error handling, dependency injection and first database; second, construction of patients' accounts,
+profiles, notes, and booking; third, construction of staff screens with schedules, consultations, results
+review, and Tasks; fourth, construction of documents, pharmacy, billing, audits, and retry controls;
+fifth, construction of rules-based risk checks, AI experiments, and improvements to Arabic, English,
+and responsive layouts; lastly, construction of tests, security, and limited shared-server API. These are
+the observable phases of development; they are not claimed to be conventional dated Scrum sprints.
+
+3.1.2 User-Centered Design and Continuous Validation
+Established signs of continued refinement include the DESIGN.md, database migrations up to v.35,
+the automatically generated Drift and Freeze files, test suites, and two project review checklists. Taken
+together these documents suggest features were tackled and bugs were fixed iteratively. The proposal
+also forecasts over a 16-week timeline. Because the records do not all include both sprint dates and
+team velocity data, I am employing the proposed timeline as a project planning guideline rather than
+as a measure of when each task was completed.
+
+3.1.3 Quality Gates and Definition of Done
+This was noted as ready to review when its requirements were documented, the databases and
+repository code had been created, and the main screen was able to perform that action. For sensitive
+actions, that involved the permission checks, rejected input, and repeated requests all in the same
+operation. For booking and consultation functions, extra care needed to be taken to note that a failed
+
+
+
+                                                                                                      11
+<PARSED TEXT FOR PAGE: 19 / 61>
+write did not leave inconsistent records. Checklist items are useful pointers to progress, but the
+existence of a checklist item does not replace a reproducible test result.
+
+3.1.4 Scope Control and Change Management
+With the development of the application, additional projects included the three research questions as
+well as features related to billing, issued documents, pharmacy, and workforce. The amount of
+integration work increased significantly. For the university demonstration, we felt it was necessary to
+separate out functioning that is mandatory and whether shared-server features and clinical features are
+optional, so we are able to take new requests only when we have time to implement and test the new
+features without impacting on the main work of the patient and staff.
+
+3.2 Risk Management
+The risks in Table 3.1 are rated as Low, Medium or High for likelihood and impact. These ratings are
+all based on a qualitative engineering judgment rather than any quantitative chance of an event
+occurring. The table includes typical development risks as well as privacy, authorization, and clinical-
+decision risks, all of which are critically relevant in a healthcare app.
+Table 3.1: Project risk register
+                Risk event
+ Risk ID /      and
+                              Likelihood      Impact                   Prevention, response and evidence
+ category       concrete
+                trigger
+                Drift
+                schema
+                changes
+                                                                       Versioned migrations, build_runner,
+ R01            break old
+                              M               H                        populated snapshot upgrade and foreign-
+ Technical      demo data
+                                                                       key/integrity tests
+                or
+                generated
+                bindings
+                Two
+                reservation
+                s share a
+                                                                       Validate schedule and overlap inside book()
+ R02            clinician
+                              M               H                        transaction; IdempotencyGuard;
+ Technical      time
+                                                                       concurrent/replayed tests
+                interval
+                after a
+                retry
+                Patient
+                accesses
+                another
+                                                                       AccessPolicy, patient/care-team/proxy
+                patient’s
+ R03 Security                 M               H                        checks inside repositories and server;
+                chart by
+                                                                       adversarial direct-ID tests
+                changing
+                an ID/deep
+                link
+
+
+
+
+                                                                                                                 12
+<PARSED TEXT FOR PAGE: 20 / 61>
+                 Risk event
+Risk ID /        and
+                                Likelihood   Impact   Prevention, response and evidence
+category         concrete
+                 trigger
+                 Browser-
+                 hosted
+                 clinical
+                                                      Restrict public demo to synthetic
+                 records
+                                                      information; never use real PHI; server
+R04 Security     leak from      M            H
+                                                      authoritative encrypted storage for approved
+                 unencrypte
+                                                      future use
+                 d per-
+                 browser
+                 SQLite
+                 Shared-
+                 mode route
+                                                      Per-route capability matrix; hide
+R05              calls an
+                                H            H        unsupported actions; complete tested
+Integration      Unavailabl
+                                                      adapters before pilot
+                 e...
+                 repository
+                 No-show
+                 or risk
+                 output                               Keep capability flags disabled; synthetic-
+R06 Clinical /
+                 falsely        M            H        performance disclosure; clinical review
+AI
+                 implies                              before activation
+                 medical
+                 validation
+                 Feature
+                 growth
+                                                      Freeze core journeys and schedule
+                 displaces
+R07 Schedule                    H            M        regression passes; maintain change log and
+                 testing and
+                                                      acceptance baseline
+                 documenta
+                 tion
+                 Browser
+                 state
+                 erased or
+                                                      State local-mode limitation; deterministic
+R08              different
+                                H            M        reseed and backups; server migration/sync
+Availability     devices
+                                                      only with approved scope
+                 show
+                 different
+                 data
+                 Local
+                 REAL
+                 monetary
+                 fields lead
+                                                      Convert critical calculations to fils,
+                 to
+R09 Financial                   M            M        reconciliation tests, eventual INTEGER fils
+                 rounding
+                                                      persistence
+                 or
+                 reconciliati
+                 on
+                 differences
+                 Arabic
+                 RTL, focus
+                 order or                             Dedicated AR/EN keyboard, screen-reader
+R10 Usability    enlarged       M            M        and 200% text acceptance using
+                 text blocks                          representative screens
+                 important
+                 actions
+
+
+
+
+                                                                                                   13
+<PARSED TEXT FOR PAGE: 21 / 61>
+                   Risk event
+ Risk ID /         and
+                                  Likelihood             Impact                         Prevention, response and evidence
+ category          concrete
+                   trigger
+                   Shared-
+                   service
+                   deploymen
+                                                                                        Private HTTPS staging, off-host encrypted
+ R11               t lacks
+                                  M                      H                              backup, restore rehearsal, observability and
+ Operations        restoration/
+                                                                                        rollback checklist
+                   monitoring
+                   or secrets
+                   rotation
+                   Misapplica
+                   tion of
+                                                                                        Describe HIPAA only as comparative
+                   HIPAA
+ R12                                                                                    reference; assess applicable Bahrain rules
+                   terminolog     M                      H
+ Privacy/legal                                                                          with qualified reviewers before real-data
+                   y to a
+                                                                                        deployment
+                   Bahrain
+                   prototype
+
+3.2.1 Risk Monitoring and Control
+Risk monitoring was achieved through specific tests and repository review checklists. Significant tests
+included 1. Patient permissions check, 2. Duplicate booking check, 3. Database migration check. The
+checklists also identify unapproved items such as clinical and privacy checks and the extensive shared-
+server deployment, which are identified as open items even after the related software feature has been
+released.
+In Flutter, most of the interface code is shared, but the security and storage aspect can behave
+differently on web and native devices. In this project, local storage is used with Drift/SQLite and there
+is a second pilot running with a Node.js API. Firebase is not used as the main database.
+
+3.3 Project Activities Plan
+The stages are divided up into five planned sets of the work: requirements and literature review in
+weeks 1-3; design in weeks 4-6; implementation in weeks 7-9; testing in weeks 10-12; report write up
+in weeks 13-16. These are mapped to the available set of materials in table 3.2. These week numbers
+are only taken from the original plan and are not exhaustive.
+Table 3.2: Planned activities, outputs and verification
+ Phase                  Planned weeks          Major work items                          Inspectable output and acceptance
+                                                                                         Proposal questions, requirement
+ Requirements /                                Actors, research questions, clinical
+                        1–3                                                              inventory and defined non-clinical
+ domain analysis                               object types, user needs, scope
+                                                                                         boundaries
+ Literature review
+                                               Evidence gathering and academic           Reserved Chapter 2, to be prepared
+ (separate              1–3
+                                               critique                                  separately
+ workstream)
+                                               Use cases, UML, repository
+                                                                                         DESIGN.md, domain interfaces, routes,
+ System design          4–6                    abstractions, patient/staff/admin UI,
+                                                                                         database definitions and modeled flows
+                                               ER model
+                                               Flutter screens/providers, Drift          lib/features/, lib/domain/, lib/data/,
+ Implementation         7–9 (plan)             repositories, authentication, records,    lib/services/ and working synthetic
+                                               booking, consultation                     demo
+
+
+
+
+                                                                                                                                     14
+<PARSED TEXT FOR PAGE: 22 / 61>
+ Phase                  Planned weeks         Major work items                              Inspectable output and acceptance
+                                              Identity, documents, billing,
+ Integration /          Across later                                                        services/shared_api/, integrity triggers,
+                                              workflows, remote shared API,
+ hardening              iterations                                                          negative tests and TODO evidence
+                                              migration repair
+                                              Unit/widget/database/API
+ Testing and            10–12 (plan),                                                       test/, integration_test/, Node tests, ML
+                                              verification, regression, usability
+ results                with later cycles                                                   evaluation and readiness records
+                                              preparation
+                                              Reconciled architecture diagrams,
+ Reporting /                                                                                UOB report, demonstration script,
+                        13–16                 evidence, live demo script,
+ presentation                                                                               research-question traceability and poster
+                                              limitations
+
+
+
+
+                        Figure 3.1: Proposed 16-week project activity schedule (relative project weeks)
+                 Source: The original senior-project proposal; phases are planned, not verified historical delivery dates.
+
+
+3.3.1 Requirements Collection and Literature Planning
+The plan of the project included all information about patients, clinicians, administrators, the main
+research questions, initial privacy concerns, and literature review, which can be found in its entirety as
+Chapter 2.
+
+3.3.2 Architectural and Database Design
+The design section for weeks 4-6 covered the design of the use cases, user roles, database
+relationships, navigation and initial interface. The design document and schema show the output of
+these design steps, but do not specify the specific times when each was completed.
+
+3.3.3 Implementation and Feature Integration
+It was scheduled for weeks 7-9. First, the main patient and clinical screens were created, using Flutter,
+Riverpod, and the local repository layer. Other modules such as documents, pharmacy, billing, and
+workforce, were added in later releases, and required more integration work.
+
+3.3.4 Testing and Quality Assurance
+Testing was planned for weeks 10-12, but documentation in the repository shows testing continued as
+the project grew larger. Unit, widget, database, and API tests were written to test different parts of the
+application. This report distinguishes between tests that were directly monitored during the technical
+review, and test results documented earlier by the project team.
+
+
+
+
+                                                                                                                                        15
+<PARSED TEXT FOR PAGE: 23 / 61>
+3.3.5 Deployment and Demonstration
+The supported deployment has just a browser demonstration with synthetic data. There is a separate
+pilot for the shared API which is not complete for all features. Therefore, the graduation
+demonstration should demonstrate repeatable workflows for patients, doctors, and administrators
+rather than declare the system ready to handle real clinic records.
+
+3.3.6 Documentation, Presentation and Release Review
+Final project activities are made up of system reports, diagrams, screenshot and presentation. The
+same tasks also require ensuring the written statement true to the working features. Accessibility in
+Arabic and formal review on privacy, security and shared deployment are still the activities which
+have yet to be assigned up to date before probable use outside the university.
+For a reproducible release check, the team should record their versions of Flutter, Dart, and Node, run
+analyzers and tests, build the web app, and check database upgrades with data. Manual checks should
+include both language versions, major user journeys, accessibility, and handles for failed or
+unauthorized actions. Better evidence is provided than by a checklist of features when these checks
+have been done.
+
+
+
+3.4 Chapter Summary
+The repository demonstrates continuous development via functional features, reviews and tests. An
+iterative development approach enabled local patient/staff workflows to be refined as demands arose.
+During the final university demo, the key goal is to produce a stable and approved scope and show
+evidence of the tests performed.
+
+
+
+
+                                                                                                    16
+<PARSED TEXT FOR PAGE: 24 / 61>
+                               Chapter 4
+                   Requirement Collection and Analysis
+4.1 Requirement Elicitation
+4.1.1 Stakeholder Identification
+The proposal mentions three main user types: patients, hospital staff and administration. It also
+presents three needs: make records easier to access, make appointments easier to manage, make
+clinical follow-up easier to organize. Those needs were compared with screens, domain models, and
+repository contracts of the application. The project documentation and testing have also been used for
+additional information on permission, errors, and the expected change of state.
+
+4.1.2 Data Collection Methods and Evidence Boundaries
+Available elicitation evidence. There is little elicitation evidence. The artefacts provided with this
+project do not include any survey results, interview transcripts, enumeration or consent records.
+Therefore, there are no interviews or questionnaires presented as activities within this report. The
+stated needs have been derived from the proposal, the paperwork, and the realized artefacts. Any
+separately gathered user research must be reported with its actual methodology and conclusions.
+
+4.1.3 Domain Analysis and Requirement Prioritization
+Traces were taken from the proposal, DESIGN.md, two review checklists, repository interfaces, and
+scenario tests. Every major function was written out with the person doing it, the pre-conditions that
+should be true before it, and the post-conditions after it. For example, booking requires permission to
+administer the patient, an available clinician that passes all criteria, an available time slot, and checks
+against double booking. Access to a medical history requires the correct identity of the patient, results
+in chronological order, and clear information of the origin of a record.
+The original proposal described general ideas like AI assisted summaries, intelligent scheduling. The
+actual implementation distills out some of these ideas to ones that can be shown safe: imported and
+synthetic records, rules-based staff task management, and an experimental no-show model that isn't
+used in scheduling decisions. In the requirements tables we mean 'implemented locally' to refer to the
+Drift/SQLite version of the function, and 'partial shared' to mean that the server-backed
+implementation is only partial.
+
+4.2 System Requirements
+4.2.1 Functional Requirements
+Table 4.1 lists functions found in the application and identifies the relevant user roles. The
+requirement IDs were assigned for this report to help relate requirements to the implementation; they
+are not claimed to be original project issue numbers.
+Table 4.1: Functional requirements and implementation traceability
+
+
+
+
+                                                                                                        17
+<PARSED TEXT FOR PAGE: 25 / 61>
+                     Requirement and
+                     expected
+ID     Actor                                Main evidence               State
+                     observable
+                     outcome
+                     Sign in and enter      SessionController,
+       Patient/
+FR01                 only an authorized     AuthRepositoryImpl,         Local implemented
+       staff/admin
+                     role shell             router.dart
+                     Register/manage
+                                            register_screen.dart,
+FR02   Patient       account and patient                                Local implemented; real identity unverified
+                                            patient_profiles
+                     demographics
+                     Browse own
+                     longitudinal
+                                            RecordRepositoryImpl,
+FR03   Patient       records and                                        Local implemented
+                                            medical_records, timeline
+                     source/review
+                     details
+                     Import supported
+                     clinical document,     RecordRepositoryImpl.add
+FR04   Patient                                                          Local implemented
+                     hash and               , document_files
+                     deduplicate it
+                     Select an
+                     authorized linked      family_links,
+FR05   Patient                                                          Local implemented
+                     family subject to      _bookingSubjectProvider
+                     view/manage
+                     Discover available
+                                            discovery_providers.dart,
+FR06   Patient       clinicians and open                                Local implemented
+                                            openSlots
+                     appointment times
+                     Book an
+                                            AppointmentRepositoryIm
+                     appointment
+FR07   Patient                              pl.book,                    Local implemented
+                     without conflict or
+                                            idempotency_records
+                     duplicate replay
+                     View/cancel/
+                     reschedule             appointment repository,
+FR08   Patient                                                          Local implemented
+                     permitted              appointment screens
+                     appointment states
+                     Review
+                     prescriptions,         records, vitals, billing,
+FR09   Patient                                                          Local implemented
+                     vitals, invoices and   notification providers
+                     notifications
+                     Submit a
+                     service/document       care/document services,
+FR10   Patient                                                          Local implemented in major paths
+                     request and view       request entities
+                     status
+                     Use bilingual and
+                                            app.dart, router.dart,
+FR11   Patient       responsive                                         Implemented; final manual acceptance open
+                                            design system
+                     navigation
+                     View own
+                     schedule and           staff dashboard,
+FR12   Clinician                                                        Local implemented
+                     related patient        AccessPolicy
+                     chart
+                     Accept/reject
+                                            RecordRepositoryImpl.revi
+FR13   Clinician     eligible patient-                                  Local implemented
+                                            ewImport
+                     imported record
+                     Record
+                     observations/result    consultation repository,
+FR14   Clinician                                                        Local implemented
+                     s and conduct          chart/record interfaces
+                     consultation
+                     Save encounter
+                     draft; finalize        EncounterDraftRepositoryI
+FR15   Clinician     signed note and        mpl,                        Local implemented
+                     medicines              EncounterRepositoryImpl
+                     atomically
+
+
+
+
+                                                                                                                  18
+<PARSED TEXT FOR PAGE: 26 / 61>
+                              Requirement and
+                              expected
+ ID          Actor                                  Main evidence                 State
+                              observable
+                              outcome
+                              Manage allocated
+             Clinician/       tasks, risk flags,    RiskDetectionService,
+ FR16                                                                             Local implemented
+             staff            review and            TaskRepositoryImpl
+                              escalation
+                              Perform bounded
+             Nurse/
+                              intake, queue and     nursing, workforce,
+ FR17        reception/                                                           Implemented in selected paths
+                              dispense/stock        pharmacy modules
+             pharmacist
+                              workflows
+                              Manage users,
+                              roles, departments    admin providers,
+ FR18        Admin                                                                Local implemented
+                              and operational       repositories, app_settings
+                              settings
+                              Review payments,
+                              invoices, audit       billing, audit, admin
+ FR19        Admin                                                                Local implemented; simulated settlement
+                              entries and service   modules
+                              requests
+             Admin/           Approve and issue
+                                                    DocumentServiceImpl,
+ FR20        authorized       immutable                                           Implemented with outstanding policy review
+                                                    issuance tables
+             issuer           document versions
+                              Access supported
+                              shared-service
+             Approved                               SharedClient, Node
+ FR21                         functions with                                      Partial shared pilot
+             users                                  server.mjs
+                              server
+                              authorization
+                              Receive reliable
+             Staff/
+ FR22                         app-closed            reminder/outbox interfaces    External provider integration incomplete
+             patient
+                              SMS/push/email
+                              Generate validated
+                                                    capabilities,
+ FR23        AI module        live clinical                                       Disabled/unvalidated
+                                                    GeminiAiService
+                              recommendations
+                              Operationally rank
+             Scheduling       appointments with     logistic predictor,
+ FR24                                                                             Model exists; operational use disabled
+             module           validated no-show     capability registry
+                              risk
+
+4.2.2 Non-Functional Requirements
+Table 4.2: Non-functional requirements and measurable acceptance criteria
+                  Quality                 Requirement / measurable
+ ID                                                                                Evidence or limitation
+                  attribute               acceptance
+                                          All patient-scoped repository
+                                                                                   AccessPolicy; negative direct-ID tests
+ NFR01            Security                reads/writes enforce authorization
+                                                                                   needed per route
+                                          beyond route guards
+                                          SQLite foreign keys and integrity
+                                                                                   Direct read-only check:
+ NFR02            Integrity               checks produce no violations on
+                                                                                   quick_check=ok; foreign_key_check=0
+                                          bundled snapshot
+                                          Booking, consultation finalization
+                                          and document issuance are                transactions and IdempotencyGuard;
+ NFR03            Atomicity
+                                          transactionally consistent and retry-    concurrency testing required
+                                          safe
+                                          Target indexed high-frequency            Current scanned predicates identified;
+ NFR04            Performance             patient/staff history queries and        production latency target not yet
+                                          avoid unbounded list materialization     measured
+                                          Clear status/error/loading states and    design screens and widgets; formal
+ NFR05            Usability
+                                          recoverable user actions                 participant study not supplied
+
+
+
+
+                                                                                                                             19
+<PARSED TEXT FOR PAGE: 27 / 61>
+                  Quality              Requirement / measurable
+ ID                                                                           Evidence or limitation
+                  attribute            acceptance
+                                       English and Arabic navigation, RTL
+                  Internationalizati                                          code/design evidence; human Arabic
+ NFR06                                 and Bahrain currency/date
+                  on                                                          acceptance still open
+                                       conventions
+                                       48dp targets, visible focus,
+                                                                              DESIGN.md contract; complete manual
+ NFR07            Accessibility        keyboard/screen reader paths,
+                                                                              certification outstanding
+                                       readable text to 200%
+                                       Local demo should open
+                                       independently of a shared server;      browser local persistence works by
+ NFR08            Availability
+                                       shared mode needs                      design; remote SLO unmeasured
+                                       availability/recovery plan
+                                       No actual patient information in the
+                                                                              release scope documentation and access
+ NFR09            Privacy              public synthetic demo; restrict
+                                                                              policies
+                                       subject/patient grants
+                                       Distinct presentation, application,
+                                                                              lib/features, domain, data, code
+ NFR10            Maintainability      domain and data layer ownership;
+                                                                              generation
+                                       type-safe entities and tests
+                                       Repeated payment/booking requests
+                                       must not silently                      simulated gateway/retry model and
+ NFR11            Reliability
+                                       double-charge/book; failed PDF         document artifact statuses
+                                       render not reported as ready
+                                       Share Flutter UI code; verify
+                                       Android/iOS/Windows                    Platform wrappers exist; full native run
+ NFR12            Portability
+                                       independently before claiming          not independently evidenced
+                                       support
+                                       Assess applicable local law and
+                  Regulatory           clinical risk; use HIPAA guidance as   No clinical/privacy approval or HIPAA
+ NFR13
+                  readiness            comparative control framework, not     audit supplied
+                                       compliance certification
+                                       Distinguish
+ NFR14            Traceability         mock/local/shared/disabled functions   capability and release-scope records
+                                       throughout demo and report
+HIPAA is a United States healthcare privacy and security framework and does not automatically
+certify a student application in Bahrain (U.S. Department of Health and Human Services, n.d.). Its
+principles can still inform access control, logging and protection of medical information. Before using
+real patient data, the project would need a separate review of Bahrain's applicable legal and clinical
+requirements. The prototype is not presented as compliant or certified for clinical deployment.
+
+4.3 Personas
+The following personas describe typical tasks for each user group based on the application design.
+They are illustrative examples, not profiles of people who were interviewed during the project.
+
+4.3.1 Patient Persona
+Persona P1 — Patient, 34, uses Arabic and English on a phone. The patient wants to check
+previous laboratory results, view appointments and share selected information with a permitted family
+member. A typical journey is Home → Medical Records → Record Details, or Book Appointment →
+Choose Doctor → Confirm. Important concerns are unclear medical terms, unexpected changes to an
+appointment and not knowing whether an uploaded document has been reviewed.
+
+
+
+
+                                                                                                                         20
+<PARSED TEXT FOR PAGE: 28 / 61>
+4.3.2 Clinician Persona
+Persona P2 — Doctor, 42, mainly uses a desktop or tablet. The doctor reviews the day's
+appointments, opens an authorized patient chart, records a consultation and finalizes the note. The
+main requirements are fast access to relevant history, clear identification of unreviewed information
+and protection against accidental duplicate orders or edits to signed notes.
+
+4.3.3 Nursing and Care Coordinator Persona
+Persona P3 — Nurse or care coordinator, 29, works with intake forms and a task queue. Daily
+work includes recording observations, following up overdue tasks and handing work to another staff
+member. The screen needs to show priority, current owner, task status and history so that urgent work
+is not lost or repeated.
+
+4.3.4 Administrator Persona
+Persona P4 — Administrator, 38, manages users, departments, service requests and billing
+exceptions. The administrator needs clear operational information and an audit history for sensitive
+changes. The role should not automatically provide access to every patient's detailed clinical records.
+
+4.4 System Models (Object-Oriented Approach)
+The object-oriented models show how the main user actions relate to domain entities, repositories and
+application services. Generated Drift or Freezed classes are treated separately from repository
+interfaces written by the team. A database foreign key shows an association between records; it does
+not necessarily mean the corresponding Dart objects have an inheritance or composition relationship.
+
+4.4.1 UML Use Case Diagram Description
+The use-case diagram defines the main MyHealth Care application boundary. Patient, staff and
+administrator actions are carried out through Flutter screens. In local demonstration mode, the data are
+stored in the client's Drift database. The optional shared mode connects to a Node.js service, which is
+responsible for enforcing permissions on server requests. Notification, document and AI services
+support selected use cases rather than acting as independent healthcare users.
+The main actors are Patient, Doctor/Clinician, Nurse, Pharmacist, Reception Staff and Administrator.
+A patient may use selected functions for an accepted linked family member when the required
+permission exists. Supporting services include notification delivery, the simulated payment gateway,
+optional Gemini integration and the shared server. AccessPolicy and the patient's clinical relationship
+determine which records a staff member is allowed to open.
+Table 4.3: Use case catalogue and relationships
+ Use case           Initiating actor   Includes / depends on             Extension / alternative
+ UC01 Log in /      Any registered     Credentials, lockout check,       Invalid/locked account, inactivity
+ restore session    user               AuthContext, route guard          expiration
+ UC02 Register      Prospective        Validate account/profile, write
+                                                                         Duplicate email, missing required data
+ patient            patient            identity row
+
+
+
+
+                                                                                                                  21
+<PARSED TEXT FOR PAGE: 29 / 61>
+ Use case           Initiating actor    Includes / depends on                   Extension / alternative
+ UC03 View                              Resolve patient subject, authorize,     Linked subject denied;
+                    Patient
+ personal history                       retrieve records and lab/source data    missing/unreviewed record
+ UC04 Import        Patient/            Validate file, checksum, duplicate      Too large/invalid/missing issuer;
+ medical report     authorized proxy    check, store record and attachment      duplicate override
+ UC05 Review                            Care relationship, review status,       Reject with reason, unauthorized
+                    Clinician
+ imported record                        audit                                   reviewer
+ UC06 Discover                          Staff schedules, exceptions, existing
+                    Patient                                                     No schedule; no available slot
+ slots                                  bookings
+ UC07 Book                              UC06, subject grant, transaction,
+                    Patient/proxy                                               Slot conflict, stale selection, replay
+ appointment                            idempotency, reminder outbox
+ UC08 Cancel or     Patient/staff by
+                                        State/version and notice rules          Cutoff reached, version conflict
+ reschedule         policy
+ UC09 Conduct                           Open encounter, patient chart,
+                    Doctor                                                      Nonparticipating clinician blocked
+ consultation                           persistent draft
+ UC10 Finalize                          Validate, create signed note and
+                    Doctor                                                      Retry, invalid encounter, version change
+ encounter                              medications, audit/outbox
+ UC11 Review                            Rule flags, task owner/coverage,
+                    Staff                                                       Escalation or handover
+ care tasks                             history
+ UC12
+                    Patient and         Template, evidence, approval, freeze    Rejection, render failure, superseded
+ Request/issue
+                    authorized issuer   snapshot, render                        version
+ document
+ UC13 Pay invoice   Patient/admin       Invoice, masked method, request
+                                                                                Gateway decline/retry/refund
+ (simulation)       role by policy      reference
+ UC14 Manage
+                    Admin               Users, departments, staff and config    Role or grant refusal
+ clinic
+ UC15 Produce AI                        Patient context, hash/cache, mock
+                    Patient/clinician                                           Live AI unavailable by capability
+ summary (demo)                         service
+Figure 4.1 shows the main actions available to each user group. It is a summary of permitted
+workflows, not a statement that every logged-in user can access every record. Family-linked actions
+require an accepted relationship and the appropriate scope.
+
+
+
+
+                                                                                                                         22
+<PARSED TEXT FOR PAGE: 30 / 61>
+                           Figure 4.1: MyHealth Care UML use-case overview by actor
+
+4.4.2 Process Specifications
+Use case: Booking an Appointment
+UC07 — Book Appointment. Goal: create a single authorized booking for a free clinician slot.
+Preconditions:   active   session;   patient    account    or    valid   delegated    manage   relationship;
+clinician/schedule exists; chosen start/end are valid. Main flow: (1) patient selects specialty/clinician,
+visit type and day; (2) rankedSlotsProvider invokes AppointmentRepository.openSlots and shows
+available chronological slots because operational no-show ranking is disabled; (3) user confirms; (4)
+booking_providers.dart rechecks subject/proxy rights and submits BookingRequest with idempotency
+key; (5) AppointmentRepositoryImpl.book() checks version, schedule/exception and interval overlap
+inside a transaction; (6) appointment row and ticket metadata are committed, associated
+reminders/outbox records are prepared, idempotency result is recorded; (7) UI receives
+Ok(Appointment) and navigates to confirmation. Alternative A1: booked/conflicting interval → Err
+with no appointment. A2: authorization revoked → access failure and no write. A3: same key retried
+→ previous committed result, not a new row. A4: reminder dispatch temporarily fails → booked visit
+remains committed and delivery is retried according to outbox semantics. Postcondition: exactly one
+
+
+
+                                                                                                         23
+<PARSED TEXT FOR PAGE: 31 / 61>
+durable local reservation for the successful idempotency scope; no claim of cross-device serializability
+in disconnected local mode.
+
+Use case: Viewing Medical History
+UC03 — View Medical History. Preconditions: valid session and patient subject access. Main flow:
+(1) patient opens timeline/records; (2) the application resolves own or accepted linked subject; (3)
+records_providers.dart calls an authorized record repository; (4) RecordRepositoryImpl filters by
+patient identity, retrieves ordered MedicalRecords and associated LabValues/DocumentFiles
+metadata; (5) screen groups records by date/type and indicates provenance and review status; (6)
+details open the selected record and preserve patient scope. Alternatives: empty records show an
+empty state; a revoked family link or foreign record ID is rejected; a missing file displays an error
+rather than implying an attachment. Postcondition: no mutation is required for ordinary viewing,
+except an authorized read-tracking action when invoked. Browser local data is not equivalent to
+external hospital truth.
+
+Use case: Patient Registration
+UC02 — Patient Registration. Preconditions: user is signed out and registration enabled. Main flow:
+enter required identity/contact details and password; screen validates input; AuthRepository creates an
+account and patient profile with role-appropriate defaults; application returns explicit success or
+transitions to sign-in. Alternatives: duplicate account identifier, malformed fields, weak/invalid
+password and persistence failure must not result in a partially activated account. Postcondition: a local
+account and associated profile exist when registration succeeds. The local demonstration does not
+verify official national identity, government registry status or ownership of a real clinical record.
+
+Use case: Importing and Reviewing Medical Records
+UC04/UC05 — Import and Clinician Review. Preconditions: patient or managed proxy has access;
+supported source file supplied. Main flow: collect record type, date, issuer and PDF;
+RecordRepositoryImpl.add(NewRecord) validates file and issuer requirement, computes SHA-256,
+applies per-patient duplicate logic, writes record, lab child rows and DocumentFiles atomically, marks
+uploaded content pendingReview and produces audit/review work; authorized clinician later reviews
+and accepts or rejects through reviewImport. Alternatives: unsupported/oversized file, duplicate
+fingerprint without override, disallowed account, inconsistent lab data or failed transaction.
+Postcondition: original byte provenance and review decision remain traceable; unreviewed user
+uploads must not be presented as verified clinical truth.
+
+Use case: Consultation and Signed-Note Finalization
+UC09/UC10       —     Consultation     Finalization.    Preconditions:     authorized    clinician,     valid
+encounter/appointment relationship and correct visit state. Main flow: open staff schedule and
+consultation; load patient context; save EncounterDraft notes and draft medicines with version; invoke
+EncounterRepositoryImpl.finalize; validate authorship and appointment state; run a transaction
+
+
+
+                                                                                                          24
+<PARSED TEXT FOR PAGE: 32 / 61>
+creating deterministic SignedNotes and related medical/medication rows, mark encounter completed,
+resolve walk-in linkage when applicable, remove the draft and write audit/outbox and idempotency
+outcome. Alternatives: stale version, staff without relationship, invalid medicine fields or duplicate
+finalize request. Postcondition: signed record is preserved against ordinary edits; later corrections are
+additive SignedNoteAmendments rather than silent overwrites.
+
+Use case: Managing Staff Tasks and Risk Flags
+UC11 — Staff Risk and Task Handling. Preconditions: assigned staff and valid patient scope. Main
+flow: RiskDetectionService collects recent vitals, records and medications; deterministic rules identify
+threshold anomalies, missed follow-up or medication gap and derive deduplication keys; task
+generation associates a source episode and owner; board groups urgent, overdue, today, upcoming and
+completed    work;    an   authorized     user   acknowledges,   transfers,   escalates   or   completes;
+TaskRepositoryImpl checks ownership/version and records TaskHistory. Alternatives: identical source
+episode is deduplicated; unauthorized coverage cannot change task; stale version yields conflict; risk
+rules yield no actionable finding. Postcondition: work has an accountable status and history. The
+output is decision-support demonstration only.
+
+Use case: Medical Document Issuance
+UC12 — Document Issue and Verification. Preconditions: permitted template and issuer/role
+conditions; related patient/appointment records exist where required. Main flow: prepare request,
+submit, approve; DocumentServiceImpl.issue() snapshots patient, issuer, language, disclosure and
+template content into IssuedDocumentVersions; separate rendering writes DocumentArtifacts with file
+hash; delivery event is recorded; a recipient downloads an authorized version and verifier can check
+minimal status. Alternatives: request rejected, credential not approved, render failed, version revoked
+or superseded. Postcondition: immutable issued snapshot and reliable failure status; real-world legal
+validity is not established solely by these software controls.
+The key sequence for booking is BookingScreen → Riverpod provider → AppointmentRepository →
+AccessPolicy → database transaction → appointment and idempotency records → result shown in the
+UI. Consultation finalization follows a similar pattern, using EncounterRepositoryImpl to validate the
+draft and write signed records, prescriptions and related updates together. Notification records are
+prepared after a successful state change; their presence does not guarantee external delivery.
+
+4.4.3 UML Class Diagram Specification
+The domain layer defines Dart models and repository contracts, with concrete classes implementing
+those contracts. Appointments refer to patient and staff accounts through identifiers; records are
+related to laboratory values and uploaded files; staff tasks refer to owners and history entries.
+PatientProfiles and StaffProfiles extend Users in the relational database through one-to-one links, not
+through Dart class inheritance. AppointmentRepositoryImpl and RecordRepositoryImpl implement
+their respective repository interfaces.
+
+
+
+                                                                                                      25
+<PARSED TEXT FOR PAGE: 33 / 61>
+Table 4.4: Core class/interface responsibilities and relationships
+                     Principal
+ Class / interface   attributes or     Main methods / operations              Relationships
+                     state
+Repository interfaces define operations that the rest of the application can call, while concrete
+repositories provide the database or HTTP behavior. Freezed generates model features such as equality
+and copyWith; Flutter and Riverpod provide widget base classes. These generated or framework
+classes should not be counted as additional business modules created specifically for MyHealth Care.
+
+
+
+
+                        Figure 4.2: Representative UML class and repository interaction model
+
+Figure 4.2 presents the main classes and contracts involved in appointment booking. It illustrates how
+the booking logic depends on a repository interface and on explicit permission and replay checks. The
+diagram is intentionally limited to the classes needed to explain this workflow.
+Several rules govern changes to stored data. Appointment statuses follow controlled transitions, while
+signed notes and issued-document versions are protected against ordinary overwrites. Version fields
+help detect conflicting changes. A valid foreign key alone is not sufficient for authorization: for
+example, a referenced staff account must also have permission to perform the requested clinical action.
+
+4.5 Chapter Summary
+This chapter connects the three proposal questions with the actions implemented for patients,
+clinicians and administrators. The use cases describe normal activity as well as invalid inputs, denied
+access and conflicting updates. The object-oriented models show how the application separates data
+and business operations. Formal user acceptance and clinical validation would still be needed before
+the system could be used outside the synthetic demonstration.
+
+
+
+
+                                                                                                    26
+<PARSED TEXT FOR PAGE: 34 / 61>
+                                            Chapter 5
+                                          System Design
+This chapter describes the design in the source code currently in place. MyHealth Care, in fact, can be
+tested with a local demonstration using synthetic data and there is a different implementation of shared
+server with only some of the functionality. These two modes have different responsibilities in terms of
+storage and access control and must be represented separately in architecture and deployment
+diagrams.
+
+5.1 Software Architectural Style
+
+My Health Care has a layered, feature-first Flutter architecture. Screens and reusable widgets are
+found   in   lib/features/presentation,      Riverpod   providers   and   workflow   definitions   are   in
+lib/features/application. Domain models and repository contracts are in lib/domain; Drift and remote
+implementations in lib/data; shared services like scheduling, access checking, risk detection, document
+processing are in lib/services. The architecture is close in spirit to MVVM, as state management is
+done outside the widget tree. However, I would say 'layered architecture with repositories and
+Riverpod' is a better team than MVC.
+It also allows testing and modification. For example, you can replace the repository interface with a
+mock implementation for unit testing, which allows testing a specific rule without starting a complete
+screen. You can also largely isolate modifications to the database or API by changing its adapter.
+Importantly, checks for access are performed by the data and service layers, rather than by hiding a
+menu item. These benefits only hold if you are disciplined about always following the repository
+contract in each storage mode.
+Some areas of the project are incomplete and require attention. Repository sizes are sometimes too
+high, some screens depend on the specifics of the local database, and some shared-server adapters are
+still not available. The dependency flow that is ideal is presentation to application to domain to
+interface to data implementation. Flutter recommends responsibility separation and for data access to
+reside through interfaces (Flutter, n.d.).
+Access control lives on many levels. Session Controller guards the user log-in, router. Dart secures
+routes, and Auth Context exposes the current account state. Before sensitive actions are taken, Access
+Policy is checking roles, patient IDs, care-team relationships, family permissions, and other grants.
+Some data streams check permission anew each time they update. All that makes the local prototype
+more consistent, but browser-based security is not a replacement for a trusted server if real patients
+and many devices are being used.
+The local database is also built with Drift and SQLite and has migrated to the current schema version
+35. The native app uses encrypted local storage, while the browser demo keeps its SQLite data in
+
+
+
+                                                                                                         27
+<PARSED TEXT FOR PAGE: 35 / 61>
+browser storage without protection. The Node.js API has a separate server database of its own. The
+outbox, idempotency, help us with retrieving and notifications, but not with full two-way sync
+between browser and server.
+
+
+Figure 5.1 — Layered architecture
+
+
+
+
+Layered local and shared runtime architecture
+
+5.2 Architectural Diagrams / Package Structure
+Table 5.1 summarizes the main source directories and the role of each layer. Generated build and
+platform files are omitted because they are not part of the project's main application design.
+
+
+
+
+                                                                                                 28
+<PARSED TEXT FOR PAGE: 36 / 61>
+Table 5.1: Package/folder architecture map
+ Source path                Responsibility                                    Representative files
+                            MyHealthCareApp, MaterialApp.router, role         app.dart, router.dart, session_scope.dart,
+ lib/app/
+                            shells, theme and session navigation              shared_mode.dart
+                            Result/failure types, dependency wiring,          di.dart, result.dart, failures.dart,
+ lib/core/
+                            capability policy, UI utilities                   capabilities/capability_registry.dart
+                            Clinical and operational immutable domain         user.dart, patient.dart, appointment.dart,
+ lib/domain/entities/
+                            objects                                           medical_record.dart, staff_task.dart
+                                                                              appointment_repository.dart,
+                            Interface contracts for data access and domain
+ lib/domain/repositories/                                                     record_repository.dart,
+                            operations
+                                                                              consultation_repository.dart
+ lib/domain/identity/       Role/capability and principal types               permission and identity support
+                            Drift schema, generated mappings, migrations,
+ lib/data/db/                                                                 app_database.dart, tables/*.dart
+                            converters and integrity rules
+                                                                              appointment_repository_impl.dart,
+                            Authoritative local use-case persistence and
+ lib/data/repositories/                                                       record_repository_impl.dart,
+                            transactions
+                                                                              consultation_repository_impl.dart
+                            Dio transport and shared-mode repository
+ lib/data/remote/                                                             shared_client.dart, shared_repositories.dart
+                            adapters or unavailable contracts
+                            Deterministic synthetic accounts and clinical
+ lib/data/seed/                                                               seeded demo domain
+                            data
+                            Outbox/idempotency for durable local
+ lib/data/sync/                                                               idempotency and outbox helpers
+                            mutation retries
+                            Patient, staff, admin, booking, documents,        27 feature directories, screens and provider
+ lib/features/
+                            charting and feature UI/application providers     files
+                                                                              auth/access_policy.dart,
+                            Authorization, AI, scheduling, PDF, payment
+ lib/services/                                                                rules/risk_detection_service.dart,
+                            simulation, notification, risk and ML
+                                                                              ml/no_show_predictor.dart
+                            Optional Node.js server-authoritative pilot and   server.mjs, store.mjs, clinic_ops.mjs,
+ services/shared_api/
+                            SQL store                                         clinical_ops.mjs, workers.mjs
+                            Flutter web initialization, workers, WASM
+ web/                                                                         demo_seed.sqlite, worker/static assets
+                            assets and demo SQLite snapshot
+                            Generated/native platform embedding and           Android Gradle and manifests; platform
+ android/, ios/, windows/
+                            configuration                                     runners
+                            Unit/widget/security and integration
+ test/, integration_test/                                                     Dart test suites and integration entrypoints
+                            specification
+Medical-record flow. A patient opens the timeline or records screen. A Riverpod provider calls
+RecordRepository, which checks the patient's access and uses Drift queries to retrieve
+MedicalRecords, LabValues and related file or review information. The provider then updates the
+interface. In shared mode, a supported remote adapter can call the Node.js API instead. If that function
+is not implemented remotely, the application returns an unavailable result rather than pretending the
+local data are shared.
+Appointment flow. The patient selects a clinician and a displayed slot. Before saving,
+booking_providers.dart confirms the patient or family permission and sends a BookingRequest.
+AppointmentRepositoryImpl.book() checks schedules, exceptions and conflicts inside a database
+transaction. It also checks the request's idempotency key, assigns ticket information and saves the
+appointment. Reminder or outbox records are created for later processing, after which the UI shows
+the booking result.
+
+
+
+                                                                                                                             29
+<PARSED TEXT FOR PAGE: 37 / 61>
+Consultation flow. An authorized clinician opens an appointment, reviews the chart and saves a draft
+note. Finalization checks the appointment and staff permissions, writes the signed note and related
+medication or medical-record data, and updates the encounter in one transaction. Later corrections are
+stored in SignedNoteAmendments rather than silently replacing the original note. These software
+controls do not verify a doctor's professional license or the legal validity of a clinical signature.
+Deployment. The approved public demonstration is a static Flutter Web application hosted on GitHub
+Pages, with each browser keeping its own local SQLite data. A separate configuration can connect the
+client to the Node.js shared API, but that pilot is incomplete. A real shared clinic system would require
+an authoritative server, protected connections, managed secrets, backups and tested access controls.
+The public demo should not be described as a live cloud medical-record service.
+
+5.2.1 Data Flow Diagram — Level 1: Main System Processes
+Figure 5.2 shows how the main user groups interact with patient records, appointments, clinical work
+and administration. D1 represents the synthetic browser-local Drift database. D2 represents the
+separate Node.js service used for selected shared workflows. The figure does not imply that the two
+stores automatically synchronize.
+
+
+
+
+                  Figure 5.2: Level 1 data flow — identities, scheduling, records, staff and operations
+
+5.2.2 Data Flow Diagram — Level 2: Appointment Booking
+Figure 5.3 expands the booking process into permission checking, available-slot calculation, conflict
+checking and saving the booking. The main safety step is the database transaction: a time shown as
+free on screen must be checked again before the reservation is committed.
+
+
+
+
+                                                                                                          30
+<PARSED TEXT FOR PAGE: 38 / 61>
+                Figure 5.3: Level 2 data flow — conflict-aware and replay-safe appointment booking
+
+5.3 Database Design / Schema
+5.3.1 Storage modes, schema version and integrity
+The supplied web/demo_seed.sqlite snapshot was inspected directly. It uses schema version 35 and
+contains 69 application tables. SQLite reported a successful quick_check and no foreign-key
+violations. The snapshot includes 106 users (60 patients, 44 staff and two administrators), eight
+departments, 892 appointments, 1,199 medical records, 2,181 laboratory values, 624 vital records and
+624 invoices. These counts describe the supplied dataset, not a guaranteed result of running the seeder
+again. Selected integrity triggers are installed by AppDatabase.installIntegrityRules.
+The schema stores identifiers and many status values as TEXT, timestamps and counters as
+INTEGER, selected measurements and local monetary fields as REAL, and file bytes as BLOB.
+PatientProfiles.userId and StaffProfiles.userId link directly to Users.id. Some medical records have no
+appointment_id because they represent standalone information. Foreign keys protect relationships
+
+
+
+                                                                                                     31
+<PARSED TEXT FOR PAGE: 39 / 61>
+between rows, but other rules must still check whether a staff account is an eligible clinician or
+whether two appointment times overlap. The shared API uses a different schema and should not be
+confused with the local 69-table database.
+Figure 5.4: Core relational model and principal entity cardinalities
+
+
+
+
+Core patient, appointment, record and staff relationships
+Table 5.2: Major entity relationships and application rules
+ Source /
+                     Cardinality         Database references                     Application-level invariant
+ destination
+ users →
+                     1:0..1              patient_profiles.user_id PK + FK        profile must correspond to patient role
+ patient_profiles
+ users →
+                     1:0..1              staff_profiles.user_id PK + FK          staff specialty/credentials by permission
+ staff_profiles
+ departments →                           staff_profiles.department_id nullable   clinician associated with configured
+                     1:N
+ staff_profiles                          FK                                      department
+ users (patient) →
+                     1:N                 appointments.patient_id FK              subject/proxy authorization required
+ appointments
+ users (staff) →                                                                 eligible and scheduled clinician; overlap
+                     1:N                 appointments.staff_id FK
+ appointments                                                                    check
+ appointments →                          medical_records.appointment_id
+                     1:N optional                                                independently imported record possible
+ medical_records                         nullable FK
+ medical_records
+                     1:N                 lab_values.record_id FK                 value provenance and review/flag status
+ → lab_values
+ medical_records
+ →                   1:0..N physical     document_files.record_id FK             source bytes, hash and access checks
+ document_files
+ appointments →      one logical final                                           deterministic ID/immutability policy in
+                                         signed_notes.appointment_id FK
+ signed_notes        note                                                        service
+ signed_notes →
+ signed_note_ame     1:N                 amendment FK                            append-only corrections
+ ndments
+ users (patient) ↔                                                               active assignment and relationship
+                     N:M                 care_team_assignments
+ users (staff)                                                                   checks
+ users (patient) ↔                                                               accepted status and view/manage
+                     directed N:M        family_links
+ users (proxy)                                                                   permission
+ invoices →
+                                                                                 settlement/refund/idempotency, masked
+ payment_transacti   1:N                 payment invoice_id FK
+                                                                                 methods
+ ons
+
+
+
+
+                                                                                                                           32
+<PARSED TEXT FOR PAGE: 40 / 61>
+ Source /
+                       Cardinality         Database references                      Application-level invariant
+ destination
+ staff_tasks →
+                       1:N                 history task_id FK                       actor, version, state transition audit
+ task_history
+ document_request
+ s→                                                                                 immutable issued snapshots,
+                       1:N                 version request_id FK
+ issued_document                                                                    supersession
+ _versions
+ issued_document
+ _versions →
+                       1:0..1              artifact issued_version_id PK+FK         failed render not downloadable
+ document_artifact
+ s
+
+5.3.2 Selected logical/physical data dictionary
+The local database has 69 tables, but only the main entities are needed to understand the core design.
+Table 5.3 therefore shows representative fields for patients, appointments, records and staff work. The
+full definitions and migrations remain available in the source repository. Primary and foreign keys in
+the table are taken from the inspected database.
+                                  Table 5.3: Core database entities and representative fields
+  Entity / purpose              Key columns (SQLite type)                              Main relationship / constraint
+  users                         id (TEXT), role (TEXT), email (TEXT),
+                                                                                       PK: id
+  Account/role                  password_hash (TEXT)
+  patient_profiles              user_id (TEXT), blood_type (TEXT), allergies
+                                                                                       user_id → users.id
+  Patient history               (TEXT)
+  staff_profiles                user_id (TEXT), specialty (TEXT), department_id        user_id → users.id; department_id
+  Clinical staff                (TEXT)                                                 → departments.id
+                                id (TEXT), patient_id (TEXT), staff_id (TEXT),
+  appointments                                                                         patient_id → users.id; staff_id →
+                                slot_start (INTEGER), slot_end (INTEGER), status
+  Scheduled encounters                                                                 users.id
+                                (TEXT)
+                                id (TEXT), staff_id (TEXT), weekday (INTEGER),
+  schedule_templates
+                                start_minutes (INTEGER), end_minutes                   staff_id → users.id
+  Clinician availability
+                                (INTEGER)
+                                id (TEXT), patient_id (TEXT), appointment_id
+  medical_records                                                                      patient_id → users.id;
+                                (TEXT), record_type (TEXT), occurred_at
+  Patient record timeline                                                              appointment_id → appointments.id
+                                (INTEGER), review_status (TEXT)
+  lab_values                    id (TEXT), record_id (TEXT), analyte (TEXT),
+                                                                                       record_id → medical_records.id
+  Laboratory results            value (REAL), verification_status (TEXT)
+  document_files                id (TEXT), record_id (TEXT), mime_type (TEXT),
+                                                                                       record_id → medical_records.id
+  Attached files                sha256 (TEXT)
+                                id (TEXT), patient_id (TEXT), recorded_at
+  vitals
+                                (INTEGER), heart_rate (INTEGER), systolic              patient_id → users.id
+  Vital observations
+                                (INTEGER)
+  medications                   id (TEXT), patient_id (TEXT), appointment_id           patient_id → users.id;
+  Prescribed medicine           (TEXT), name (TEXT), dose (TEXT)                       appointment_id → appointments.id
+  signed_notes                  id (TEXT), appointment_id (TEXT),                      appointment_id → appointments.id;
+  Signed encounter notes        author_staff_id (TEXT), signed_at (INTEGER)            author_staff_id → users.id
+  family_links                  id (TEXT), owner_patient_id (TEXT),                    owner_patient_id → users.id;
+  Delegated patient access      viewer_patient_id (TEXT), permission (TEXT)            viewer_patient_id → users.id
+  care_team_assignments
+                                id (TEXT), patient_id (TEXT), staff_id (TEXT),         patient_id → users.id; staff_id →
+  Patient–clinician
+                                role (TEXT)                                            users.id
+  assignment
+  staff_tasks                   id (TEXT), staff_id (TEXT), patient_id (TEXT),         staff_id → users.id; patient_id →
+  Clinical work queue           priority (TEXT), status (TEXT)                         users.id
+
+
+
+
+                                                                                                                             33
+<PARSED TEXT FOR PAGE: 41 / 61>
+  Entity / purpose          Key columns (SQLite type)                    Main relationship / constraint
+  risk_flags                id (TEXT), patient_id (TEXT), kind (TEXT),
+                                                                         patient_id → users.id
+  Rules-based risk alerts   severity (TEXT), source (TEXT)
+  invoices                  id (TEXT), patient_id (TEXT), total_amount
+                                                                         patient_id → users.id
+  Demonstration billing     (REAL), status (TEXT)
+  document_requests
+                            id (TEXT), patient_id (TEXT), template_id    patient_id → users.id; template_id
+  Clinical document
+                            (TEXT), status (TEXT)                        → document_templates.id
+  requests
+
+5.3.3 Transactions, migrations, query efficiency and storage correctness
+Transactions keep related changes together. Booking and consultation finalization must either save
+all required rows or fail without a partial result. Selected signed notes, issued-document versions and
+audit records are also protected by append-only or version rules. An outbox records notification work
+to be attempted later, while an idempotency record allows the application to recognize a previously
+completed request.
+Database performance should be checked as the number of records increases. Patient history, clinician
+schedules, laboratory values and staff tasks are common queries that may benefit from indexes
+matching their filters and sort order. These improvements should be based on measured query plans
+rather than assumed performance problems in the small synthetic demonstration.
+Local billing stores some dinar amounts as SQLite REAL values. BillingRepositoryImpl converts
+selected values to integer fils through _fils(double bhd) for comparison and provider requests.
+Persisting integer fils throughout the local database would make exact financial calculations easier, but
+it would require a migration and reconciliation tests. The shared payment endpoints already use
+integer fils.
+Storage differs by platform. The native implementation has encrypted local SQLite storage, while
+the browser demo uses local browser data without equivalent encryption. Neither mode by itself
+provides a synchronized, authoritative hospital record. A future shared solution would need explicit
+rules for patient identity, consent, clinical amendments, offline changes and conflicts between devices.
+
+5.3.4 ERD Interpretation and Data Integrity Controls
+The ERD in Figure 5.4 focuses on the relationships most important to the main workflows: users and
+their profiles, patients and appointments, patients and records, and staff tasks and histories. It is a
+readable summary of the physical model; the complete table definitions remain in the source code.
+
+5.4 User Interface Design
+The interface design is described in DESIGN.md and docs/figma-redesign/implementation-map.json.
+It uses blue actions, light backgrounds, white cards and dark text. Different status colors are supported
+by words or icons so that urgency is not shown through color alone. Shared UI components follow a
+4dp spacing scale and target minimum touch areas of 48dp. The design uses Lexend, Inter and Noto
+Naskh Arabic. Navigation changes with screen width: bottom navigation on phones, a rail on tablets
+and a wider sidebar on large screens.
+
+
+
+                                                                                                              34
+<PARSED TEXT FOR PAGE: 42 / 61>
+Table 5.4: Role-dependent navigation and screen hierarchy
+ Workspace and root
+                          Primary screens / exact route examples               Main actions and data
+ route
+                          /register, /forgot-password, /policies/terms,        Local login and recovery/registration;
+ Signed out /login
+                          /policies/privacy                                    session restored/locked states
+                          /patient/timeline, /patient/appointments,            Upcoming cards, record history, navigation
+ Patient /patient/home
+                          /patient/summary, /patient/settings                  to personal services
+                          /patient/appointments/book, appointment detail       Clinician and time discovery, confirmation,
+ Patient appointments
+                          by ID, /patient/book/doctor                          ticket, cancellation/reschedule
+                          /patient/timeline/record/:id (constructed route),
+                                                                               Record details, source PDF,
+ Patient records          /patient/timeline/imaging,
+                                                                               radiology/document groups
+                          /patient/timeline/documents
+                          /patient/settings/personal,
+                          /patient/settings/health,                            Identity and health preferences, linked
+ Patient profile/family
+                          /patient/settings/preferences,                       patients, language
+                          /patient/settings/family
+                          /patient/home/calculators,
+                                                                               Wellness calculators and non-diagnostic
+ Patient tools            /patient/home/converters,
+                                                                               tools
+                          /patient/home/emergency
+                          /patient/home/billing,
+ Patient                                                                       Simulated payment, care communication
+                          /patient/home/messages,
+ financial/messages                                                            and local alerts
+                          /patient/home/notifications
+                          /staff/patients, /staff/tasks, /staff/schedule,      Schedule, related charts, staff queues, mock
+ Staff /staff/dashboard
+                          /staff/chat, /staff/scribe                           scribe
+                          Consultation route by appointment ID, staff          Draft/finalized encounter, result review and
+ Staff encounter
+                          patient chart route by patient ID                    medicine actions
+                          /staff/profile/activity, /staff/profile/directory,   Workforce overview and role-specific
+ Staff profile
+                          /staff/profile/analytics                             preferences
+                                                                               Users, departments, document/service work,
+ Administrator            Admin route subtree in router.dart
+                                                                               billing, analytics, settings and audit
+AppScaffold provides a consistent layout for major screens, while AuthScaffold is used for sign-in and
+registration. Reusable cards, navigation rows and action tiles keep similar information presented in a
+consistent way. Lists display loading, empty and error states, and protected routes use GoRouter
+guards. When a patient switches to a linked family member, the selected subject should remain clear
+on every relevant screen.
+The main interface journeys are straightforward. A patient signs in, checks records or upcoming
+appointments, chooses a doctor and confirms a booking. For an uploaded document, the patient sees
+the pending-review state before a clinician accepts or rejects it. A doctor moves from the daily
+schedule to the patient chart, writes a draft and finalizes the consultation. An administrator reviews
+operational requests and permitted approvals through the dashboard. These journeys are illustrated by
+the screenshots in Chapter 6.
+The design file contains 78 reference frames, but those frames should not be counted as 78
+independently tested screens. Additional manual testing is still needed for Arabic medical terms, larger
+text, assistive technology, task completion time and user satisfaction. The report therefore describes
+these as usability goals rather than completed evaluation results.
+Figure 5.5: Booking state progression through authorized repository operations
+
+
+
+                                                                                                                          35
+<PARSED TEXT FOR PAGE: 43 / 61>
+Booking and encounter finalization sequence
+
+
+
+
+                                              36
+<PARSED TEXT FOR PAGE: 44 / 61>
+5.5 Chapter Summary
+The overall architecture provides a clear boundary between the Flutter screens and application logic
+and data access. It supports the most common local workflows, using a relational database and
+transactional processing, while isolating shared-server integration as a separate and unfinished path.
+Further work should focus on implementation of the remaining remote adapters, evaluation of
+database performance and defining an explicit deployment contract before adding more complexity.
+
+
+
+
+                                                                                                   37
+<PARSED TEXT FOR PAGE: 45 / 61>
+                                     Chapter 6
+                          System Implementation and Testing
+6.1 System Implementation Details
+6.1.1 Tools, frameworks and selection rationale
+Table 6.1: Actual implementation technology inventory
+ Layer                      Technology / version in source                   Why it is used; limitations
+                                                                             One declarative UI framework for browser
+                            Flutter 3.47.2, Dart 3.13.2 pinned via
+ Client                                                                      and native wrapper targets; browser demo is
+                            toolchain.json; sdk: ^3.12.2
+                                                                             approved release
+                                                                             Rebuilds screens from async data states and
+ Reactive state             flutter_riverpod: ^2.6.1                         injects repository dependencies; no
+                                                                             riverpod_generator requirement
+                                                                             Declarative route definitions, nested role
+ Routes                     go_router: ^17.5.0
+                                                                             shells and guarded deep links
+                                                                             Typed SQL persistence, queries, migrations,
+ Local ORM                  drift: ^2.34.0, drift_flutter: ^0.3.1
+                                                                             generated rows and testability
+                            freezed_annotation: ^3.1.0, freezed: ^3.1.0,     Immutable domain models, copyWith and
+ Model generation
+                            json_serializable, build_runner                  generated mapping
+                                                                             Optional shared API and provider requests
+ HTTP                       dio: ^5.11.0                                     with error mapping, tokens and
+                                                                             cancellation/generation handling
+                            file_picker, syncfusion_flutter_pdf, pdf,        Import original records, generate/print
+ Files and PDFs
+                            printing, image_picker                           selected documents and manage media
+                            crypto, cryptography, flutter_secure_storage,    Hashes, key storage and native encryption;
+ Security/storage
+                            encrypted native SQLite                          no browser at-rest encryption
+                                                                             On-device notification hooks and local
+ Notifications              flutter_local_notifications, timezone            reminder scheduling; external delivery
+                                                                             incomplete
+                                                                             Vitals/analytics, bilingual formatting and
+ UI/data visualizations     fl_chart, intl, bundled fonts
+                                                                             accessible visual presentation
+                            mobile_scanner, image, url_launcher,             QR/media/link integration and non-sensitive
+ Additional UI / scanner
+                            shared_preferences                               preferences
+                            Node.js ESM scripts under                        Shared authenticated clinic API, server
+ Optional backend           services/shared_api/ (Node 24.13.0 required by   SQLite, encrypted documents and workers;
+                            repository toolchain)                            incomplete module coverage
+                                                                             Synthetic no-show classifier with
+                            Python training and scikit-learn process, Dart
+ Machine learning                                                            reproducible feature schema; capability
+                            inference, JSON weights
+                                                                             disabled in operational booking
+                                                                             Code generation, static analysis, Dart tests,
+ Automation                 GitHub Actions workflow YAML
+                                                                             web builds and platform checks
+The inspected project does not use Firebase Authentication, Firestore or Firebase Hosting as its main
+platform. Its local data layer is Drift/SQLite, with a separate Node.js API pilot. Local passwords use
+PBKDF2-HMAC-SHA256 with 120,000 iterations for ordinary accounts; the synthetic data generator
+uses less expensive test hashes. Security properties differ between native and browser storage, so the
+application should not be described as an encrypted live clinical service.
+
+6.1.2 Implementation trace — identity, access and navigation
+The application starts in main.dart and creates the Flutter interface through lib/app/app.dart. GoRouter
+defines protected patient, staff and administrator routes in lib/app/router.dart. SessionController, in
+
+
+                                                                                                                             38
+<PARSED TEXT FOR PAGE: 46 / 61>
+lib/features/auth/application/session.dart, tracks sign-in and permission changes and clears user-
+specific state when necessary. AuthRepositoryImpl handles local credential checks and account
+lockout. AccessPolicy then verifies the user's permitted patient or staff scope when records are read or
+changed. These checks are applied below the screen level so that opening a route is not the only
+security condition.
+In shared mode, RemoteAuthRepository uses SharedClient.login to request a bearer session from
+POST /api/login. The Node.js server checks the session and permissions for API actions. The client
+also ignores stale responses after an account switch. Polling is used for some shared updates, but this
+is not full real-time synchronization. Unsupported remote operations return an unavailable result rather
+than quietly reading a different local dataset.
+
+6.1.3 Implementation trace — transactional appointment allocation
+AppointmentRepositoryImpl.book(BookingRequest) is responsible for saving a reservation. It first
+checks whether the current account can manage the selected patient. It then uses a database transaction
+to verify the slot's start and end, published schedule, exceptions and existing bookings. The same
+transaction checks for a previous result with the request's idempotency key. If the slot remains valid, it
+creates the appointment, assigns ticket details and records reminders or outbox work. The following
+pseudocode summarizes these steps.
+
+    book(request):
+        actingAccount := authorizeBooking(request.patientId)
+        if linkedPersonName is set but request targets actor's own record:
+            return validation error
+        TRANSACTION:
+            if (same actor, scope and idempotency key) previously committed:
+                return previously committed appointment
+            require end > start and start > current time
+            require interval belongs to clinician's published schedule
+            require no availability exception overlaps interval
+            require no existing appointment overlaps clinician interval
+            require capacity >= 1
+            assign deterministic ticket sequence and department room label
+            INSERT appointment(patientId, staffId, interval, status, version,...)
+            save idempotency-key-to-appointment reference
+            create notification outbox and reminder schedule records
+            return inserted appointment
+
+The implementation uses _db.transaction, schedule-grid and exception checks, overlap checking and
+IdempotencyGuard.prior/remember. These operations protect bookings stored in the same SQLite
+database, including repeated requests. They cannot prevent a conflict between two separate browser
+databases. A real shared appointment service must therefore make the server responsible for the final
+booking decision.
+
+6.1.4 Implementation trace — records, provenance and signed consultations
+RecordRepositoryImpl.add(NewRecord) stores an imported medical record, related laboratory values
+and source-file information. It validates supported file details and calculates a SHA-256 fingerprint to
+
+
+                                                                                                       39
+<PARSED TEXT FOR PAGE: 47 / 61>
+identify duplicate content. Imported patient files are marked pendingReview until an authorized
+clinician makes a review decision. RecordReads and RecordCorrections help preserve later history.
+Because appointment_id may be empty, the timeline must also handle records that were not created
+during a booked visit. File hashing confirms byte identity, not clinical accuracy.
+EncounterDraftRepositoryImpl stores consultation drafts that can still be edited. When a clinician
+finalizes a visit, EncounterRepositoryImpl.finalize validates the staff member and encounter state and
+commits the signed note, linked records, medication orders and appointment changes together. The
+draft is cleared after successful finalization. Later corrections use SignedNoteAmendments instead of
+overwriting signed content. Clinical signatures and prescribing rights would still require formal
+approval in a real clinic.
+
+6.1.5 Implementation trace — rules-first staff risk workflow
+RiskDetectionService reads selected records, vital signs, medicines and appointments through
+repository interfaces. It applies defined rules for abnormal measurements, missing medication
+coverage and overdue follow-up. A deduplication key helps prevent several tasks being created for the
+same episode. TaskRepositoryImpl controls task ownership, status changes and history, while the staff
+screen separates urgent, overdue, current and completed tasks. These functions support follow-up
+work but do not amount to a validated diagnosis or triage system.
+
+6.1.6 Implementation trace — AI summaries and no-show model
+The application defines an AiService interface with MockAiService for offline examples and
+GeminiAiService as an optional provider integration. PatientContextBuilder prepares information for a
+summary, and AiSummaryController tracks whether the source context has changed. The capability
+registry keeps live-clinical-ai and no-show-risk disabled in the approved demonstration. This matters
+because external AI requests involving real medical data would need a secure server boundary, clinical
+review and appropriate handling of patient information.
+No-show      prediction.     The    Dart     service    lib/services/ml/no_show_predictor.dart   loads
+assets/models/no_show_model.json through NoShowModel.load(). The JSON contains 11 feature
+names, scaling values, model coefficients, an intercept and thresholds for risk bands. Each feature is
+standardized using the training values and then contributes to a logistic-regression score, summarized
+by the following equation:
+                         z = b + SUM(i = 1..11) [w_i * (x_i - mean_i) / scale_i]
+                                     P(no-show) = 1 / (1 + exp(-z))
+NoShowModel.predict calculates the standardized feature contributions, applies the sigmoid function
+and places the probability into a low, medium or high risk band. The 11 inputs include previous no-
+show rate, booking lead time, first-visit status, chronic-condition flag, previous appointment count,
+acknowledged reminders, hour and day, two visit-type indicators and age. The feature contributions
+
+
+
+
+                                                                                                   40
+<PARSED TEXT FOR PAGE: 48 / 61>
+describe how the model calculates a score; they do not prove why an individual patient might miss a
+visit.
+The synthetic evaluation in docs/ml_results.md used 2,145 held-out appointments, of which 25.1%
+were no-shows. Reported results were accuracy 0.733, precision 0.476, recall 0.623, F1 score 0.540
+and ROC-AUC 0.754. The confusion matrix contained 1,236 true negatives, 370 false positives, 203
+false negatives and 336 true positives. A majority-class baseline achieved 0.749 accuracy but did not
+identify missed visits. This shows why accuracy alone is insufficient for an imbalanced dataset. The
+reported model has not been independently reevaluated here or tested with real patients.
+
+6.1.7 Documents, billing and notification state machines
+DocumentServiceImpl handles document requests through preparation, submission, approval,
+issuance, rendering and delivery. At issuance, the application saves the patient, issuer, language and
+template content in IssuedDocumentVersions. The generated PDF is tracked separately in
+DocumentArtifacts,     including     success   or   failure   information.   DocumentVerifications      and
+DocumentDeliveryEvents record selected checks and attempts. These measures help preserve
+document history, but official medical-document approval would require external policy and clinical
+review.
+BillingRepositoryImpl manages invoices, payment transactions, wallet entries, saved payment
+descriptions and simulated gateway charges. Request references support safe retries, while separate
+states record authorization, settlement or failure. Only masked card details are stored by the local
+demonstration. The payment gateway is simulated, not connected to a live bank. Some local amounts
+use REAL dinar values, with _fils(double bhd) converting selected calculations to integer fils. A future
+migration to integer-fils storage would improve consistency.
+Notification records are written through an outbox so that a successful database change can be
+followed by a delivery attempt. An outbox entry confirms that the application intends to send a
+message; it does not prove that an SMS or push notification reached the user. The demonstration
+should keep this difference clear.
+
+6.2 Testing & Results
+6.2.1 Testing strategy and evidence classification
+Testing covers different levels of the application. Unit tests check calculations and rules, widget tests
+check forms and navigation, and database tests examine transactions, relationships and migrations.
+Integration and security tests cover selected user journeys, server requests, access denial and repeated
+actions. The repository stores Dart tests under test/, Flutter integration tests under integration_test/ and
+separate Node.js API tests. Static analysis and code-generation tools provide additional checks.
+Table 6.2 distinguishes five kinds of evidence. A direct pass was checked in the technical review. A
+repository-reported pass was recorded by the team but not rerun during this review. A partial run
+
+
+
+                                                                                                         41
+<PARSED TEXT FOR PAGE: 49 / 61>
+produced some observed results without finishing the full suite. Source-supported means the test or
+feature exists but was not independently executed. Open indicates an unfinished acceptance or
+deployment task. This prevents an existing test file from being counted automatically as a passing test.
+Table 6.2: Observed and reported verification evidence
+ Evidence source       Date/context         Reported or observed result             Interpretation
+ Direct SQLite                              v35, 69 tables; PRAGMA
+ inspection of         27 October 2026      quick_check returned ok; PRAGMA
+                                                                                    Direct pass for bundled snapshot only
+ web/demo_seed.s       source audit         foreign_key_check returned zero
+ qlite                                      violations
+ Direct SQLite
+                                            Scans in several high-frequency         Direct performance issue, not a suite
+ query-plan            Same audit
+                                            patient/staff query patterns            failure
+ inspection
+ docs/                 Last reported
+                                            Describes matrix and an earlier 457     Repository report, not independently
+ phase9_release_re     September 29,
+                                            Flutter tests                           rerun
+ adiness.md            2026
+ docs/
+                       Around October       Reports Flutter test/build acceptance   Repository report only; confirm pinned
+ task8_acceptance.
+                       9, 2026              passes                                  environment
+ md
+                       Same source          18 passing subtest result lines
+ Selected Node                                                                      Partial run, not a completed passing
+                       audit, Node          appeared, but overall process timed
+ test invocation                                                                    suite; repository requires Node 24.13.0
+                       22.16.0              out without final exit summary
+ Flutter
+                       Environment
+ analysis/test/build                        Flutter/Dart binaries unavailable       Not run here
+                       constraint
+ in present audit
+ docs/                 Synthetic model      2,145 synthetic holdout, AUC 0.754      Developer-reported model result, not a
+ ml_results.md         evaluation report    and F1 0.540                            clinical outcome
+ Manual
+                       Outstanding          Several sign-offs and representative
+ accessibility/Arab                                                                 Open; do not assert success
+                       TODO checklist       acceptance sessions unchecked
+ ic/pilot usability
+ Shared two-
+ device/pilot,         Outstanding          No independently completed end-to-      Open; production readiness not
+ backup restore,       release work         end deployment acceptance               established
+ clinical/privacy
+
+6.2.2 Detailed functional, security and regression test cases
+Table 6.3 contains test scenarios with their inputs, expected results and the evidence currently
+available. Where a test was not rerun, its status is shown accordingly. During the final demonstration,
+the team can record the commit, test environment, execution date and screenshots for each completed
+case.
+Table 6.3: Test scenario, input, expected output, actual evidence and status
+          Test
+ ID                     Input / setup        Expected output        Actual result or existing evidence    Status
+          scenario
+          Database      Open bundled
+ T01      physical      demo_seed.sqlite;    ok                     ok observed                           Direct pass
+          integrity     quick_check
+          Foreign-
+                        PRAGMA
+          key
+ T02                    foreign_key_chec     0 violating rows       0 observed                            Direct pass
+          consistenc
+                        k
+          y
+
+
+
+
+                                                                                                                              42
+<PARSED TEXT FOR PAGE: 50 / 61>
+      Test
+ID                   Input / setup        Expected output         Actual result or existing evidence       Status
+      scenario
+      Version
+                     Read
+      and                                 v35 and 69 user
+T03                  user_version/tabl                            v35 and 69 observed                      Direct pass
+      relation                            tables
+                     es
+      inventory
+                     Valid synthetic                                                                       Source-
+      Login and                           Corresponding           Session controller, route logic and
+T04                  patient/staff/admi                                                                    supported/not
+      role route                          guarded workspace       test assets present; Flutter not rerun
+                     n credentials                                                                         rerun
+      Reject
+                     Staff/patient
+      wrong-                                                                                               Source-
+                     invokes foreign      Authorized failure;     Access policy and security regression
+T05   account                                                                                              supported/not
+                     patient record ID    no disclosure           assets present; runtime not rerun
+      patient                                                                                              rerun
+                     without grant
+      record
+      Account
+                     Sign out from A,
+      switch                              No A data/cached                                                 Source-
+                     sign into B with                             SessionController, session scope and
+T06   clears                              response visible in                                              supported/not
+                     pending A                                    remote generation guards present
+      sensitive                           B workspace                                                      rerun
+                     request
+      state
+      Book valid                          One booking,                                                     Source-
+                     Future valid open
+T07   clinician                           returned ticket/room    book() transaction verified statically   supported/not
+                     slot and patient
+      slot                                where assignable                                                 rerun
+      Reject
+                     Same clinician                                                                        Source-
+      overlappin                          Conflict and no         _hasOverlap and transactional check
+T08                  interval on                                                                           supported/not
+      g clinician                         extra booking           inspected
+                     another request                                                                       rerun
+      booking
+                     Same
+      Replay                              Same booking ID,                                                 Source-
+                     idempotency key                              IdempotencyGuard.prior/remember
+T09   identical                           no duplicate                                                     supported/not
+                     after committed                              in transaction inspected
+      booking                             notifications                                                    rerun
+                     booking
+      Reject         End ≤ start, past                                                                     Source-
+                                          Validation/conflict
+T10   invalid        date or blocked                              book() checks present and inspected      supported/not
+                                          error
+      scheduling     exception                                                                             rerun
+                                          Pending record,
+      Imported       Patient PDF with                                                                      Source-
+                                          original hash,          RecordRepositoryImpl.add/
+T11   document       issuer and valid                                                                      supported/not
+                                          clinician review        reviewImport inspected
+      review         metadata                                                                              rerun
+                                          workflow
+      Prevent
+      unauthoriz                                                                                           Source-
+                     Foreign              Denial and no file      Subject policy present; full adapter
+T12   ed                                                                                                   supported/not
+                     record/file ID       bytes                   matrix not rerun
+      imported-                                                                                            rerun
+      PDF read
+                                          Signed note,
+      Consultati                                                                                           Source-
+                     Valid draft and      visit/medicine          EncounterRepositoryImpl.finalize
+T13   on                                                                                                   supported/not
+                     appointment          actions atomically      code inspected
+      finalization                                                                                         rerun
+                                          committed
+      Re-                                 Conflict/idempotent
+                     Same finalized                                                                        Source-
+      finalization                        outcome; no             Version and deterministic ID paths
+T14                  appointment or                                                                        supported/not
+      or stale                            duplicated signed       present
+                     stale draft                                                                           rerun
+      version                             note
+                     Attempt to
+      Immutable                                                                                            Source-
+                     change                                       Trigger definitions and source
+T15   issued                              DB/policy rejection                                              supported/not
+                     signed/issued                                inspected; targeted test not rerun
+      document                                                                                             rerun
+                     historical row
+      Failed         Renderer fails       Artifact remains                                                 Source-
+T16   render         after approved       failed/unavailable      Separate artifact status code present    supported/not
+      behavior       issuance             for download                                                     rerun
+      Simulated                           No duplicate                                                     Source-
+                     Repeat reference                             Simulated gateway/reconciliation
+T17   billing                             settlement; traceable                                            supported/not
+                     or refund                                    code inspected
+      retry                               state                                                            rerun
+
+
+
+
+                                                                                                                           43
+<PARSED TEXT FOR PAGE: 51 / 61>
+        Test
+ ID                   Input / setup        Expected output       Actual result or existing evidence     Status
+        scenario
+        Risk
+                      Re-scan same                                                                      Source-
+        episode                            One canonical         dedupeKey and task source logic
+ T18                  laboratory/vital                                                                  supported/not
+        deduplicati                        flag/source episode   present
+                      trigger                                                                           rerun
+        on
+                      Known 11-
+        No-show                            Deterministic                                                Source-
+                      feature vector                             predict() implementation and parity-
+ T19    classifier                         sigmoid and band;                                            supported/not
+                      against JSON                               test artifacts present
+        math                               Python/Dart parity                                           rerun
+                      weights
+                      Normal booking
+        Capability
+                      with AI risk         No operational ML-
+ T20    governanc                                                Registry explicitly disables feature   Static verification
+                      capability           derived ranking
+        e
+                      disabled
+        Shared
+                      Correct/wrong        Role- and subject-
+        API                                                      Selected Node subtests observed,
+ T21                  token, scoped        correct HTTP                                                 Partial run
+        authenticat                                              overall run timed out
+                      endpoint             response
+        ion
+        Two-          Two
+        browser       authenticated        At most one
+                                                                 Shared pilot acceptance not
+ T22    same          independent          committed                                                    Open
+                                                                 completed
+        appointme     remote clients       appointment
+        nt            race a slot
+        Accessibili
+                      Arabic, 200%         Complete tasks
+        ty/AR/
+ T23                  text, keyboard       without focus/text    Manual checklist remains open          Open
+        RTL
+                      and screen reader    loss
+        acceptance
+                      Pinned Flutter
+        Full                               Analyzer/tests/
+                      3.47.2/Dart                                Only historical repository results     Not independently
+ T24    release                            builds exit
+                      3.13.2/Node                                available here                         run
+        regression                         successfully
+                      24.13.0
+                      Restore encrypted    Correct intact
+        Disaster
+ T25                  server backup        records and secrets   Operational drill outstanding          Open
+        restoration
+                      into clean staging   separation
+
+6.2.3 Analysis of testing completeness and research results
+The SQLite checks show that the supplied database is structurally valid, but they do not prove that
+every medical value or permission is correct. The repository contains many automated tests; to
+confirm the current release, the full suite still needs to run on a documented toolchain and commit.
+Manual acceptance should include failed actions as well as successful ones, such as a revoked family
+link, a rejected import, a declined simulated payment, a draft conflict and an Arabic document that
+cannot be displayed correctly.
+RQ1 is demonstrated by collecting a patient's records into a timeline and producing offline example
+summaries. The accuracy of those summaries has not been measured against clinician-reviewed
+answers. A future evaluation should check completeness, incorrect statements, contradictions and
+whether each statement can be traced to a source record.
+RQ2 includes a synthetic no-show prediction experiment. The reported ROC-AUC of 0.754 suggests
+useful ranking within that synthetic dataset, while precision of 0.476 and F1 of 0.540 show that errors
+remain. The model is disabled for routine use, and the project has not measured a reduction in real
+missed appointments. Before operational use, the model would need evaluation on representative data,
+calibration, fairness checks and testing of the intervention it would support.
+
+
+                                                                                                                              44
+<PARSED TEXT FOR PAGE: 52 / 61>
+RQ3 is demonstrated by rule-based risk flags and staff task management. Suitable tests include
+checking whether each rule fires on the intended input, whether repeated events create duplicate tasks,
+and whether assignments and escalations respect permissions. These checks are different from proving
+that clinical diagnoses or patient outcomes have improved. A later user study could also measure how
+quickly staff find and finish important tasks.
+
+6.2.4 Verification commands and reproducibility
+To rerun the checks, use the versions specified in toolchain.json and the Node.js requirement recorded
+in the repository. Run the following commands from a clean copy, then record the commit, operating
+system, tool versions and exit status for each command:
+
+    flutter --version
+    flutter pub get
+    dart run build_runner build --delete-conflicting-outputs
+    dart format --output=none --set-exit-if-changed lib test integration_test
+    flutter analyze
+    flutter test
+    flutter build web --dart-define=APP_MODE=demo
+    # In the shared service directory, use the repository's own test instructions
+    # and pinned Node 24.13.0; do not mistake a partial timeout for a clean pass.
+
+Database verification should record SQLite user_version, quick_check, foreign_key_check and
+representative query plans. Browser checks should cover patient, doctor and administrator journeys,
+including expected access denials. Use synthetic accounts only; real patient records must not be placed
+in the public demo.
+
+6.2.5 Visual Functional Evidence from the Synthetic Demo
+Figures 6.1–6.5 are screenshots included in the MyHealth Care repository. They show the main
+interface layouts used by patients and staff. A screenshot is useful evidence of visual design, but a
+successful database operation still needs a separate functional test. The images in this report use
+synthetic information.
+
+
+
+
+                                                                                                    45
+<PARSED TEXT FOR PAGE: 53 / 61>
+Figure 6.1: Patient home dashboard and longitudinal medical-record timeline
+Source: docs/rebuild_screenshots/after/patient_home_light_en.png; records_light_en.png
+
+
+
+
+        Figure 6.2: Clinician discovery and appointment booking entry
+ Source: docs/rebuild_screenshots/after/find_doctor_light.png; book_landing_light.png
+
+
+
+
+                                                                                         46
+<PARSED TEXT FOR PAGE: 54 / 61>
+      Figure 6.3: Doctor scheduling workspace and reception operations
+Source: preview/workforce-doctor-1440-light.png; workforce-reception-1024-light.png
+
+
+
+
+          Figure 6.4: Nursing-intake form and pharmacy workspace
+Source: preview/workforce-nurse-intake-saved.png; workforce-pharmacy-1440-dark.png
+
+
+
+
+                                                                                      47
+<PARSED TEXT FOR PAGE: 55 / 61>
+                        Figure 6.5: Administrator appointment and operational dashboard
+                                        Source: preview/app-admin-1366-en.png
+
+Figures 6.1 and 6.2 show patient home, medical-record and appointment screens. Figures 6.3 and 6.4
+show doctor, reception, nursing and pharmacy workspaces. Figure 6.5 shows the administrator
+dashboard. Together, they demonstrate how navigation changes by role. During the presentation, these
+screens should be linked to test cases and database results so that the functionality can be verified as
+well as viewed.
+
+6.3 Strengths and Weaknesses
+Table 6.4: Engineering strengths and outstanding limitations
+ Area                   Evidence-backed strength                           Weakness / risk and remedy
+                        Repository interfaces, typed failures/results,     Large repository files and some local-
+ Architecture
+                        feature-oriented providers and DI                  specific coupling; split and contract-test
+                        Record provenance, pending review, signed          No official EHR exchange; require HL7
+ Clinical workflow
+                        immutable amendments                               FHIR or approved connectors in future
+                        Transactional conflict checks,                     Browser-local databases not shared; require
+ Appointments
+                        capacity/schedule logic and replay key             central server for cross-device correctness
+                        69-table v35 schema, foreign keys, migrations,     Missing important query indexes; add
+ Data integrity
+                        integrity triggers                                 measured v36 indexes; review constraints
+                                                                           Client-owned web data cannot protect real
+                        AccessPolicy, scoped grants, revocation-aware
+ Role security                                                             clinical records; authoritative server
+                        session behavior
+                                                                           required
+                        English/Arabic, RTL, responsive shells,            Human Arabic/assistive-technology and
+ UI/UX
+                        reusable design system                             representative usability evidence incomplete
+                        Offline demonstration, explainable logistic        No clinical validation, no live deployment;
+ AI/ML
+                        inference and synthetic evaluation                 capability flags correctly disabled
+                        Versioned immutable snapshots, hashes,             Official credential/template disclosure
+ Documents
+                        distinct artifact success/failure                  approval and delivery provider incomplete
+                        Simulated gateway, masked methods,                 REAL money storage, no real processor;
+ Finance
+                        reference/idempotency and refund states            migrate to integer fils if needed
+                        Large test folders, code generation and CI         Full pinned environment not independently
+ Testing
+                        plans                                              rerun; complete manual acceptance open
+                        Node API and server authorization provide          Partial adapter coverage, unfinished hosting,
+ Shared service
+                        real expansion path                                cross-device sign-off and restore drill
+
+
+
+                                                                                                                         48
+<PARSED TEXT FOR PAGE: 56 / 61>
+ Area                   Evidence-backed strength                   Weakness / risk and remedy
+                                                                   Drift between README/schema diagrams
+ Maintainability        Rich TODO/security/release documentation
+                                                                   and actual dataset; auto-generate inventories
+The final demonstration should cover three complete journeys: uploading and reviewing a patient
+record, booking an appointment and finalizing a consultation, and detecting a risk flag and completing
+the related staff task. Each should use synthetic data and show both the action and the saved result.
+The team should also explain that the AI experiment and shared-server pilot are not approved clinical
+services.
+
+6.4 Chapter Summary
+The implementation provides a broad local demonstration and a smaller shared-server pilot. Its
+database design, service boundaries and test coverage are substantial for a senior project. However,
+full independent build verification, user testing, clinical approval and complete shared-mode operation
+remain outstanding. The screenshots support the explanation of the interface but do not replace
+executable test evidence.
+
+
+
+
+                                                                                                              49
+<PARSED TEXT FOR PAGE: 57 / 61>
+                                     Chapter 7
+                            Conclusion and Future Work
+7.1 Introduction
+This chapter summarizes the system that has been built and displays evidence towards its main
+objectives. It also highlights the limitations of the current prototype, and what requirements its needs
+in order to be extended to outside the university demonstration.
+
+7.2 Summary of the Project
+MyHealth Care has been built as a Flutter/Dart application with separate workspaces for patient, staff
+and admin. Patients have the option of looking at their records and appointments, clinical staff can
+manage consultations, imported results, issued items and actions, all stored in a structured relational
+database with transactional booking, permissions checks, review states and a history of signed notes.
+Riverpod, GoRouter and the repository interface bring a separation between the user interface and
+application rules and store, which are presumably going to make this prototype more testable and
+sustainable.
+
+7.3 Key Findings and Results
+The local database under test uses schema version 35 and spans 69 interconnected tables. It was able
+to pass read-only SQLite integrity and foreign-key validation checks. Although the repository contains
+a comprehensive collection of automated tests, the entire suite of Flutter tests was not run on its own
+during this report's investigation. The Node.js shared API provides a suggestion of how a server-
+backed version may look, but it is not yet integrated into the app.
+
+7.4 Significance of the Project
+Three separate research pathways are integrated in the prototype: patient history and demonstration
+summary organization; a no-show prediction experiment; and rule-based staff task management. The
+0.754 ROC-AUC score cited for the predictor is achieved using synthetic data and does not
+demonstrate performance in a real clinical environment. The conclusion is therefore more about
+technical implementation and workflow design, rather than real decrease in waiting times, cancellation
+rate, and medical errors.
+
+7.5 Limitations of the System
+My Health Care is not a certified electronic health record and not a deployed clinical service. No
+customer verified hospital interoperability. No real patient verified identity. External notifications, full
+shared-server coverage, clinical AI approved, multi-device support are still a work in progress. Some
+platform and backend tests require a full, recorded rerun. This needs to be explicitly mentioned in the
+demos.
+
+
+
+
+                                                                                                         50
+<PARSED TEXT FOR PAGE: 58 / 61>
+7.6 Implications of the Project
+The project shows that the area of patient history, appointment booking and follow-up of staff can be
+arranged in one role-based Flutter application quite successfully. A lot of the senior project are due to
+the workflow, database rules and evidence of technical tests. Claims on any real benefit for the
+patients would require user studies and clinical trials well outside the scope of the prototype.
+
+7.7 Future Work
+7.7.1 Graduation Demonstration and Documentation
+Graduation priorities. For graduation, the following are the priorities: stability of the synthetic
+browser demo, update the README/diagrams to match implementation, document the results of a full
+test run. We want to see the main workflows in either Arabic or English (with keyboards and large
+text). The team should be able to show the tasks for a patient, doctor, and admin without needing any
+real patient data or leaving any hard-to-decode external dependencies.
+
+7.7.2 Controlled Multi-Device Pilot
+Shared-server pilot. requires the remaining remote repository adapters and the same set of checked-
+in enabled actions by the server. For private deployment, use HTTPS, persistent storage, back ups,
+monitoring, secret management, tested recoveries. For a private deployment with shared schema
+version 2, handle all critical use cases such as two bookings for the same slot, changes to permissions
+while the request is open, repeated payment or document requests. Declare only explicit integration
+plan for local schema version 35 and shared schema version 2 rather than rely on implicit schema
+version 2 sync.
+
+7.7.3 Health Data Interoperability
+Interoperability. Patient and prescription records can then be linked to the specified HL7 FHIR
+(Health Level Seven International, n.d.) resources and standards using a future project with a
+healthcare provider. This task will necessitate agreeing on patient matching, consent standards,
+terminology, provenance and data quality. However, a standards-based approach does not necessarily
+ensure the equivalence or correctness of clinical records from different providers.
+
+7.7.4 Clinical Decision Support Research
+AI evaluation. Next steps should be to evaluate summaries on clinician-reviewed records for
+omissions or unsubstantiated claims. Evaluation of no-show predictions would be required on
+representative data to assess calibration and fairness, before testing the reminder interventions. Risk-
+rule alerts should be analyzed for false warnings, and effects on staff workload. Automated diagnosis
+may be potential, but requires caution, professional review, ethical approval, and independent
+validation (World Health Organization, 2021a).
+
+
+
+
+                                                                                                      51
+<PARSED TEXT FOR PAGE: 59 / 61>
+7.7.5 Patient Engagement and Wearables
+Patient services. potential improvements could involve the addition of telehealth, verified reminders,
+medication follow-up, digital consent and optional wearable measurements. Wearable measurements
+must be verified, correctly timed, and recorded to the clinical history before uploading into a central
+database. Transition to larger cloud storage or PostgreSQL should be driven by storage capacity needs
+and operational use-case; security and backup issues should be considered.
+
+7.7.6 Long-Term Governance and Research
+Long-term maintenance. Future research will define the classification of code changes, migration,
+API compatibility, security testing, and release note updates. If this project is evaluated with real
+participants, the research will need to follow an approved procedure and report participant recruitment,
+task times, errors, and methods used. The system will be referred to as the synthetic-data prototype in
+the case of no such evaluation.
+
+7.8 Conclusion
+MyHealth Care project supports its main objective of a senior project by presenting the role-based
+patient and clinic flows in an operational synthetic-data application. Among the most impressive
+features of this application are handling of related clinical records, conflict-aware appointment
+scheduling, repository-level permission checking, and staff task tracking. The system as it stands is
+suitable for academic demonstration but limited and should be thoroughly described. Further technical
+development, user testing, and approval are needed for use in a real clinical environment.
+
+
+
+
+                                                                                                     52
+<PARSED TEXT FOR PAGE: 60 / 61>
+                                                References
+Agile Alliance (2001) Manifesto for Agile Software Development. Available at: https://agilemanifesto.org/
+Binder, S. (n.d.) Drift documentation. Available at: https://drift.simonbinder.eu/
+Campanella, P., Lovato, E., Marone, C., Fallacara, L., Mancuso, A., Ricciardi, W. and Specchia, M. L. (2016)
+   ‘The impact of electronic health records on healthcare quality: A systematic review and meta-analysis’,
+   European Journal of Public Health, 26(1), pp. 60–64. Available at: https://doi.org/10.1093/eurpub/ckv122
+Dantas, L. F., Fleck, J. L., Oliveira, F. L. C. and Hamacher, S. (2018) ‘No-shows in appointment scheduling – A
+    systematic literature review’, Health Policy, 122(4), pp. 412–421. Available at:
+    https://doi.org/10.1016/j.healthpol.2018.02.002
+Flutter (n.d.) Guide to app architecture. Available at: https://docs.flutter.dev/app-architecture
+Ghassemi, M., Oakden-Rayner, L. and Beam, A. L. (2021) ‘The false hope of current approaches to explainable
+   artificial intelligence in health care’, The Lancet Digital Health, 3(11), pp. e745–e750. Available at:
+   https://doi.org/10.1016/S2589-7500(21)00208-9
+Goldzweig, C. L., Orshansky, G., Paige, N. M., Towfigh, A. A., Haggstrom, D. A., Miake-Lye, I., Beroes, J. M.
+    and Shekelle, P. G. (2013) ‘Electronic patient portals: Evidence on health outcomes, satisfaction, efficiency,
+    and attitudes: A systematic review’, Annals of Internal Medicine, 159(10), pp. 677–687. Available at:
+    https://doi.org/10.7326/0003-4819-159-10-201311190-00006
+Hasvold, P. E. and Wootton, R. (2011) ‘Use of telephone and SMS reminders to improve attendance at hospital
+    appointments: A systematic review’, Journal of Telemedicine and Telecare, 17(7), pp. 358–364. Available
+    at: https://doi.org/10.1258/jtt.2011.110707
+Health Level Seven International (n.d.) FHIR Release 5. Available at: https://hl7.org/fhir/
+Irizarry, T., DeVito Dabbs, A. and Curran, C. R. (2015) ‘Patient portals and patient engagement: A state of the
+     science review’, Journal of Medical Internet Research, 17(6), e148. Available at:
+     https://doi.org/10.2196/jmir.4255
+ISO/IEC (2023) ISO/IEC 25010:2023: Systems and software engineering—Product quality model. Available at:
+    https://www.iso.org/standard/78176.html
+Jaafar, A. M. J. and Meftah, M. A. R. (2026a) MyHealth Care v2: Source code and project documentation
+     [Unpublished source code]. University of Bahrain.
+Jaafar, A. M. J. and Meftah, M. A. R. (2026b) Senior project proposal: MyHealth—Healthcare records,
+     appointments, and medical staff [Unpublished project proposal]. University of Bahrain.
+Keshta, I. and Odeh, A. (2021) ‘Security and privacy of electronic health records: Concerns and challenges’,
+    Egyptian Informatics Journal, 22(2), pp. 177–183. Available at: https://doi.org/10.1016/j.eij.2020.07.003
+Kruse, C. S., Kristof, C., Jones, B., Mitchell, E. and Martinez, A. (2016) ‘Barriers to electronic health record
+    adoption: A systematic literature review’, Journal of Medical Systems, 40(12), Article 252. Available at:
+    https://doi.org/10.1007/s10916-016-0628-9
+Kruse, C. S., Stein, A., Thomas, H. and Kaur, H. (2018) ‘The use of electronic health records to support
+    population health: A systematic review of the literature’, Journal of Medical Systems, 42(11), Article 214.
+    Available at: https://doi.org/10.1007/s10916-018-1075-6
+Lehne, M., Sass, J., Essenwanger, A., Schepers, J. and Thun, S. (2019) ‘Why digital medicine depends on
+    interoperability’, npj Digital Medicine, 2, Article 79. Available at: https://doi.org/10.1038/s41746-019-
+    0158-1
+Mandel, J. C., Kreda, D. A., Mandl, K. D., Kohane, I. S. and Ramoni, R. B. (2016) ‘SMART on FHIR: A
+   standards-based, interoperable apps platform for electronic health records’, Journal of the American
+   Medical Informatics Association, 23(5), pp. 899–908. Available at: https://doi.org/10.1093/jamia/ocv189
+
+
+
+
+                                                                                                                   53
+<PARSED TEXT FOR PAGE: 61 / 61>
+Marcolino, M. S., Oliveira, J. A. Q., D’Agostino, M., Ribeiro, A. L., Alkmim, M. B. M. and Novillo-Ortiz, D.
+   (2018) ‘The impact of mHealth interventions: Systematic review of systematic reviews’, JMIR mHealth and
+   uHealth, 6(1), e23. Available at: https://doi.org/10.2196/mhealth.8873
+Nouri, R., Niakan Kalhori, S. R., Ghazisaeedi, M., Marchand, G. and Yasini, M. (2018) ‘Criteria for assessing
+   the quality of mHealth apps: A systematic review’, Journal of the American Medical Informatics
+   Association, 25(8), pp. 1089–1098. Available at: https://doi.org/10.1093/jamia/ocy050
+Obermeyer, Z., Powers, B., Vogeli, C. and Mullainathan, S. (2019) ‘Dissecting racial bias in an algorithm used
+    to manage the health of populations’, Science, 366(6464), pp. 447–453. Available at:
+    https://doi.org/10.1126/science.aax2342
+OWASP Foundation (n.d.) Mobile Application Security Verification Standard (MASVS). Available at:
+  https://mas.owasp.org/MASVS/
+Riverpod (n.d.) flutter_riverpod: Package documentation. Available at:
+    https://pub.dev/packages/flutter_riverpod
+Shickel, B., Tighe, P. J., Bihorac, A. and Rashidi, P. (2018) ‘Deep EHR: A survey of recent advances in deep
+    learning techniques for electronic health record (EHR) analysis’, IEEE Journal of Biomedical and Health
+    Informatics, 22(5), pp. 1589–1604. Available at: https://doi.org/10.1109/JBHI.2017.2767063
+Singhal, K., Azizi, S., Tu, T., Mahdavi, S. S., Wei, J., Chung, H. W., Scales, N., Tanwani, A., Cole-Lewis, H.,
+    Pfohl, S., Payne, P., Seneviratne, M., Gamble, P., Kelly, C., Babiker, A., Schärli, N., Chowdhery, A.,
+    Mansfield, P., Demner-Fushman, D., . . . Natarajan, V. (2023) ‘Large language models encode clinical
+    knowledge’, Nature, 620, pp. 172–180. Available at: https://doi.org/10.1038/s41586-023-06291-2
+Sittig, D. F. and Singh, H. (2010) ‘A new sociotechnical model for studying health information technology in
+     complex adaptive healthcare systems’, Quality & Safety in Health Care, 19(Suppl. 3), pp. i68–i74.
+     Available at: https://doi.org/10.1136/qshc.2010.042085
+Sutton, R. T., Pincock, D., Baumgart, D. C., Sadowski, D. C., Fedorak, R. N. and Kroeker, K. I. (2020) ‘An
+    overview of clinical decision support systems: Benefits, risks, and strategies for success’, npj Digital
+    Medicine, 3, Article 17. Available at: https://doi.org/10.1038/s41746-020-0221-y
+University of Bahrain (n.d.) CS/IS system report template (Version 1) [Unpublished academic template]. College
+    of Information Technology.
+U.S. Department of Health and Human Services (n.d.) Summary of the HIPAA Security Rule. Available at:
+    https://www.hhs.gov/hipaa/for-professionals/security/laws-regulations/index.html
+Wiens, J., Saria, S., Sendak, M., Ghassemi, M., Liu, V. X., Doshi-Velez, F., Jung, K., Heller, K., Kale, D.,
+   Saeed, M., Ossorio, P. N., Thadaney-Israni, S. and Goldenberg, A. (2019) ‘Do no harm: A roadmap for
+   responsible machine learning for health care’, Nature Medicine, 25(9), pp. 1337–1340. Available at:
+   https://doi.org/10.1038/s41591-019-0548-6
+World Health Organization (2021a) Ethics and governance of artificial intelligence for health: WHO guidance.
+   Available at: https://www.who.int/publications/i/item/9789240029200
+World Health Organization (2021b) Global strategy on digital health 2020–2025. Available at:
+   https://www.who.int/publications/i/item/9789240020924
+World Health Organization (2025) Global strategy on digital health 2020–2027. Available at:
+   https://www.who.int/publications/i/item/9789240116870
+Zahabi, M., Kaber, D. B. and Swangnetr, M. (2015) ‘Usability and safety in electronic medical records interface
+    design: A review of recent literature and guideline formulation’, Human Factors, 57(5), pp. 805–834.
+    Available at: https://doi.org/10.1177/0018720815576827
+
+
+
+
+                                                                                                                  54

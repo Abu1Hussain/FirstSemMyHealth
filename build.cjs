@@ -1,13 +1,21 @@
-const fs=require('fs'),path=require('path'),vm=require('vm');
-const pages={index:'home',about:'about',services:'services',features:'features',demo:'demo',contact:'contact'};
-for(const [name,page] of Object.entries(pages)){
- const nodes={header:{},main:{},footer:{}};
- const doc={body:{dataset:{page}},querySelector:s=>nodes[s]||(s==='.menu'?{addEventListener(){}}:null),querySelectorAll:()=>[],getElementById:()=>null};
- vm.runInNewContext(fs.readFileSync('dist/app.js','utf8'),{document:doc,Date,console},{timeout:1000});
- let html=fs.readFileSync(`dist/${name}.html`,'utf8');
- for(const tag of ['header','main','footer']) html=html.replace(new RegExp(`<${tag}([^>]*)>[\\s\\S]*?<\\/${tag}>`),`<${tag}$1>${nodes[tag].innerHTML}</${tag}>`);
- fs.writeFileSync(`dist/${name}.html`,html);
- if(!html.includes('<h1>'))throw Error('Missing heading '+name);
- for(const m of html.matchAll(/(?:src|href)="([^"]+)"/g)) {const href=m[1];if(/^(https?:|mailto:|#)/.test(href))continue;if(!fs.existsSync(path.join('dist',href.split('#')[0])))throw Error('Broken asset or link '+href);}
- console.log(`${name}.html: rendered, heading and local links verified`);
+const fs=require('node:fs'),path=require('node:path');
+const {header,footer,esc}=require('./src/components.cjs'),content=require('./src/content.cjs'),details=require('./src/details.cjs');
+const root=__dirname,dist=path.join(root,'dist');
+const pages={index:{key:'home',title:'One place for your health',render:content.home},about:{key:'about',title:'Our story and team',render:content.about},services:{key:'services',title:'Solutions for patients and clinics',render:content.services},features:{key:'features',title:'Product features',render:content.features},demo:{key:'demo',title:'Explore the demo',render:content.demo},contact:{key:'contact',title:'Contact the team',render:content.contact},'project-details':{key:'details',title:'Project details and roadmap',render:details}};
+const css=fs.readFileSync(path.join(dist,'style.css'),'utf8'),js=fs.readFileSync(path.join(root,'src/client.js'),'utf8');fs.writeFileSync(path.join(dist,'app.js'),js);
+const fragments={};
+for(const [file,p] of Object.entries(pages)){
+ const body=`${header(p.key)}<main id="main">${p.render()}</main>${footer()}`;fragments[file]=body;
+ const html=`<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(p.title)} | myhealth</title><meta name="description" content="Explore myhealth: records, appointments, report explanations and clinic work in one University of Bahrain prototype."><meta name="theme-color" content="#102d51"><meta property="og:title" content="${esc(p.title)} | myhealth"><meta property="og:description" content="One place for your health. One clearer way to care."><meta property="og:type" content="website"><link rel="icon" href="assets/logo.png"><link rel="stylesheet" href="style.css"><script src="app.js" defer></script></head><body data-page="${p.key}">${body}</body></html>\n`;
+ fs.writeFileSync(path.join(dist,`${file}.html`),html);
 }
+const assets={};for(const name of fs.readdirSync(path.join(dist,'assets'))){if(/\.(png|jpg|webp|svg)$/.test(name)){const ext=path.extname(name).slice(1);assets[`assets/${name}`]=`data:image/${ext==='svg'?'svg+xml':ext};base64,${fs.readFileSync(path.join(dist,'assets',name)).toString('base64')}`;}}
+const downloads={};for(const name of ['project-report.txt','project-proposal.txt'])downloads['downloads/'+name]='data:text/plain;charset=utf-8;base64,'+fs.readFileSync(path.join(dist,'downloads',name)).toString('base64');
+const safeJSON=x=>JSON.stringify(x).replace(/</g,'\\u003c');
+const standaloneScript=`const pages=${safeJSON(fragments)},assets=${safeJSON(assets)},downloads=${safeJSON(downloads)},titles=${safeJSON(Object.fromEntries(Object.entries(pages).map(([k,p])=>[k,p.title])))};
+function renderStandalone(){const [page='index',anchor]=location.hash.slice(1).split('/');const key=pages[page]?page:'index';document.getElementById('website').innerHTML=pages[key];document.title=titles[key]+' | myhealth';document.querySelectorAll('#website img').forEach(img=>{if(assets[img.getAttribute('src')])img.src=assets[img.getAttribute('src')]});document.querySelectorAll('#website a').forEach(a=>{const href=a.getAttribute('href');if(!href)return;if(downloads[href]){a.href=downloads[href];return}const [f,h]=href.split('#');if(f.endsWith('.html')&&pages[f.slice(0,-5)])a.href='#'+f.slice(0,-5)+(h?'/'+h:'');else if(href.startsWith('#'))a.href='#'+key+'/'+href.slice(1)});window.MyHealthSite.init(document.getElementById('website'));if(anchor)requestAnimationFrame(()=>document.getElementById(anchor)?.scrollIntoView());else window.scrollTo(0,0)}
+window.addEventListener('hashchange',renderStandalone);document.addEventListener('DOMContentLoaded',renderStandalone);`;
+fs.writeFileSync(path.join(root,'START-HERE.html'),`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>myhealth | Website preview</title><meta name="theme-color" content="#102d51"><style>${css}</style></head><body><div id="website"><p style="padding:30px">Opening myhealth… Enable JavaScript for this standalone preview, or open dist/index.html.</p></div><script>${js}</script><script>${standaloneScript}</script></body></html>`);
+fs.writeFileSync(path.join(root,'src','page-manifest.json'),JSON.stringify(Object.fromEntries(Object.entries(pages).map(([k,p])=>[k,{key:p.key,title:p.title}])),null,2)+'\n');
+fs.writeFileSync(path.join(root,'src','rendered-pages.json'),JSON.stringify(fragments));
+console.log(`Built ${Object.keys(pages).length} complete HTML pages and START-HERE.html (${(fs.statSync(path.join(root,'START-HERE.html')).size/1024/1024).toFixed(2)} MB).`);

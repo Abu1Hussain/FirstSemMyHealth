@@ -1,19 +1,70 @@
-# myhealth website
+# myhealth — complete website
 
-Six responsive pages: Home, About, Solutions, Features, Demo, Contact.
+Seven pages, the original doctor and AI characters, real application screenshots, an interactive introduction, and a video area. Built around the supplied proposal and report with the latest inspected repository scope.
 
-## Add your walkthrough video
+## Open it now — no installation
 
-Place your video at `dist/assets/walkthrough.mp4`. In `dist/app.js`, change `const WALKTHROUGH_VIDEO=''` to `const WALKTHROUGH_VIDEO='assets/walkthrough.mp4'`. Both the homepage and Demo page will display a real video player with controls. An HTTPS MP4 URL also works.
+1. Extract the ZIP.
+2. Double-click **START-HERE.html**.
+3. Use the menu to move between all seven pages.
 
-## Contact
+The standalone file contains the styles, scripts, images, pages, and source-text downloads. No package installation, server, or Internet connection is needed to explore it. Internet is needed only for external links, including the Flutter app demo. A browser with JavaScript is required for the standalone file. You may also open `dist/index.html`; the multipage website includes its main content directly in each HTML file.
 
-The form opens an email draft to myhealthcare.bh@gmail.com. It does not claim server delivery. LinkedIn icons are labelled Coming soon until real profile URLs are supplied.
+## Pages
 
-## Preview
+| File | Purpose |
+| --- | --- |
+| index.html | Product introduction, doctor hero, role selector, records, AI guide, journey, video |
+| about.html | Problem, mission, vision, objectives, all three team members, supervisor |
+| services.html | Patient, staff, admin, and all five staff roles |
+| features.html | 25 searchable capabilities with audience filters and honest status labels |
+| demo.html | Three interactive workflows, full-app link, video area, FAQ |
+| contact.html | Confirmed email, draft-email form, LinkedIn placeholder |
+| project-details.html | Report coverage, scope, technology, research, evidence, timeline, roadmap, source text |
 
-Run `node preview.cjs`, then open http://127.0.0.1:5173.
+## Add the walkthrough video later
 
-## Content
+To try a video immediately, open Home or Demo, expand **Preview your own video**, and choose a video from your device. This only plays the file locally; it does not upload, save, or publish it. Reloading or leaving the page clears the preview.
 
-Original logo and application screenshots come from Meftah7/myhealthcare_v2. Sample product images represent the demo app. There are no invented users, ratings, or performance claims. External app demo uses synthetic data.
+For the published website:
+
+1. Put the finished MP4 at `dist/assets/walkthrough.mp4`.
+2. Edit `src/config.cjs`: set `walkthroughVideo: 'assets/walkthrough.mp4'`.
+3. Optionally add a WebVTT captions file and set `walkthroughCaptions`.
+4. Run `node build.cjs`.
+5. Upload the contents of `dist/` to your static host.
+
+This updates the Home and Demo video players. Use an H.264 MP4 for broad browser compatibility. The standalone file does not embed large videos; after configuring a relative video path, keep its referenced `assets` directory alongside the standalone file or use the normal `dist` website. An HTTPS video URL also works when online.
+
+## Edit and rebuild
+
+Node.js 18 or newer is needed only to regenerate files. There are no package dependencies and no `npm install` step.
+
+```text
+node build.cjs
+node check.cjs
+```
+
+- `src/config.cjs`: contact, links, walkthrough, review information.
+- `src/content.cjs`: main page content.
+- `src/details.cjs`: report and proposal detail page.
+- `src/components.cjs`: shared navigation, footer, video area, and components.
+- `src/client.js`: role switching, search, guided demo, draft-email form, local video preview.
+- `dist/style.css`: responsive layout, colors, typography, reduced-motion and print rules.
+- `dist/assets/`: actual logo, app screenshots, supplied characters.
+- `docs/CONTENT-COVERAGE.md`: proposal/report/requirement-to-page map.
+- `docs/SOURCE-REVIEW.md`: source scope, assets, evidence, and verification limits.
+
+`build.cjs` generates the seven HTML pages, `dist/app.js`, the standalone preview, and page metadata. Edit source files rather than generated HTML. To serve locally when desired, run `node preview.cjs` and open the URL it prints.
+
+## Contact and publishing
+
+The confirmed public email is **myhealthcare.bh@gmail.com**. The contact form opens an email draft; it is not a server-submitted form. No message is sent automatically. LinkedIn is an icon with “coming soon” text, because no account was supplied. No domain or phone number was invented.
+
+Deploy only `dist/` to a static host. No backend or secret key is required for this marketing website. The live Flutter demo remains a separate application linked from the website. This ZIP is the complete marketing website, not a copy of the Flutter application repository.
+
+## Source and verification notes
+
+All user-facing claims are bounded by the report and current repository review. Future features, simulated payments, incomplete delivery, and disabled clinical AI are labelled. The complete extracted text from both supplied PDFs is included under `dist/downloads/`; the original illustrated PDFs are not reproduced.
+
+Static validation passed for seven pages, 220 local links/assets, 38 image alternatives, JavaScript syntax, embedded standalone assets, and key content coverage. A browser launch was attempted but unavailable, so live browser layout and interaction verification remain unconfirmed. The existing Sites project could not be published because its Git connection failed in this environment. No live marketing-site URL is claimed.
