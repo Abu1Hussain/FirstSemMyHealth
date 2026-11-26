@@ -2,7 +2,10 @@ const fs=require('node:fs'),path=require('node:path');
 const {header,footer,esc}=require('./src/components.cjs'),content=require('./src/content.cjs'),details=require('./src/details.cjs');
 const root=__dirname,dist=path.join(root,'dist');
 const pages={index:{key:'home',title:'One place for your health',render:content.home},about:{key:'about',title:'Our story and team',render:content.about},services:{key:'services',title:'Solutions for patients and clinics',render:content.services},features:{key:'features',title:'Product features',render:content.features},demo:{key:'demo',title:'Explore the demo',render:content.demo},contact:{key:'contact',title:'Contact the team',render:content.contact},'project-details':{key:'details',title:'Project details and roadmap',render:details}};
-const css=fs.readFileSync(path.join(dist,'style.css'),'utf8'),js=fs.readFileSync(path.join(root,'src/client.js'),'utf8');fs.writeFileSync(path.join(dist,'app.js'),js);
+const team=require('./src/team.cjs');
+for(const member of team.members)pages[member.slug]={key:'about',title:member.name+' | '+member.roles.join(' & '),render:()=>team.profile(member.slug)};
+const teamStyleMarker='/* Team image hotspots and individual profiles. */';
+const css=fs.readFileSync(path.join(dist,'style.css'),'utf8').split(teamStyleMarker)[0].trimEnd()+'\n'+fs.readFileSync(path.join(root,'src/team.css'),'utf8'),js=fs.readFileSync(path.join(root,'src/client.js'),'utf8');fs.writeFileSync(path.join(dist,'style.css'),css);fs.writeFileSync(path.join(dist,'app.js'),js);
 const fragments={};
 for(const [file,p] of Object.entries(pages)){
  const body=`${header(p.key)}<main id="main">${p.render()}</main>${footer()}`;fragments[file]=body;

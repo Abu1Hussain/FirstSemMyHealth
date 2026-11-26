@@ -1,6 +1,33 @@
 (function(){
 'use strict';
+let disposeTyping=()=>{};
 function init(root=document){
+ disposeTyping();
+ const timers=new Set();
+ const motion=window.matchMedia('(prefers-reduced-motion: reduce)');
+ const elements=[...root.querySelectorAll('[data-typewriter]')];
+ let stopped=false;
+ function later(fn,delay){const timer=setTimeout(()=>{timers.delete(timer);if(!stopped)fn()},delay);timers.add(timer)}
+ function stopTyping(){stopped=true;timers.forEach(clearTimeout);timers.clear();elements.forEach(el=>{el.textContent=JSON.parse(el.dataset.typewriter).join(' & ');el.classList.remove('is-typing')})}
+ function onMotionChange(){if(motion.matches)stopTyping()}
+ motion.addEventListener('change',onMotionChange);
+ disposeTyping=()=>{stopTyping();motion.removeEventListener('change',onMotionChange)};
+ elements.forEach(el=>{
+   const words=JSON.parse(el.dataset.typewriter);
+   if(motion.matches){el.textContent=words.join(' & ');return}
+   let word=0,letters=0,deleting=false;
+   el.classList.add('is-typing');el.textContent='';
+   function tick(){
+     if(!el.isConnected)return;
+     const characters=Array.from(words[word]);
+     letters+=deleting?-1:1;
+     el.textContent=characters.slice(0,letters).join('');
+     if(!deleting&&letters===characters.length){deleting=true;later(tick,2100);return}
+     if(deleting&&letters===0){deleting=false;word=(word+1)%words.length;later(tick,350);return}
+     later(tick,deleting?38:85);
+   }
+   later(tick,350);
+ });
  const q=s=>root.querySelector(s),qa=s=>[...root.querySelectorAll(s)];
  const menu=q('.menu-toggle'),nav=q('#navigation');
  menu?.addEventListener('click',()=>{const open=menu.getAttribute('aria-expanded')!=='true';menu.setAttribute('aria-expanded',String(open));menu.setAttribute('aria-label',open?'Close navigation':'Open navigation');nav.classList.toggle('open',open)});

@@ -26,5 +26,17 @@
   "project-details": {
     "key": "details",
     "title": "Project details and roadmap"
+  },
+  "mohammed": {
+    "key": "about",
+    "title": "Mohammed | Software Engineer"
+  },
+  "ali": {
+    "key": "about",
+    "title": "Ali | Backend Developer & Designer"
+  },
+  "sayed": {
+    "key": "about",
+    "title": "Sayed | Software Engineer"
   }
 }

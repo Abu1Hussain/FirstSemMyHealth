@@ -32,7 +32,16 @@ The report supplies the deeper architecture and workflow review. The website doe
 - assets/ai-peek.png: user's ai-mascot/myhealth-chatbot-peek-right.png, preserved.
 - assets/staff.png and admin.png: real desktop screenshots from `preview/workforce-doctor-1440-light.png` and `preview/app-admin-1366-en.png` at the inspected GitHub revision. Desktop views were selected for the wide care-team and administrator showcase panels.
 
-No fake testimonials, customer counts, clinical performance claims, or team photos were introduced. The doctor and AI mascot are illustrations, not team portraits.
+No fake testimonials, customer counts, or clinical performance claims were introduced. The doctor and AI mascot are illustrations. The separate team illustration represents Mohammed, Ali, and Sayed in that left-to-right order. Their software roles are stated explicitly on their profiles.
+
+## Team update — 26 November 2026
+
+- The user supplied the final group image at `C:\Users\iamxj\OneDrive\Desktop\FirstSemMyHealth\Animated doctor trio, neatly spaced.png`. Its original bytes are included as `dist/assets/team.png`.
+- Role titles come directly from the user: Mohammed and Sayed are Software Engineers; Ali is a Backend Developer and Designer. No employment history, clinical qualifications, personal social profiles, or CVs are invented.
+- Home and About reveal name links on hover and keyboard focus. Touch layouts keep the names visible. Individual profile links also work without JavaScript.
+- Three profile pages include accessible typewriter text. A stable role is available to screen readers; reduced-motion preferences disable typing. Navigating in the standalone version cancels the previous typing timer.
+- Ten-page checks pass. A controlled JavaScript timer check verifies character-by-character typing, deletion, title switching, navigation cleanup, and live reduced-motion changes. This is not a browser rendering test.
+- Hosting was retried with the existing Site identity and remained blocked by Git DNS startup failure. No live website deployment is claimed.
 
 ## Verification
 

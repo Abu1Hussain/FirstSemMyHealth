@@ -1,12 +1,12 @@
 # myhealth — complete website
 
-Seven pages, the original doctor and AI characters, real application screenshots, an interactive introduction, and a video area. Built around the supplied proposal and report with the latest inspected repository scope.
+Ten pages, the original doctor and AI characters, real application screenshots, an interactive introduction, and a video area. Built around the supplied proposal and report with the latest inspected repository scope.
 
 ## Open it now — no installation
 
 1. Extract the ZIP.
 2. Double-click **START-HERE.html**.
-3. Use the menu to move between all seven pages.
+3. Use the menu to move between all ten pages.
 
 The standalone file contains the styles, scripts, images, pages, and source-text downloads. No package installation, server, or Internet connection is needed to explore it. Internet is needed only for external links, including the Flutter app demo. A browser with JavaScript is required for the standalone file. You may also open `dist/index.html`; the multipage website includes its main content directly in each HTML file.
 
@@ -68,3 +68,13 @@ Deploy only `dist/` to a static host. No backend or secret key is required for t
 All user-facing claims are bounded by the report and current repository review. Future features, simulated payments, incomplete delivery, and disabled clinical AI are labelled. The complete extracted text from both supplied PDFs is included under `dist/downloads/`; the original illustrated PDFs are not reproduced.
 
 Static validation passed for seven pages, 220 local links/assets, 38 image alternatives, JavaScript syntax, embedded standalone assets, and key content coverage. A browser launch was attempted but unavailable, so live browser layout and interaction verification remain unconfirmed. The existing Sites project could not be published because its Git connection failed in this environment. No live marketing-site URL is claimed.
+
+## Team profiles
+
+Home and About show names in the order Mohammed, Ali, Sayed. Hover over the group, or focus it with a keyboard, to reveal all three names. Names remain visible on touchscreens. Each character and profile card opens a separate profile page. Roles type character by character; Ali alternates Backend Developer and Designer. Reduced-motion users see the full roles without animation.
+
+- mohammed.html: Mohammed — Software Engineer
+- ali.html: Ali — Backend Developer & Designer
+- sayed.html: Sayed — Software Engineer
+
+The group illustration belongs at dist/assets/team.png. The source uses initials if the file is absent, rather than substituting a different person's picture. Add the approved final image at that path and run node build.cjs to include the group and cropped character portraits in every output.
