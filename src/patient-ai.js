@@ -1,14 +1,3 @@
-const gatewayActions = {
-  open_appointments: ['appointments', 'Open appointments'],
-  book_appointment: ['appointments', 'Book an appointment'],
-  open_records: ['records', 'Open health records'],
-  upload_report: ['records', 'Add a sample report'],
-  open_messages: ['messages', 'Open message drafts'],
-  open_medications: ['medicines', 'Open medicines'],
-  open_sick_leave: ['documents', 'Request a document'],
-  open_profile: ['settings', 'Open profile']
-};
-
 const gatewayErrors = {
   unauthorized: 'The gateway did not recognise this website’s client identifier.',
   origin_not_allowed: 'The gateway has not allowed requests from this website address.',
@@ -38,6 +27,5 @@ async function askGateway(config, messages, signal) {
   const body = await response.json().catch(() => null);
   if (!response.ok) throw new Error(Object.hasOwn(gatewayErrors, body?.code) ? gatewayErrors[body.code] : `The chat gateway returned HTTP ${response.status}. Try again later.`);
   if (typeof body?.reply !== 'string' || !body.reply.trim()) throw new Error('The gateway did not return a readable reply.');
-  const options = Array.isArray(body.actions) ? body.actions : [body.action];
-  return { content: body.reply.trim().slice(0, 16000), actions: [...new Set(options)].filter(key => Object.hasOwn(gatewayActions, key)) };
+  return body.reply.trim().slice(0, 16000);
 }
