@@ -1,0 +1,25 @@
+<section id="patient-simulator" aria-labelledby="patient-simulator-title">
+  <div class="wrap">
+    <div class="ps-intro">
+      <div>
+        <h2 id="patient-simulator-title">Try the patient app</h2>
+        <p>Book a sample visit, explore health records, or open AI chat from the patient workspace.</p>
+      </div>
+    </div>
+    <div id="patient-app">
+      <div class="ps-topbar">
+        <strong><img src="assets/logo.png" width="32" height="32" alt=""> MyHealth patient workspace</strong>
+        <span class="ps-local">Browser storage</span>
+      </div>
+      <div class="ps-layout">
+        <nav class="ps-nav" aria-label="Patient workspace"></nav>
+        <div class="ps-main">
+          <div id="patient-status" role="status" aria-live="polite"></div>
+          <div id="patient-screen" tabindex="-1">Loading the patient workspace…</div>
+          <noscript>Enable JavaScript to use the patient simulator.</noscript>
+        </div>
+      </div>
+    </div>
+    <p class="small-text ps-scope">Use synthetic data in this demo. Workspace entries are saved in this browser profile.</p>
+  </div>
+</section>
