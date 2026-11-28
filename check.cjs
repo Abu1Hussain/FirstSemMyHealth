@@ -8,10 +8,11 @@ for(const m of html.matchAll(/(?:src|href)="([^"]+)"/g)){const url=m[1];if(/^(ht
 for(const tag of html.matchAll(/<img\b[^>]*>/g)){assert(/\balt="[^"]*"/.test(tag[0]),`${page}: missing image alternative`);images++;}
 console.log(`${page}: headings, landmarks, assets, anchors, and image alternatives passed`);
 }
-for (const script of ['app.js','patient-simulator.js']) new vm.Script(fs.readFileSync(path.join(dir,script),'utf8'));
+for (const script of ['app.js','patient-preview.js']) new vm.Script(fs.readFileSync(path.join(dir,script),'utf8'));
 const standalone=fs.readFileSync(path.join(__dirname,'START-HERE.html'),'utf8');for(const script of standalone.matchAll(/<script>([\s\S]*?)<\/script>/g))new vm.Script(script[1]);assert(!/src="(?:https?:)?\/\//.test(standalone),'Standalone remote asset dependency');
 const patientHome=fs.readFileSync(path.join(dir,'index.html'),'utf8');
-assert(patientHome.includes('id="patient-simulator"') && patientHome.includes('src="patient-simulator.js"'), 'Home mounts the patient simulator');
+assert(patientHome.includes('id="patient-preview"') && patientHome.includes('src="patient-preview.js"'), 'Home mounts the patient preview');
+assert.equal((patientHome.match(/data-preview-image=/g) || []).length, 3, 'Home includes three patient screenshots');
 const all=pages.map(p=>fs.readFileSync(path.join(dir,p+'.html'),'utf8')).join('\n');for(const phrase of ['Sayed Hussain Ali Shubbar Hasan','myhealthcare.bh@gmail.com','logistic','pharmacy','pending','family','Arabic','0.754','69 application tables'])assert(all.includes(phrase),`Coverage: ${phrase}`);
 console.log(`PASS: ${pages.length} pages; ${localLinks} local links/assets; ${images} image alternatives; JS syntax; standalone asset isolation; critical source coverage.`);
 

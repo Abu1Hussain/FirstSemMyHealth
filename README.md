@@ -14,7 +14,7 @@ The standalone file contains the styles, scripts, images, pages, and source-text
 
 | File | Purpose |
 | --- | --- |
-| index.html | Product introduction, interactive patient workspace, role selector, AI guide, journey, video |
+| index.html | Product introduction, real patient screenshots, AI chat, role selector, journey, video |
 | about.html | Problem, mission, vision, objectives, all three team members, supervisor |
 | services.html | Patient, staff, admin, and all five staff roles |
 | features.html | 25 searchable capabilities with audience filters and honest status labels |
@@ -57,18 +57,18 @@ node check.cjs
 
 `build.cjs` generates the ten HTML pages, browser assets, the standalone preview, and page metadata. Edit source files rather than generated HTML. To serve locally when desired, run `node preview.cjs` and open the URL it prints.
 
-## Patient workspace on Amplify
+## Patient preview and AI chat on Amplify
 
-Run `npm run build` and `npm run check`. ZIP the contents of `dist/` so `index.html` sits at the root, then upload the ZIP to Amplify Hosting. Open the Home page and select **Try the patient simulator**. Workspace data, including sample PDFs, is stored in IndexedDB under this website address and browser profile. Use the Settings screen to reset it.
+Run `npm run build` and `npm run check`. ZIP the contents of `dist/` so `index.html` sits at the root, then upload the ZIP to Amplify Hosting. **See the app** opens a scrollable phone preview with [original Flutter captures](https://github.com/Meftah7/myhealthcare_v2/tree/main/docs/rebuild_screenshots/final_audit). **Try the app** opens the existing hosted Flutter demo. Select the Patient demo to explore the real workspace.
 
-Live chat uses the [MyHealth Report AI gateway](https://github.com/Meftah7/myhealthcare_v2/tree/main/services/report_ai). It sends the current message and up to 12 preceding chat turns to `POST /v1/chat`. Saved records and attachments stay in the browser. Use synthetic information for the demo.
+Website chat uses the [MyHealth Report AI gateway](https://github.com/Meftah7/myhealthcare_v2/tree/main/services/report_ai). It sends the current message and up to 12 preceding chat turns to `POST /v1/chat`. The website chat has no access to the Flutter app’s records or attachments. Use synthetic information for the demo.
 
 Choose one way to enable chat before building the Amplify ZIP.
 
 1. **Direct from the browser.** Register a dedicated browser client identifier in the gateway’s `REPORT_AI_CLIENT_TOKENS` and add the exact Amplify URL origin to `REPORT_AI_ORIGINS` in Render. In the environment running `npm run build`, set `REPORT_AI_BROWSER_CLIENT_ID` to that identifier. The identifier is visible in the built browser bundle. Keep `DEEPSEEK_API_KEY` on Render. Keep the configured build output out of Git.
 2. **Through your own server.** To keep the gateway credential private, set `REPORT_AI_RELAY_URL` at build time. Configure that server endpoint to accept `{message, history}`, use the server-held Bearer credential to call the gateway, and return the gateway’s JSON reply. Use application-level access controls and rate limits on that endpoint. For a cross-origin relay, allow the exact Amplify origin on the relay.
 
-Without gateway configuration, the patient workspace builds and runs with live chat disabled.
+Without gateway configuration for this website, the screenshot preview and **Try the app** link work. The website displays a link to the hosted app in place of the chat form. The hosted Flutter app uses its own gateway configuration and browser origin.
 
 ## Contact and publishing
 
